@@ -955,7 +955,7 @@ var __PLATE_ENC__ = {"v": 1, "kdf": "PBKDF2-HMAC-SHA256", "iter": 100000, "ciphe
     var k = b.getAttribute('data-k');
     if (k === 'del') { elPw.value = elPw.value.slice(0,-1); showErr(''); }
     else if (k === 'ok') { tryUnlock(); }
-    else if (/^\\d$/.test(k)) {
+    else if (/^[0-9]$/.test(k)) {
       elPw.value = (elPw.value + k).slice(0,12); showErr('');
       if (elPw.value.length === 4) setTimeout(function(){ if (elPw.value.length === 4 && !opening) tryUnlock(); }, 120);
     }
