@@ -961,7 +961,7 @@ function codeGroups(){
 /* ================= 📷 사진으로 찾기 (스텐실 치수 OCR) ================= */
 var PHOTO_CDN = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
 var PHOTO_MAXSIDE = 2600;         /* 분석에 쓰는 최대 긴 변(px) */
-var PHOTO_MAXBAND = 3;            /* 회전당 살펴볼 글자 줄 수 */
+var PHOTO_MAXBAND = 2;            /* 회전당 살펴볼 글자 줄 수 */
 var PHOTO_TESS_P = null, PHOTO_W_P = null;
 var PHOTO_BUSY = false, PHOTO_CANDS = {}, PHOTO_HITS = 0, PHOTO_DBG = [];
 var PHOTO_OBJURL = null;
@@ -1429,10 +1429,10 @@ function photoAnalyze(img){
       var h = Math.max(8, b.y1 - b.y0);
       var scale = Math.min(3, Math.max(1.7, 300 / h));
       var variants = [
-        { pad: Math.max(4, Math.round(h * 0.10)), inv: true, sh: 1.5, psm: 4, wl: '0123456789X' },
-        { pad: Math.round(h * 0.25), inv: true, sh: 1.5, psm: 6, wl: '0123456789X' },
-        { pad: Math.round(h * 0.45), inv: true, sh: 1.2, psm: 11, wl: '0123456789X' },
-        { pad: Math.round(h * 0.25), inv: false, sh: 1.2, psm: 6, wl: '' }
+        { pad: Math.max(6, Math.round(h * 0.15)), inv: true, sh: 1.5, psm: 4, wl: '0123456789X' },
+        { pad: Math.round(h * 0.28), inv: true, sh: 1.5, psm: 4, wl: '0123456789X' },
+        { pad: Math.max(6, Math.round(h * 0.15)), inv: true, sh: 1.4, psm: 6, wl: '0123456789X' },
+        { pad: Math.round(h * 0.28), inv: false, sh: 1.2, psm: 6, wl: '' }
       ];
       var vi = 0;
       function nextVar(){
