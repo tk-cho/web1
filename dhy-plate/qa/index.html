@@ -130,6 +130,7 @@ main{padding:0 0 calc(84px + env(safe-area-inset-bottom))}
 .pchip.hit .cnt{background:#0b2b57;color:#fff;border-color:#0b2b57}
 .pchip:active{transform:scale(.995)}
 .pchip .sub{font-size:11.5px;font-weight:700;color:#5b6472;display:block;margin-top:2px}
+.pnote.ok{background:#e8f5ec;border-color:#a9d5b9;color:#14713c}
 .pnote{margin-top:8px;font-size:12.5px;font-weight:700;color:#8a5a00;background:#fff7e6;border:1px solid #f2d391;
   border-radius:10px;padding:9px 11px;line-height:1.45}
 .pmanual{margin-top:6px;border-top:1px dashed #dbe2ea;padding-top:2px}
@@ -1344,6 +1345,7 @@ function photoRender(){
   }
   chips.innerHTML = html;
   var note = $p('photoNote');
+  note.className = 'pnote';
   if (noteFuzzy) {
     note.innerHTML = '<b>두께 글자를 또렷하게 못 읽었습니다.</b> 폭·길이는 같고 두께만 다른 규격을 함께 보여드립니다. 철판 두께를 확인해 고르세요.';
     note.classList.remove('hidden');
@@ -1366,7 +1368,7 @@ function photoRender(){
 }
 
 /* ---------- 검색 적용 ---------- */
-function photoSearch(t, w, l){
+function photoApply(t, w, l){
   $p('q').value = ''; state.q = '';
   state.code = '';
   $('dT').value = (t === null || t === undefined || t === '') ? '' : String(t);
@@ -1375,6 +1377,9 @@ function photoSearch(t, w, l){
   readInputs();
   syncChips();
   applyFilters();
+}
+function photoSearch(t, w, l){
+  photoApply(t, w, l);
   photoClose();
   try {
     var top = $('panelSearch').offsetTop || 0;
@@ -1404,9 +1409,12 @@ function photoAnalyze(img){
     photoRender();
     var best = photoSorted()[0];
     if (best && best.exact) {
-      setTimeout(function(){
-        if (!$p('photoWrap').classList.contains('hidden')) photoSearch(best.t, best.w, best.l);
-      }, 700);
+      photoApply(best.t, best.w, best.l);
+      var note = $p('photoNote');
+      note.className = 'pnote ok';
+      note.innerHTML = '✅ <b>' + best.t + 'T × ' + best.w + ' × ' + best.l + '</b> 로 검색했습니다. '
+        + '닫으면 목록에서 ' + intTxt(best.exact.count) + '건을 볼 수 있습니다.';
+      note.classList.remove('hidden');
     }
   }
 
