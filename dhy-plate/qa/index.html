@@ -965,6 +965,7 @@ var PHOTO_MAXBAND = 3;            /* 회전당 살펴볼 글자 줄 수 */
 var PHOTO_TESS_P = null, PHOTO_W_P = null;
 var PHOTO_BUSY = false, PHOTO_CANDS = {}, PHOTO_HITS = 0, PHOTO_DBG = [];
 var PHOTO_OBJURL = null;
+try { window.__PHOTO_DEBUG = PHOTO_DBG; } catch(e){}
 
 function $p(id){ return document.getElementById(id); }
 
@@ -1410,7 +1411,8 @@ function photoStart(file){
   if (!file) return;
   if (PHOTO_BUSY) return;
   PHOTO_BUSY = true;
-  PHOTO_CANDS = {}; PHOTO_HITS = 0; PHOTO_DBG = [];
+  PHOTO_CANDS = {}; PHOTO_HITS = 0;
+  while (PHOTO_DBG.length) PHOTO_DBG.pop();
   $p('photoRes').classList.add('hidden');
   $p('photoChips').innerHTML = '';
   $p('photoNote').classList.add('hidden');
@@ -1434,6 +1436,10 @@ function photoStart(file){
   };
   img.src = PHOTO_OBJURL;
 }
+
+try {
+  window.__PHOTO_FN = { rotated: photoRotated, bands: photoBands, band: photoBandCanvas, ocr: photoOcr, dims: photoDims };
+} catch(e){}
 
 function photoInit(){
   var btn = $p('photoBtn');
