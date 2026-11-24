@@ -993,7 +993,8 @@ function photoClose(){
   if (PHOTO_OBJURL){ try { URL.revokeObjectURL(PHOTO_OBJURL); } catch(e){} PHOTO_OBJURL = null; }
 }
 function photoReset(){
-  PHOTO_CANDS = {}; PHOTO_HITS = 0; PHOTO_DBG = [];
+  PHOTO_CANDS = {}; PHOTO_HITS = 0;
+  while (PHOTO_DBG.length) PHOTO_DBG.pop();
   photoProgOn(false); photoFail('');
   $p('photoRes').classList.add('hidden');
   $p('photoPreviewWrap').classList.add('hidden');
