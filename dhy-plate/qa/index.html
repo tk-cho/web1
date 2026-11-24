@@ -1118,7 +1118,7 @@ function photoBandCanvas(rc, y0, y1, scale, pad, invert, sharpen){
   if (sh < 6) return null;
   var sw = rc.width;
   var w = Math.round(sw * scale), h = Math.round(sh * scale);
-  if (w > 5000) { scale = 5000 / sw; w = 5000; h = Math.round(sh * scale); }
+  if (w > 6400) { scale = 6400 / sw; w = 6400; h = Math.round(sh * scale); }
   if (h > 1600) { var s2 = 1600 / h; h = 1600; w = Math.round(w * s2); scale = scale * s2; }
   if (w < 60 || h < 12) return null;
   var cv = document.createElement('canvas'); cv.width = w; cv.height = h;
@@ -1165,38 +1165,16 @@ function photoOcr(cv, psm, wl){
   });
 }
 
-/* ---------- 글자에서 치수 뽑기 ---------- */
-function photoValid(a, b, c){
-  return a >= 2 && a <= 80 && b >= 300 && b <= 3200 && c >= 800 && c <= 25000;
-}
-function photoDims(text){
-  var s = String(text).replace(/[×*＊хХ]/g, 'X');
-  var out = [], seen = {}, m;
-  function push(a, b, c){
-    if (!photoValid(a, b, c)) return;
-    var k = a + 'x' + b + 'x' + c;
-    if (seen[k]) return;
-    seen[k] = 1; out.push([a, b, c]);
-  }
-  var re = /(\d{1,2})\s*[Xx]\s*(\d{3,4})\s*[Xx]\s*(\d{4,5})/g;
-  while ((m = re.exec(s))) push(+m[1], +m[2], +m[3]);
-  /* 줄바꿈/기호로 끊긴 경우: 숫자와 X만 남겨 다시 */
-  var flat = s.replace(/[^0-9Xx]/g, '');
-  var re2 = /(\d{1,2})[Xx](\d{3,4})[Xx](\d{4,5})/g;
-  while ((m = re2.exec(flat))) push(+m[1], +m[2], +m[3]);
-  return out;
-}
-
-/* ---------- 자료와 대조 ---------- */
+/* ---------- 글자에서 치수 뽑기 (자료 사전으로 자동 보정) ---------- */
 var PHOTO_SPEC = null;
 function photoSpecIndex(){
   if (PHOTO_SPEC) return PHOTO_SPEC;
-  var exact = {}, wl = {};
+  var exact = {}, wl = {}, list = [];
   for (var i = 0; i < ROWS.length; i++) {
     var r = ROWS[i], t = r[F.T], w = r[F.W], l = r[F.L];
     if (t === null || t === undefined || w === null || w === undefined || l === null || l === undefined) continue;
     var k = t + 'x' + w + 'x' + l;
-    if (!exact[k]) exact[k] = {t: t, w: w, l: l, count: 0, qty: 0, pend: 0};
+    if (!exact[k]) { exact[k] = {t: t, w: w, l: l, count: 0, qty: 0, pend: 0}; list.push(exact[k]); }
     exact[k].count++;
     exact[k].qty += (r[F.QTY] || 0);
     if (isPend(r)) exact[k].pend++;
@@ -1204,9 +1182,80 @@ function photoSpecIndex(){
     if (!wl[k2]) wl[k2] = [];
     if (wl[k2].indexOf(k) < 0) wl[k2].push(k);
   }
-  PHOTO_SPEC = { exact: exact, wl: wl };
+  PHOTO_SPEC = { exact: exact, wl: wl, list: list };
   return PHOTO_SPEC;
 }
+
+/* 짧은 문자열 편집거리(상한 넘으면 99) */
+function photoEd(a, b, cap){
+  a = String(a); b = String(b);
+  if (a === b) return 0;
+  var la = a.length, lb = b.length, i, j;
+  if (Math.abs(la - lb) > cap) return 99;
+  var prev = new Array(lb + 1), cur = new Array(lb + 1);
+  for (j = 0; j <= lb; j++) prev[j] = j;
+  for (i = 1; i <= la; i++) {
+    cur[0] = i;
+    var best = cur[0];
+    for (j = 1; j <= lb; j++) {
+      var cost = a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1;
+      var v = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost);
+      cur[j] = v;
+      if (v < best) best = v;
+    }
+    if (best > cap) return 99;
+    var tmp = prev; prev = cur; cur = tmp;
+  }
+  return prev[lb] > cap ? 99 : prev[lb];
+}
+
+/* 읽은 숫자 → 실제 규격 (정확히 없으면 자료에서 가장 가까운 규격) */
+function photoResolve(t, w, l){
+  var idx = photoSpecIndex();
+  var k = t + 'x' + w + 'x' + l;
+  if (idx.exact[k]) return { t: +t, w: +w, l: +l, info: idx.exact[k], dist: 0 };
+  if (String(t).length > 2 || String(w).length > 4 || String(l).length > 5) return null;
+  var best = null;
+  for (var i = 0; i < idx.list.length; i++) {
+    var o = idx.list[i];
+    var d = photoEd(t, o.t, 1);
+    if (d > 1) continue;
+    d += photoEd(w, o.w, 2 - d);
+    if (d > 2) continue;
+    d += photoEd(l, o.l, 2 - d);
+    if (d > 2) continue;
+    if (!best || d < best.dist || (d === best.dist && o.count > best.info.count)) {
+      best = { t: o.t, w: o.w, l: o.l, info: o, dist: d };
+    }
+  }
+  return best;
+}
+
+function photoDims(text){
+  var s = String(text).toUpperCase().replace(/[×*＊Х]/g, 'X');
+  var flat = s.replace(/[^0-9X]/g, '');
+  var out = [], seen = {}, m;
+  function add(r){
+    if (!r) return;
+    var k = r.t + 'x' + r.w + 'x' + r.l;
+    if (seen[k]) return;
+    seen[k] = 1; out.push(r);
+  }
+  var re3 = /(\d{1,2})X(\d{3,5})X(\d{4,5})/g;
+  while ((m = re3.exec(flat))) add(photoResolve(m[1], m[2], m[3]));
+  if (!out.length) {
+    var re2 = /(\d{1,2})X(\d{7,9})/g;
+    while ((m = re2.exec(flat))) {
+      var t = m[1], rest = m[2];
+      for (var k = 3; k <= 4; k++) {
+        if (rest.length - k < 4 || rest.length - k > 5) continue;
+        add(photoResolve(t, rest.slice(0, k), rest.slice(k)));
+      }
+    }
+  }
+  return out;
+}
+
 function photoLookup(t, w, l){
   var idx = photoSpecIndex();
   var e = idx.exact[t + 'x' + w + 'x' + l] || null;
@@ -1223,12 +1272,13 @@ function photoLookup(t, w, l){
 }
 
 /* ---------- 결과 모으기 / 표시 ---------- */
-function photoCollect(dims, meta){
+function photoCollect(dims){
   if (!dims || !dims.length) return;
   for (var i = 0; i < dims.length; i++) {
-    var d = dims[i], k = d.join('x');
-    if (!PHOTO_CANDS[k]) PHOTO_CANDS[k] = { t: d[0], w: d[1], l: d[2], hits: 0 };
+    var d = dims[i], k = d.t + 'x' + d.w + 'x' + d.l;
+    if (!PHOTO_CANDS[k]) PHOTO_CANDS[k] = { t: d.t, w: d.w, l: d.l, hits: 0, dist: d.dist };
     PHOTO_CANDS[k].hits++;
+    if (d.dist < PHOTO_CANDS[k].dist) PHOTO_CANDS[k].dist = d.dist;
   }
   PHOTO_HITS++;
   photoRender();
@@ -1265,12 +1315,14 @@ function photoRender(){
   var chips = $p('photoChips');
   if (!arr.length){ chips.innerHTML = ''; $p('photoRes').classList.add('hidden'); return; }
   $p('photoRes').classList.remove('hidden');
-  var html = '', shown = 0, noteFuzzy = false, noteNone = false;
+  var html = '', shown = 0, noteFuzzy = false, noteNone = false, noteFix = false;
   for (var i = 0; i < arr.length && shown < 6; i++) {
     var c = arr[i];
     if (c.exact) {
+      if (c.dist > 0) noteFix = true;
       html += '<button class="pchip hit" data-t="' + c.t + '" data-w="' + c.w + '" data-l="' + c.l + '">'
-            + '<span><b>' + c.t + 'T × ' + c.w + ' × ' + c.l + '</b><span class="sub">읽은 그대로 · 눌러서 검색</span></span>'
+            + '<span><b>' + c.t + 'T × ' + c.w + ' × ' + c.l + '</b><span class="sub">'
+            + (c.dist > 0 ? '자동 보정 · 눌러서 검색' : '읽은 그대로 · 눌러서 검색') + '</span></span>'
             + '<span class="cnt">' + photoCountTxt(c.exact) + '</span></button>';
       shown++;
     } else if (c.alts) {
@@ -1295,18 +1347,21 @@ function photoRender(){
   if (noteFuzzy) {
     note.innerHTML = '<b>두께 글자를 또렷하게 못 읽었습니다.</b> 폭·길이는 같고 두께만 다른 규격을 함께 보여드립니다. 철판 두께를 확인해 고르세요.';
     note.classList.remove('hidden');
+  } else if (noteFix) {
+    note.innerHTML = '글자 일부를 <b>자료와 대조해 보정</b>했습니다. 실제 철판과 다른지 한 번 확인해 주세요.';
+    note.classList.remove('hidden');
   } else if (noteNone) {
     note.innerHTML = '<b>사진에서 읽은 치수가 자료에 없습니다.</b> 숫자가 잘못 읽혔을 수 있으니 아래 칸에서 고쳐 검색해 보세요.';
     note.classList.remove('hidden');
   } else {
     note.classList.add('hidden');
   }
-  /* 직접 입력칸: 가장 좋은 후보를 채워 둔다 */
   var best = arr[0];
   if ($p('pmW').value === '') {
-    $p('pmT').value = (best.exact || (best.alts && best.alts[0])) ? String((best.exact || best.alts[0]).t) : String(best.t);
-    $p('pmW').value = String(best.w);
-    $p('pmL').value = String(best.l);
+    var bt = best.exact ? best.exact : (best.alts && best.alts[0] ? best.alts[0] : best);
+    $p('pmT').value = String(bt.t);
+    $p('pmW').value = String(bt.w);
+    $p('pmL').value = String(bt.l);
   }
 }
 
@@ -1357,7 +1412,7 @@ function photoAnalyze(img){
 
   function nextRot(){
     if (exactFound || ri >= PHOTO_ROTS.length) return finish();
-    if (calls >= 16) return finish();
+    if (calls >= 18) return finish();
     var rot = PHOTO_ROTS[ri++];
     photoProg('글자 위치 찾는 중… (' + ri + '/3)', 0.3 + 0.03 * ri);
     var rc;
@@ -1374,10 +1429,10 @@ function photoAnalyze(img){
       var h = Math.max(8, b.y1 - b.y0);
       var scale = Math.min(3, Math.max(1.7, 300 / h));
       var variants = [
-        { pad: Math.round(h * 0.22), inv: true,  sh: 1.5, psm: 4, wl: '0123456789X' },
-        { pad: Math.round(h * 0.22), inv: false, sh: 1.5, psm: 4, wl: '0123456789X' },
-        { pad: Math.round(h * 0.5),  inv: true,  sh: 1.0, psm: 6, wl: '' },
-        { pad: Math.round(h * 0.5),  inv: false, sh: 1.0, psm: 6, wl: '' }
+        { pad: Math.max(4, Math.round(h * 0.10)), inv: true, sh: 1.5, psm: 4, wl: '0123456789X' },
+        { pad: Math.round(h * 0.25), inv: true, sh: 1.5, psm: 6, wl: '0123456789X' },
+        { pad: Math.round(h * 0.45), inv: true, sh: 1.2, psm: 11, wl: '0123456789X' },
+        { pad: Math.round(h * 0.25), inv: false, sh: 1.2, psm: 6, wl: '' }
       ];
       var vi = 0;
       function nextVar(){
