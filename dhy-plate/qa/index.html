@@ -1107,7 +1107,7 @@ function photoBands(rc){
     for (y = bands[i][0]; y < bands[i][1]; y++) if (sm[y] > mx) mx = sm[y];
     out.push({y0: Math.round(bands[i][0]/k), y1: Math.round(bands[i][1]/k), sc: mx, h: bh});
   }
-  out.sort(function(a, b){ return (b.y1-b.y0)*(b.sc) - (a.y1-a.y0)*(a.sc); });
+  out.sort(function(a, b){ return b.sc - a.sc; });
   return out.slice(0, PHOTO_MAXBAND);
 }
 
