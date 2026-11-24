@@ -89,6 +89,62 @@ main{padding:0 0 calc(84px + env(safe-area-inset-bottom))}
 #codeChip b{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:15px}
 #codeChip button{margin-left:auto;border:0;background:#0b2b57;color:#fff;border-radius:8px;height:30px;padding:0 10px;font-size:12.5px;font-weight:800}
 
+/* ---------- 📷 사진으로 찾기 ---------- */
+.qrow{display:flex;gap:8px;align-items:stretch}
+.qrow .qwrap{flex:1 1 auto;min-width:0}
+#photoBtn{flex:0 0 auto;display:flex;align-items:center;gap:5px;height:50px;padding:0 13px;border-radius:12px;
+  border:2px solid #0b2b57;background:#e8effa;color:#0b2b57;font-size:14px;font-weight:900;letter-spacing:-.3px}
+#photoBtn .cam{font-size:17px;line-height:1}
+#photoBtn:active{background:#d7e4f7}
+
+#photoWrap{position:fixed;inset:0;z-index:85;background:rgba(11,20,32,.55);display:flex;align-items:flex-end}
+#photoModal{background:#fff;width:100%;max-height:92vh;border-radius:18px 18px 0 0;display:flex;flex-direction:column;
+  box-shadow:0 -8px 30px rgba(11,20,32,.25)}
+.photobody{padding:0 16px 6px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.photohelp{margin:2px 0 12px;font-size:13px;font-weight:600;color:#4a5460;line-height:1.45}
+.photoacts{display:flex;gap:8px}
+.photoacts .pact{flex:1;height:56px;border-radius:13px;border:1.5px solid #0b2b57;background:#fff;color:#0b2b57;
+  font-size:15px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:6px}
+.photoacts .pact.cam{background:#0b2b57;color:#fff}
+.photoacts .pact:active{transform:scale(.985)}
+#photoPreviewWrap{margin-top:12px;border-radius:12px;overflow:hidden;border:1px solid #dbe2ea;background:#eef1f5;
+  max-height:190px;display:flex;align-items:center;justify-content:center}
+#photoPreview{width:100%;height:auto;max-height:190px;object-fit:contain;display:block}
+#photoProg{margin-top:12px;background:#eef3fb;border:1px solid #c7d8f0;border-radius:12px;padding:10px 12px}
+#photoProg .ptxt{font-size:13.5px;font-weight:800;color:#0b2b57;display:flex;align-items:center;gap:8px}
+#photoProg .ptxt .spin{width:14px;height:14px;border-radius:50%;border:2.5px solid #b9cdec;border-top-color:#0b2b57;
+  animation:pspin .8s linear infinite;flex:0 0 auto}
+@keyframes pspin{to{transform:rotate(360deg)}}
+#photoProg .pbar{height:6px;border-radius:3px;background:#cfdcf0;margin-top:8px;overflow:hidden}
+#photoProg .pbar i{display:block;height:100%;width:0;background:#0b2b57;border-radius:3px;transition:width .25s}
+#photoRes{margin-top:12px}
+.plabel{font-size:12.5px;font-weight:900;color:#5b6472;letter-spacing:-.1px;margin:10px 0 7px}
+.photochips{display:flex;flex-direction:column;gap:7px}
+.pchip{display:flex;align-items:center;gap:9px;width:100%;text-align:left;border-radius:12px;padding:11px 12px;
+  border:1.5px solid #cdd6e0;background:#fbfcfe;color:#101418}
+.pchip b{font-size:18px;font-weight:900;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.pchip .cnt{margin-left:auto;font-size:12.5px;font-weight:900;border-radius:20px;padding:4px 9px;white-space:nowrap;
+  background:#e6f4ec;color:#14713c;border:1px solid #a9d5b9}
+.pchip.none .cnt{background:#f3f4f6;color:#7d8896;border-color:#dbe2ea}
+.pchip.hit{border-color:#0b2b57;background:#eef3fb}
+.pchip.hit .cnt{background:#0b2b57;color:#fff;border-color:#0b2b57}
+.pchip:active{transform:scale(.995)}
+.pchip .sub{font-size:11.5px;font-weight:700;color:#5b6472;display:block;margin-top:2px}
+.pnote{margin-top:8px;font-size:12.5px;font-weight:700;color:#8a5a00;background:#fff7e6;border:1px solid #f2d391;
+  border-radius:10px;padding:9px 11px;line-height:1.45}
+.pmanual{margin-top:6px;border-top:1px dashed #dbe2ea;padding-top:2px}
+.prow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
+.prow label{display:flex;flex-direction:column;gap:3px;font-size:11.5px;font-weight:800;color:#33404f}
+.prow input{height:46px;border:1.5px solid #cdd6e0;border-radius:10px;padding:0 10px;font-size:16px;font-weight:800;
+  background:#fbfcfe;color:#101418;width:100%;font-variant-numeric:tabular-nums;-webkit-appearance:none;appearance:none}
+.prow input:focus{outline:0;border-color:#0b2b57;background:#fff}
+.pgo{width:100%;height:48px;margin-top:9px;border-radius:11px;border:1.5px solid #0b2b57;background:#fff;color:#0b2b57;
+  font-size:15px;font-weight:900}
+.pgo:active{background:#e8effa}
+#photoFail{margin-top:12px;background:#fff4ec;border:1px solid #f0a675;border-radius:12px;padding:11px 12px;
+  font-size:13px;font-weight:700;color:#a8410d;line-height:1.5}
+#photoFail b{color:#8a2f08}
+
 /* result bar */
 .resultbar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 2px 8px}
 .resultbar .n{font-size:14px;font-weight:800;color:#101418}
@@ -410,11 +466,14 @@ table.fields td.dim{color:#7d8896;font-weight:600}
   <!-- ============ TAB 1 ============ -->
   <section class="panel" id="panelSearch">
     <div class="searchcard">
-      <div class="qwrap">
-        <span class="qicon">🔍</span>
-        <input id="q" type="text" inputmode="search" autocomplete="off" autocorrect="off" spellcheck="false"
-               placeholder="발주코드 · 구역 · 착지 · 제품번호 · 1500x6100">
-        <button id="qclear" aria-label="지우기">✕</button>
+      <div class="qrow">
+        <div class="qwrap">
+          <span class="qicon">🔍</span>
+          <input id="q" type="text" inputmode="search" autocomplete="off" autocorrect="off" spellcheck="false"
+                 placeholder="발주코드 · 구역 · 착지 · 제품번호 · 1500x6100">
+          <button id="qclear" aria-label="지우기">✕</button>
+        </div>
+        <button id="photoBtn" aria-label="사진으로 찾기"><span class="cam">📷</span>사진</button>
       </div>
       <div class="dims">
         <label class="dim"><span>두께 (T)</span><input id="dT" type="text" inputmode="decimal" autocomplete="off" placeholder="예) 6"></label>
@@ -516,6 +575,51 @@ table.fields td.dim{color:#7d8896;font-weight:600}
   </div>
 </div>
 
+<!-- ============ 📷 사진으로 찾기 ============ -->
+<div id="photoWrap" class="hidden">
+  <div id="photoModal" role="dialog" aria-modal="true" aria-label="사진으로 찾기">
+    <div class="shiphead"><h2>📷 사진으로 찾기</h2><button id="photoClose" aria-label="닫기">✕</button></div>
+    <div class="photobody">
+      <p class="photohelp">철판 옆면 스텐실의 <b>두께 × 폭 × 길이</b>(예: <code>16X2450X8050</code>)를 읽어서 찾아드립니다.
+        글자가 화면에 크게 차도록 <b>가까이서</b> 찍으면 더 잘 읽습니다.</p>
+      <div class="photoacts" id="photoActs">
+        <button id="photoCam" class="pact cam">📷 카메라로 찍기</button>
+        <button id="photoPick" class="pact">🖼️ 앨범에서 고르기</button>
+      </div>
+      <input id="photoCamInput" type="file" accept="image/*" capture="environment" class="hidden">
+      <input id="photoPickInput" type="file" accept="image/*" class="hidden">
+
+      <div id="photoPreviewWrap" class="hidden"><img id="photoPreview" alt="선택한 사진"></div>
+
+      <div id="photoProg" class="hidden">
+        <div class="ptxt"><span class="spin"></span><span id="photoProgTxt">준비 중…</span></div>
+        <div class="pbar"><i id="photoProgBar"></i></div>
+      </div>
+
+      <div id="photoRes" class="hidden">
+        <div class="plabel">인식된 치수 · 누르면 바로 검색</div>
+        <div id="photoChips" class="photochips"></div>
+        <div id="photoNote" class="pnote hidden"></div>
+        <div class="pmanual">
+          <div class="plabel">직접 입력해서 찾기</div>
+          <div class="prow">
+            <label>두께 (T)<input id="pmT" type="text" inputmode="decimal" placeholder="16"></label>
+            <label>폭 (mm)<input id="pmW" type="text" inputmode="numeric" placeholder="2450"></label>
+            <label>길이 (mm)<input id="pmL" type="text" inputmode="numeric" placeholder="8050"></label>
+          </div>
+          <button id="pmGo" class="pgo">이 치수로 검색</button>
+        </div>
+      </div>
+
+      <div id="photoFail" class="hidden"></div>
+    </div>
+    <div class="shipfoot">
+      <button id="photoRetry">다른 사진</button>
+      <button id="photoDone" class="primary">닫기</button>
+    </div>
+  </div>
+</div>
+
 <!-- ============ HELP ============ -->
 <div id="help" class="hidden">
   <div class="helpbox">
@@ -535,6 +639,15 @@ table.fields td.dim{color:#7d8896;font-weight:600}
       <li><b>부분검색</b>을 켜두면 앞자리 일치까지 찾습니다. 예) 길이 <code>610</code> → 6100, 6105 / 두께 <code>1</code> → 10, 11, 12…</li>
       <li>맨 위 <b>빠른 검색</b>은 발주코드(<code>YD-001</code>), 구역(<code>1공구</code>), 착지(<code>무기리</code>), 제품번호, 재질, 그리고 <code>1500x6100</code>·<code>6x1500x6100</code> 같은 규격 입력을 한 번에 처리합니다.</li>
       <li>카드를 누르면 <b>26개 항목 전체</b>(발주일·제품번호·입고일·미입고·착지·비고 등)가 표로 열립니다.</li>
+    </ul>
+
+    <h3>📷 사진으로 찾기 (치수 자동 인식)</h3>
+    <ul>
+      <li>검색창 옆 <b>📷 사진</b>을 누르면 <b>카메라로 찍기</b> / <b>앨범에서 고르기</b>를 고를 수 있습니다.</li>
+      <li>철판 옆면 스텐실의 <b>두께 × 폭 × 길이</b>(예: <code>16X2450X8050</code>)를 폰 안에서 읽어 치수 칩으로 보여줍니다. 칩을 누르면 바로 검색됩니다.</li>
+      <li>글자가 화면에 크게 차도록 <b>가까이서</b> 찍을수록 잘 읽습니다. 세로로 찍은 사진도 알아서 돌려 봅니다.</li>
+      <li>처음 한 번은 글자 인식기를 내려받느라 <b>10~40초</b> 걸립니다(그 뒤에는 빠릅니다). 비밀번호처럼 외부로 나가는 자료는 없고, 사진은 폰 밖으로 전송되지 않습니다.</li>
+      <li>글자를 못 읽으면 안내가 뜨고, <b>두께·폭·길이를 직접 넣어</b> 검색할 수 있습니다.</li>
     </ul>
 
     <h3>✂️ 1공장 절단 (색깔 표시)</h3>
@@ -843,6 +956,581 @@ function codeGroups(){
   });
   var out=[]; for(var j=0;j<order.length;j++) out.push(map[order[j]]);
   return out;
+}
+
+/* ================= 📷 사진으로 찾기 (스텐실 치수 OCR) ================= */
+var PHOTO_CDN = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+var PHOTO_MAXSIDE = 2600;         /* 분석에 쓰는 최대 긴 변(px) */
+var PHOTO_MAXBAND = 2;            /* 회전당 살펴볼 글자 줄 수 */
+var PHOTO_TESS_P = null, PHOTO_W_P = null;
+var PHOTO_BUSY = false, PHOTO_CANDS = {}, PHOTO_HITS = 0, PHOTO_DBG = [];
+var PHOTO_OBJURL = null;
+try { window.__PHOTO_DEBUG = PHOTO_DBG; } catch(e){}
+
+function $p(id){ return document.getElementById(id); }
+
+function photoProg(txt, frac){
+  var t = $p('photoProgTxt'); if (t) t.textContent = txt;
+  var b = $p('photoProgBar'); if (b) b.style.width = Math.round(Math.max(0.03, Math.min(1, frac || 0)) * 100) + '%';
+}
+function photoProgOn(on){
+  var e = $p('photoProg'); if (!e) return;
+  if (on) e.classList.remove('hidden'); else e.classList.add('hidden');
+}
+function photoFail(html){
+  var e = $p('photoFail'); if (!e) return;
+  if (!html){ e.classList.add('hidden'); e.innerHTML = ''; return; }
+  e.innerHTML = html; e.classList.remove('hidden');
+}
+function photoOpen(){
+  $p('photoWrap').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  photoReset();
+}
+function photoClose(){
+  $p('photoWrap').classList.add('hidden');
+  document.body.style.overflow = '';
+  if (PHOTO_OBJURL){ try { URL.revokeObjectURL(PHOTO_OBJURL); } catch(e){} PHOTO_OBJURL = null; }
+}
+function photoReset(){
+  PHOTO_CANDS = {}; PHOTO_HITS = 0;
+  while (PHOTO_DBG.length) PHOTO_DBG.pop();
+  photoProgOn(false); photoFail('');
+  $p('photoRes').classList.add('hidden');
+  $p('photoPreviewWrap').classList.add('hidden');
+  $p('photoChips').innerHTML = '';
+  $p('photoNote').classList.add('hidden');
+  $p('pmT').value = ''; $p('pmW').value = ''; $p('pmL').value = '';
+  $p('photoActs').classList.remove('hidden');
+  PHOTO_BUSY = false;
+}
+
+/* ---------- 라이브러리 / 인식기 준비 ---------- */
+function photoLoadLib(){
+  if (window.Tesseract) return Promise.resolve();
+  if (PHOTO_TESS_P) return PHOTO_TESS_P;
+  PHOTO_TESS_P = new Promise(function(res, rej){
+    var s = document.createElement('script');
+    s.src = PHOTO_CDN; s.async = true;
+    s.onload = function(){ res(); };
+    s.onerror = function(){ PHOTO_TESS_P = null; rej(new Error('lib')); };
+    document.head.appendChild(s);
+  });
+  return PHOTO_TESS_P;
+}
+function photoWorker(){
+  if (PHOTO_W_P) return PHOTO_W_P;
+  photoProg('글자 인식기 준비 중…', 0.04);
+  PHOTO_W_P = photoLoadLib().then(function(){
+    return Tesseract.createWorker('eng', 1, {
+      logger: function(m){
+        var f = Math.max(0, Math.min(1, m.progress || 0));
+        if (m.status === 'loading language traineddata') photoProg('글자 인식기 내려받는 중… ' + Math.round(f*100) + '% (처음 한 번만)', 0.05 + f*0.22);
+        else if (m.status === 'loading tesseract core') photoProg('인식기 불러오는 중…', 0.03 + f*0.05);
+        else if (m.status === 'initializing api') photoProg('인식기 준비 중…', 0.28);
+      }
+    });
+  }).catch(function(e){ PHOTO_W_P = null; throw e; });
+  return PHOTO_W_P;
+}
+
+/* ---------- 이미지 → 캔버스 ---------- */
+function photoRotated(img, rot, maxSide){
+  var sw = img.naturalWidth || img.width, sh = img.naturalHeight || img.height;
+  var k = Math.min(1, (maxSide || PHOTO_MAXSIDE) / Math.max(sw, sh));
+  var iw = Math.max(1, Math.round(sw * k)), ih = Math.max(1, Math.round(sh * k));
+  var rw = (rot % 180 === 0) ? iw : ih, rh = (rot % 180 === 0) ? ih : iw;
+  var cv = document.createElement('canvas');
+  cv.width = rw; cv.height = rh;
+  var c = cv.getContext('2d');
+  c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
+  if (rot === 90) { c.translate(rw, 0); c.rotate(Math.PI / 2); }
+  else if (rot === 180) { c.translate(rw, rh); c.rotate(Math.PI); }
+  else if (rot === 270) { c.translate(0, rh); c.rotate(-Math.PI / 2); }
+  c.drawImage(img, 0, 0, iw, ih);
+  return cv;
+}
+
+/* 글자가 놓인 가로 줄(band) 찾기: 밝은 얇은 획(top-hat)의 행별 세기 */
+function photoBands(rc){
+  var workW = 640, k = Math.min(1, workW / rc.width);
+  var w = Math.round(rc.width * k), h = Math.round(rc.height * k);
+  if (w < 40 || h < 20) return [];
+  var cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  var c = cv.getContext('2d');
+  c.drawImage(rc, 0, 0, w, h);
+  var d;
+  try { d = c.getImageData(0, 0, w, h).data; } catch(e){ return []; }
+  var g = new Float32Array(w * h), i, j;
+  for (i = 0, j = 0; i < d.length; i += 4, j++) g[j] = d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114;
+  var R = 3, t1 = new Float32Array(w * h), t2 = new Float32Array(w * h);
+  var x, y, dx, dy, p, mn, v;
+  for (y = 0; y < h; y++) for (x = 0; x < w; x++) {
+    mn = 255;
+    for (dx = -R; dx <= R; dx++) { p = x + dx; if (p >= 0 && p < w) { v = g[y*w+p]; if (v < mn) mn = v; } }
+    t1[y*w+x] = mn;
+  }
+  for (y = 0; y < h; y++) for (x = 0; x < w; x++) {
+    mn = 255;
+    for (dy = -R; dy <= R; dy++) { p = y + dy; if (p >= 0 && p < h) { v = t1[p*w+x]; if (v < mn) mn = v; } }
+    t2[y*w+x] = mn;
+  }
+  var row = new Float32Array(h), s;
+  for (y = 0; y < h; y++) {
+    s = 0;
+    for (x = 0; x < w; x++) { v = g[y*w+x] - t2[y*w+x]; if (v > 0) s += v; }
+    row[y] = s / w;
+  }
+  var sm = new Float32Array(h), n2;
+  for (y = 0; y < h; y++) {
+    s = 0; n2 = 0;
+    for (j = -3; j <= 3; j++) { var yy = y + j; if (yy >= 0 && yy < h) { s += row[yy]; n2++; } }
+    sm[y] = s / n2;
+  }
+  var mean = 0, sq = 0;
+  for (y = 0; y < h; y++) { mean += sm[y]; sq += sm[y]*sm[y]; }
+  mean /= h;
+  var sd = Math.sqrt(Math.max(0, sq/h - mean*mean));
+  var thr = mean + 0.85 * sd;
+  var bands = [], st = -1;
+  for (y = 0; y < h; y++) {
+    if (sm[y] >= thr) { if (st < 0) st = y; }
+    else if (st >= 0) { bands.push([st, y]); st = -1; }
+  }
+  if (st >= 0) bands.push([st, h]);
+  var out = [];
+  for (i = 0; i < bands.length; i++) {
+    var bh = bands[i][1] - bands[i][0];
+    if (bh < Math.max(5, 0.006*h)) continue;
+    if (bh > 0.16*h) continue;
+    var mx = 0;
+    for (y = bands[i][0]; y < bands[i][1]; y++) if (sm[y] > mx) mx = sm[y];
+    out.push({y0: Math.round(bands[i][0]/k), y1: Math.round(bands[i][1]/k), sc: mx, h: bh});
+  }
+  out.sort(function(a, b){ return b.sc - a.sc; });
+  return out.slice(0, PHOTO_MAXBAND);
+}
+
+/* 줄 하나를 잘라 확대 + 대비정규화(+샤픈, 반전) */
+function photoBandCanvas(rc, y0, y1, scale, pad, invert, sharpen){
+  var sy = Math.max(0, Math.round(y0 - pad)), ey = Math.min(rc.height, Math.round(y1 + pad));
+  var sh = ey - sy;
+  if (sh < 6) return null;
+  var sw = rc.width;
+  var w = Math.round(sw * scale), h = Math.round(sh * scale);
+  if (w > 6400) { scale = 6400 / sw; w = 6400; h = Math.round(sh * scale); }
+  if (h > 1600) { var s2 = 1600 / h; h = 1600; w = Math.round(w * s2); scale = scale * s2; }
+  if (w < 60 || h < 12) return null;
+  var cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  var c = cv.getContext('2d');
+  c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
+  c.drawImage(rc, 0, sy, sw, sh, 0, 0, w, h);
+  var id = c.getImageData(0, 0, w, h), d = id.data, n = w * h, i;
+  var g = new Float32Array(n);
+  for (i = 0; i < n; i++) g[i] = d[i*4] * 0.299 + d[i*4+1] * 0.587 + d[i*4+2] * 0.114;
+  if (sharpen) {
+    var bl = new Float32Array(n), x, y, dx, dy, ss, kk;
+    for (y = 0; y < h; y++) for (x = 0; x < w; x++) {
+      ss = 0; kk = 0;
+      for (dy = -1; dy <= 1; dy++) {
+        var yy = y + dy; if (yy < 0 || yy >= h) continue;
+        for (dx = -1; dx <= 1; dx++) { var xx = x + dx; if (xx < 0 || xx >= w) continue; ss += g[yy*w+xx]; kk++; }
+      }
+      bl[y*w+x] = ss / kk;
+    }
+    for (i = 0; i < n; i++) { var vv = g[i] + sharpen * (g[i] - bl[i]); g[i] = vv < 0 ? 0 : (vv > 255 ? 255 : vv); }
+  }
+  var hist = new Uint32Array(256);
+  for (i = 0; i < n; i++) hist[g[i] | 0]++;
+  var loT = n * 0.02, hiT = n * 0.98, acc = 0, lo = 0, hi = 255, vv2;
+  for (vv2 = 0; vv2 < 256; vv2++) { acc += hist[vv2]; if (acc >= loT) { lo = vv2; break; } }
+  acc = 0;
+  for (vv2 = 0; vv2 < 256; vv2++) { acc += hist[vv2]; if (acc >= hiT) { hi = vv2; break; } }
+  var span = Math.max(1, hi - lo);
+  for (i = 0; i < n; i++) {
+    var q = (g[i] - lo) * 255 / span;
+    q = q < 0 ? 0 : (q > 255 ? 255 : q);
+    if (invert) q = 255 - q;
+    d[i*4] = d[i*4+1] = d[i*4+2] = q; d[i*4+3] = 255;
+  }
+  c.putImageData(id, 0, 0);
+  return cv;
+}
+
+function photoOcr(cv, psm, wl){
+  return photoWorker().then(function(w){
+    return w.setParameters({ tessedit_char_whitelist: wl || '', tessedit_pageseg_mode: String(psm) })
+      .then(function(){ return w.recognize(cv); })
+      .then(function(r){ return String((r && r.data && r.data.text) || ''); });
+  });
+}
+
+/* ---------- 글자에서 치수 뽑기 (자료 사전으로 자동 보정) ---------- */
+var PHOTO_SPEC = null;
+function photoSpecIndex(){
+  if (PHOTO_SPEC) return PHOTO_SPEC;
+  var exact = {}, wl = {}, list = [];
+  for (var i = 0; i < ROWS.length; i++) {
+    var r = ROWS[i], t = r[F.T], w = r[F.W], l = r[F.L];
+    if (t === null || t === undefined || w === null || w === undefined || l === null || l === undefined) continue;
+    var k = t + 'x' + w + 'x' + l;
+    if (!exact[k]) { exact[k] = {t: t, w: w, l: l, count: 0, qty: 0, pend: 0}; list.push(exact[k]); }
+    exact[k].count++;
+    exact[k].qty += (r[F.QTY] || 0);
+    if (isPend(r)) exact[k].pend++;
+    var k2 = w + 'x' + l;
+    if (!wl[k2]) wl[k2] = [];
+    if (wl[k2].indexOf(k) < 0) wl[k2].push(k);
+  }
+  PHOTO_SPEC = { exact: exact, wl: wl, list: list };
+  return PHOTO_SPEC;
+}
+
+/* 짧은 문자열 편집거리(상한 넘으면 99) */
+function photoEd(a, b, cap){
+  a = String(a); b = String(b);
+  if (a === b) return 0;
+  var la = a.length, lb = b.length, i, j;
+  if (Math.abs(la - lb) > cap) return 99;
+  var prev = new Array(lb + 1), cur = new Array(lb + 1);
+  for (j = 0; j <= lb; j++) prev[j] = j;
+  for (i = 1; i <= la; i++) {
+    cur[0] = i;
+    var best = cur[0];
+    for (j = 1; j <= lb; j++) {
+      var cost = a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1;
+      var v = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost);
+      cur[j] = v;
+      if (v < best) best = v;
+    }
+    if (best > cap) return 99;
+    var tmp = prev; prev = cur; cur = tmp;
+  }
+  return prev[lb] > cap ? 99 : prev[lb];
+}
+
+/* 읽은 숫자 → 실제 규격 (정확히 없으면 자료에서 가장 가까운 규격) */
+function photoResolve(t, w, l){
+  var idx = photoSpecIndex();
+  var k = t + 'x' + w + 'x' + l;
+  if (idx.exact[k]) return { t: +t, w: +w, l: +l, info: idx.exact[k], dist: 0 };
+  if (String(t).length > 2 || String(w).length > 4 || String(l).length > 5) return null;
+  var best = null;
+  for (var i = 0; i < idx.list.length; i++) {
+    var o = idx.list[i];
+    var d = photoEd(t, o.t, 1);
+    if (d > 1) continue;
+    d += photoEd(w, o.w, 2 - d);
+    if (d > 2) continue;
+    d += photoEd(l, o.l, 2 - d);
+    if (d > 2) continue;
+    if (!best || d < best.dist || (d === best.dist && o.count > best.info.count)) {
+      best = { t: o.t, w: o.w, l: o.l, info: o, dist: d };
+    }
+  }
+  return best;
+}
+
+function photoDims(text){
+  var s = String(text).toUpperCase().replace(/[×*＊Х]/g, 'X');
+  var flat = s.replace(/[^0-9X]/g, '');
+  var out = [], seen = {}, m;
+  function add(r){
+    if (!r) return;
+    var k = r.t + 'x' + r.w + 'x' + r.l;
+    if (seen[k]) return;
+    seen[k] = 1; out.push(r);
+  }
+  var re3 = /(\d{1,2})X(\d{3,5})X(\d{4,5})/g;
+  while ((m = re3.exec(flat))) add(photoResolve(m[1], m[2], m[3]));
+  if (!out.length) {
+    var re2 = /(\d{1,2})X(\d{7,9})/g;
+    while ((m = re2.exec(flat))) {
+      var t = m[1], rest = m[2];
+      for (var k = 3; k <= 4; k++) {
+        if (rest.length - k < 4 || rest.length - k > 5) continue;
+        add(photoResolve(t, rest.slice(0, k), rest.slice(k)));
+      }
+    }
+  }
+  return out;
+}
+
+function photoLookup(t, w, l){
+  var idx = photoSpecIndex();
+  var e = idx.exact[t + 'x' + w + 'x' + l] || null;
+  if (e) return { exact: e, alts: null };
+  var list = idx.wl[w + 'x' + l] || [];
+  if (!list.length) return { exact: null, alts: null };
+  var alts = [];
+  for (var i = 0; i < list.length; i++) {
+    var o = idx.exact[list[i]];
+    alts.push({t: o.t, w: o.w, l: o.l, count: o.count, qty: o.qty, pend: o.pend});
+  }
+  alts.sort(function(a, b){ return b.count - a.count; });
+  return { exact: null, alts: alts };
+}
+
+/* ---------- 결과 모으기 / 표시 ---------- */
+function photoCollect(dims){
+  if (!dims || !dims.length) return;
+  for (var i = 0; i < dims.length; i++) {
+    var d = dims[i], k = d.t + 'x' + d.w + 'x' + d.l;
+    if (!PHOTO_CANDS[k]) PHOTO_CANDS[k] = { t: d.t, w: d.w, l: d.l, hits: 0, dist: d.dist };
+    PHOTO_CANDS[k].hits++;
+    if (d.dist < PHOTO_CANDS[k].dist) PHOTO_CANDS[k].dist = d.dist;
+  }
+  PHOTO_HITS++;
+  photoRender();
+}
+function photoHasExact(){
+  for (var k in PHOTO_CANDS) {
+    if (!PHOTO_CANDS.hasOwnProperty(k)) continue;
+    var c = PHOTO_CANDS[k];
+    if (photoLookup(c.t, c.w, c.l).exact) return true;
+  }
+  return false;
+}
+function photoSorted(){
+  var arr = [];
+  for (var k in PHOTO_CANDS) {
+    if (!PHOTO_CANDS.hasOwnProperty(k)) continue;
+    var c = PHOTO_CANDS[k], lk = photoLookup(c.t, c.w, c.l);
+    c.exact = lk.exact; c.alts = lk.alts;
+    arr.push(c);
+  }
+  arr.sort(function(a, b){
+    var ra = a.exact ? 3 : (a.alts ? 2 : 0);
+    var rb = b.exact ? 3 : (b.alts ? 2 : 0);
+    if (ra !== rb) return rb - ra;
+    return b.hits - a.hits;
+  });
+  return arr;
+}
+function photoCountTxt(o){
+  return intTxt(o.count) + '건' + (o.pend ? ' · 미입고 ' + intTxt(o.pend) : '');
+}
+function photoRender(){
+  var arr = photoSorted();
+  var chips = $p('photoChips');
+  if (!arr.length){ chips.innerHTML = ''; $p('photoRes').classList.add('hidden'); return; }
+  $p('photoRes').classList.remove('hidden');
+  var html = '', shown = 0, noteFuzzy = false, noteNone = false, noteFix = false;
+  for (var i = 0; i < arr.length && shown < 6; i++) {
+    var c = arr[i];
+    if (c.exact) {
+      if (c.dist > 0) noteFix = true;
+      html += '<button class="pchip hit" data-t="' + c.t + '" data-w="' + c.w + '" data-l="' + c.l + '">'
+            + '<span><b>' + c.t + 'T × ' + c.w + ' × ' + c.l + '</b><span class="sub">'
+            + (c.dist > 0 ? '자동 보정 · 눌러서 검색' : '읽은 그대로 · 눌러서 검색') + '</span></span>'
+            + '<span class="cnt">' + photoCountTxt(c.exact) + '</span></button>';
+      shown++;
+    } else if (c.alts) {
+      noteFuzzy = true;
+      for (var j = 0; j < c.alts.length && shown < 6; j++) {
+        var a = c.alts[j];
+        html += '<button class="pchip" data-t="' + a.t + '" data-w="' + a.w + '" data-l="' + a.l + '">'
+              + '<span><b>' + a.t + 'T × ' + a.w + ' × ' + a.l + '</b><span class="sub">폭·길이가 같은 규격</span></span>'
+              + '<span class="cnt">' + photoCountTxt(a) + '</span></button>';
+        shown++;
+      }
+    } else {
+      noteNone = true;
+      html += '<button class="pchip none" data-t="' + c.t + '" data-w="' + c.w + '" data-l="' + c.l + '">'
+            + '<span><b>' + c.t + 'T × ' + c.w + ' × ' + c.l + '</b><span class="sub">자료에 없는 치수</span></span>'
+            + '<span class="cnt">자료 없음</span></button>';
+      shown++;
+    }
+  }
+  chips.innerHTML = html;
+  var note = $p('photoNote');
+  if (noteFuzzy) {
+    note.innerHTML = '<b>두께 글자를 또렷하게 못 읽었습니다.</b> 폭·길이는 같고 두께만 다른 규격을 함께 보여드립니다. 철판 두께를 확인해 고르세요.';
+    note.classList.remove('hidden');
+  } else if (noteFix) {
+    note.innerHTML = '글자 일부를 <b>자료와 대조해 보정</b>했습니다. 실제 철판과 다른지 한 번 확인해 주세요.';
+    note.classList.remove('hidden');
+  } else if (noteNone) {
+    note.innerHTML = '<b>사진에서 읽은 치수가 자료에 없습니다.</b> 숫자가 잘못 읽혔을 수 있으니 아래 칸에서 고쳐 검색해 보세요.';
+    note.classList.remove('hidden');
+  } else {
+    note.classList.add('hidden');
+  }
+  var best = arr[0];
+  if ($p('pmW').value === '') {
+    var bt = best.exact ? best.exact : (best.alts && best.alts[0] ? best.alts[0] : best);
+    $p('pmT').value = String(bt.t);
+    $p('pmW').value = String(bt.w);
+    $p('pmL').value = String(bt.l);
+  }
+}
+
+/* ---------- 검색 적용 ---------- */
+function photoSearch(t, w, l){
+  $p('q').value = ''; state.q = '';
+  state.code = '';
+  $('dT').value = (t === null || t === undefined || t === '') ? '' : String(t);
+  $('dW').value = (w === null || w === undefined || w === '') ? '' : String(w);
+  $('dL').value = (l === null || l === undefined || l === '') ? '' : String(l);
+  readInputs();
+  syncChips();
+  applyFilters();
+  photoClose();
+  try {
+    var top = $('panelSearch').offsetTop || 0;
+    window.scrollTo({ top: Math.max(0, top - 60), behavior: 'smooth' });
+  } catch(e){}
+}
+
+/* ---------- 분석 실행 ---------- */
+var PHOTO_ROTS = [270, 90, 0];
+function photoAnalyze(img){
+  var ri = 0, exactFound = false, calls = 0, done = false;
+  var t0 = Date.now();
+
+  function finish(){
+    if (done) return;
+    done = true;
+    PHOTO_BUSY = false;
+    photoProgOn(false);
+    var arr = photoSorted();
+    if (!arr.length) {
+      photoFail('<b>글자를 자동으로 읽지 못했습니다.</b><br>아래 칸에 두께·폭·길이를 직접 넣어 검색하거나, '
+        + '사진을 다시 찍어 보세요(스텐실 글자가 화면에 크게 차도록). 주니어 채팅에 사진을 보내 주셔도 됩니다.');
+      $p('photoRes').classList.remove('hidden');
+      return;
+    }
+    photoFail('');
+    photoRender();
+    var best = photoSorted()[0];
+    if (best && best.exact) {
+      setTimeout(function(){
+        if (!$p('photoWrap').classList.contains('hidden')) photoSearch(best.t, best.w, best.l);
+      }, 700);
+    }
+  }
+
+  function nextRot(){
+    if (exactFound || ri >= PHOTO_ROTS.length) return finish();
+    if (calls >= 18) return finish();
+    var rot = PHOTO_ROTS[ri++];
+    photoProg('글자 위치 찾는 중… (' + ri + '/3)', 0.3 + 0.03 * ri);
+    var rc;
+    try { rc = photoRotated(img, rot, PHOTO_MAXSIDE); } catch(e){ rc = null; }
+    if (!rc) return setTimeout(nextRot, 20);
+    var bands = [];
+    try { bands = photoBands(rc); } catch(e){ bands = []; }
+    if (!bands.length) { rc = null; return setTimeout(nextRot, 20); }
+
+    var bi = 0;
+    function nextBand(){
+      if (exactFound || bi >= bands.length) { rc = null; return setTimeout(nextRot, 20); }
+      var b = bands[bi++];
+      var h = Math.max(8, b.y1 - b.y0);
+      var scale = Math.min(3, Math.max(1.7, 300 / h));
+      var variants = [
+        { pad: Math.max(6, Math.round(h * 0.15)), inv: true, sh: 1.5, psm: 4, wl: '0123456789X' },
+        { pad: Math.round(h * 0.28), inv: true, sh: 1.5, psm: 4, wl: '0123456789X' },
+        { pad: Math.max(6, Math.round(h * 0.15)), inv: true, sh: 1.4, psm: 6, wl: '0123456789X' },
+        { pad: Math.round(h * 0.28), inv: false, sh: 1.2, psm: 6, wl: '' }
+      ];
+      var vi = 0;
+      function nextVar(){
+        if (exactFound || vi >= variants.length) return setTimeout(nextBand, 10);
+        var v = variants[vi++];
+        var cv = null;
+        try { cv = photoBandCanvas(rc, b.y0, b.y1, scale, v.pad, v.inv, v.sh); } catch(e){ cv = null; }
+        if (!cv) return setTimeout(nextVar, 0);
+        calls++;
+        photoProg('글자 읽는 중… ' + rot + '° · ' + (calls) + '번째 시도', 0.35 + Math.min(0.55, calls * 0.035));
+        photoOcr(cv, v.psm, v.wl).then(function(txt){
+          try { cv.width = cv.height = 0; } catch(e){}
+          var dims = photoDims(txt);
+          PHOTO_DBG.push({ rot: rot, band: [b.y0, b.y1], v: v, calls: calls, text: String(txt).replace(/\s+/g, ' ').slice(0, 160), dims: dims });
+          photoCollect(dims);
+          if (photoHasExact()) exactFound = true;
+          setTimeout(nextVar, 0);
+        }).catch(function(err){
+          PHOTO_DBG.push({ rot: rot, band: [b.y0, b.y1], v: v, err: String(err && err.message || err) });
+          try { cv.width = cv.height = 0; } catch(e){}
+          setTimeout(nextVar, 0);
+        });
+      }
+      nextVar();
+    }
+    nextBand();
+  }
+  nextRot();
+}
+
+function photoStart(file){
+  if (!file) return;
+  if (PHOTO_BUSY) return;
+  PHOTO_BUSY = true;
+  PHOTO_CANDS = {}; PHOTO_HITS = 0;
+  while (PHOTO_DBG.length) PHOTO_DBG.pop();
+  $p('photoRes').classList.add('hidden');
+  $p('photoChips').innerHTML = '';
+  $p('photoNote').classList.add('hidden');
+  photoFail('');
+  photoProgOn(true);
+  photoProg('사진 여는 중…', 0.02);
+  $p('photoActs').classList.add('hidden');
+  if (PHOTO_OBJURL){ try { URL.revokeObjectURL(PHOTO_OBJURL); } catch(e){} }
+  PHOTO_OBJURL = URL.createObjectURL(file);
+  var prev = $p('photoPreview');
+  prev.src = PHOTO_OBJURL;
+  $p('photoPreviewWrap').classList.remove('hidden');
+  var img = new Image();
+  img.onload = function(){
+    $p('photoPreview').src = prev.src;
+    setTimeout(function(){ photoAnalyze(img); }, 30);
+  };
+  img.onerror = function(){
+    PHOTO_BUSY = false; photoProgOn(false); $p('photoActs').classList.remove('hidden');
+    photoFail('사진을 열지 못했습니다. 다른 사진으로 다시 시도해 주세요.');
+  };
+  img.src = PHOTO_OBJURL;
+}
+
+try {
+  window.__PHOTO_FN = { rotated: photoRotated, bands: photoBands, band: photoBandCanvas, ocr: photoOcr, dims: photoDims };
+} catch(e){}
+
+function photoInit(){
+  var btn = $p('photoBtn');
+  if (!btn || btn.__wired) return;
+  btn.__wired = 1;
+  btn.addEventListener('click', photoOpen);
+  $p('photoClose').addEventListener('click', photoClose);
+  $p('photoDone').addEventListener('click', photoClose);
+  $p('photoWrap').addEventListener('click', function(e){ if (e.target === this) photoClose(); });
+  $p('photoRetry').addEventListener('click', function(){ photoReset(); });
+  $p('photoCam').addEventListener('click', function(){ $p('photoCamInput').click(); });
+  $p('photoPick').addEventListener('click', function(){ $p('photoPickInput').click(); });
+  $p('photoCamInput').addEventListener('change', function(){
+    var f = this.files && this.files[0]; this.value = ''; if (f) photoStart(f);
+  });
+  $p('photoPickInput').addEventListener('change', function(){
+    var f = this.files && this.files[0]; this.value = ''; if (f) photoStart(f);
+  });
+  $p('photoChips').addEventListener('click', function(e){
+    var b = e.target.closest ? e.target.closest('.pchip') : null;
+    if (!b) return;
+    photoSearch(b.getAttribute('data-t'), b.getAttribute('data-w'), b.getAttribute('data-l'));
+  });
+  $p('pmGo').addEventListener('click', function(){
+    var t = $p('pmT').value.replace(/[^0-9.]/g, '');
+    var w = $p('pmW').value.replace(/[^0-9]/g, '');
+    var l = $p('pmL').value.replace(/[^0-9]/g, '');
+    if (!w && !l && !t) { photoFail('두께·폭·길이 중 하나는 넣어 주세요.'); return; }
+    photoFail('');
+    photoSearch(t, w, l);
+  });
+  ['pmT', 'pmW', 'pmL'].forEach(function(id){
+    var el = $p(id);
+    if (el) el.addEventListener('input', function(){ this.value = this.value.replace(/[^0-9.]/g, ''); });
+  });
 }
 
 /* ================= UI ================= */
@@ -1161,6 +1849,7 @@ function switchTab(which){
 }
 
 function init(){
+  photoInit();
   loadProc();
   loadShip();
   allTotals=totalsFrom(ROWS.map(function(_,i){return i;}));
