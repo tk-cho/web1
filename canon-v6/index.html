@@ -797,7 +797,7 @@
         const rx = 120 + Math.random() * 210, ry = 26 + Math.random() * 46;
         const warm = cy > 520;
         puff(cx, cy + 10, rx * 1.15, ry * 1.2, warm ? 0.10 : 0.13, warm ? '255,238,214' : '236,244,252');
-        puff(cx, cy, rx, ry, warm ? 0.30 : 0.42, warm ? '255,247,232' : '252,254,255');
+        puff(cx, cy, rx, ry, warm ? 0.45 : 0.6, warm ? '255,247,232' : '252,254,255');
         puff(cx - rx * 0.25, cy - ry * 0.35, rx * 0.62, ry * 0.72, 0.35, '255,255,255');
       }
     }
@@ -1128,11 +1128,11 @@
   wheelGeo.rotateZ(Math.PI / 2);
   const wheelRimGeo = new THREE.CylinderGeometry(0.24, 0.24, 0.60, 8);
   wheelRimGeo.rotateZ(Math.PI / 2);
-  const matRubber = new THREE.MeshStandardMaterial({ color: 0x181a1c, roughness: 0.92, metalness: 0.15 });
-  const matSteel  = new THREE.MeshStandardMaterial({ color: 0x3a414a, roughness: 0.42, metalness: 0.78 });
-  const matGunMetal = new THREE.MeshStandardMaterial({ color: 0x24292e, roughness: 0.38, metalness: 0.82 });
-  const matERA    = new THREE.MeshStandardMaterial({ color: 0x2c362e, roughness: 0.62, metalness: 0.35 });
-  const matEnemyERA = new THREE.MeshStandardMaterial({ color: 0x3b3c2d, roughness: 0.65, metalness: 0.32 });
+  const matRubber = new THREE.MeshStandardMaterial({ color: 0x24262a, roughness: 0.94, metalness: 0.06 });
+  const matSteel  = new THREE.MeshStandardMaterial({ color: 0x5a636d, roughness: 0.5, metalness: 0.42 });
+  const matGunMetal = new THREE.MeshStandardMaterial({ color: 0x3b4147, roughness: 0.52, metalness: 0.45 });
+  const matERA    = new THREE.MeshStandardMaterial({ color: 0x46523f, roughness: 0.76, metalness: 0.12 });
+  const matEnemyERA = new THREE.MeshStandardMaterial({ color: 0x51523d, roughness: 0.78, metalness: 0.12 });
   const matGlass  = new THREE.MeshStandardMaterial({ color: 0x0ea5e9, roughness: 0.12, metalness: 0.9, emissive: 0x0369a1, emissiveIntensity: 0.4 });
   const matRedEye = new THREE.MeshBasicMaterial({ color: 0xff1e38 });
   const matHeadlight = new THREE.MeshBasicMaterial({ color: 0xfff3c4 });
@@ -1278,8 +1278,8 @@
   const playerRoot = new THREE.Group(); playerRoot.position.set(0, 0, 82); scene.add(playerRoot);
   const playerHullPivot = new THREE.Group(); playerRoot.add(playerHullPivot); // Suspension pitch/roll pivot
 
-  const pHullMat = new THREE.MeshStandardMaterial({ map: texPlayerCamo, roughness: 0.52, metalness: 0.38 });
-  const pAccent  = new THREE.MeshStandardMaterial({ color: 0x1e2c33, roughness: 0.48, metalness: 0.62 });
+  const pHullMat = new THREE.MeshStandardMaterial({ map: texPlayerCamo, roughness: 0.74, metalness: 0.10 });
+  const pAccent  = new THREE.MeshStandardMaterial({ color: 0x36454d, roughness: 0.66, metalness: 0.22 });
   const pGlow    = new THREE.MeshBasicMaterial({ color: 0x22d3ee });
   const pGold    = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.28, metalness: 0.85 });
   const pCanvas  = new THREE.MeshStandardMaterial({ color: 0x5a5b46, roughness: 0.95, metalness: 0.05 });
@@ -1416,8 +1416,8 @@
 
   const matConcreteWall = new THREE.MeshStandardMaterial({ map: texConcrete, roughness: 0.9, metalness: 0.08 });
   const matDarkConcrete = new THREE.MeshStandardMaterial({ color: 0x55524a, roughness: 0.94 });
-  const matReflPanel    = new THREE.MeshStandardMaterial({ color: 0x2c6484, roughness: 0.34, metalness: 0.55 });
-  const matSteelTruss   = new THREE.MeshStandardMaterial({ color: 0x53616f, roughness: 0.55, metalness: 0.62 });
+  const matReflPanel    = new THREE.MeshStandardMaterial({ color: 0x437f9e, roughness: 0.42, metalness: 0.25 });
+  const matSteelTruss   = new THREE.MeshStandardMaterial({ color: 0x6b7885, roughness: 0.6, metalness: 0.3 });
   const matSandbag      = new THREE.MeshStandardMaterial({ color: 0x8b7d63, roughness: 0.96 });
   const matPineBark     = new THREE.MeshStandardMaterial({ color: 0x473323, roughness: 0.95 });
   const matPineLeaf1    = new THREE.MeshStandardMaterial({ color: 0x243b26, roughness: 0.9, flatShading: true });
@@ -1720,9 +1720,9 @@
     const hullGrp = new THREE.Group(); root.add(hullGrp);
     const armorMat = new THREE.MeshStandardMaterial({
       map: isAlly ? texAllyCamo : (cfg.isBoss ? texBossCamo : texEnemyCamo),
-      roughness: 0.58, metalness: 0.34
+      roughness: 0.74, metalness: 0.10
     });
-    const accentMat = new THREE.MeshStandardMaterial({ color: isAlly ? 0x1e2c36 : 0x262622, roughness: 0.55, metalness: 0.52 });
+    const accentMat = new THREE.MeshStandardMaterial({ color: isAlly ? 0x35474f : 0x3c3d34, roughness: 0.68, metalness: 0.2 });
     const wheels = buildRealisticTankChassis(hullGrp, armorMat, accentMat, false, !isAlly, !!cfg.isBoss);
     const scl = cfg.isBoss ? 1.14 : 0.98;
 
