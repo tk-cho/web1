@@ -737,7 +737,7 @@
   const camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.2, 1400);
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, window.innerWidth <= 900 ? 1.6 : 2));
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -1304,8 +1304,8 @@
     }
   });
   // Rear bustle ammo rack + canvas stowage + turret basket cage
-  const bustle = new THREE.Mesh(boxG(2.85, 0.72, 1.45), pAccent);
-  bustle.position.set(0, 0.56, 2.75); bustle.castShadow = true; playerTurret.add(bustle);
+  const bustle = new THREE.Mesh(boxG(2.85, 0.62, 1.35), pHullMat);
+  bustle.position.set(0, 0.52, 2.72); bustle.castShadow = true; playerTurret.add(bustle);
   const canvasRoll = new THREE.Mesh(cylG(0.2, 0.2, 2.5, 8), pCanvas);
   canvasRoll.rotation.z = Math.PI / 2; canvasRoll.position.set(0, 1.02, 2.85); playerTurret.add(canvasRoll);
   {
@@ -1363,7 +1363,7 @@
   // RCWS / CIWS turret
   const ciwsTurret = new THREE.Group(); ciwsTurret.position.set(-0.92, 1.12, 0.85);
   ciwsTurret.add(new THREE.Mesh(cylG(0.32, 0.38, 0.42, 10), pAccent));
-  const ciwsEmitter = new THREE.Mesh(new THREE.SphereGeometry(0.20, 8, 8), new THREE.MeshBasicMaterial({ color: 0x34d399 }));
+  const ciwsEmitter = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 8), new THREE.MeshBasicMaterial({ color: 0x34d399 }));
   ciwsEmitter.position.y = 0.32; ciwsTurret.add(ciwsEmitter); playerTurret.add(ciwsTurret);
 
   // 4-Tube guided missile pod
@@ -2399,9 +2399,21 @@
   // 11. MAIN 60FPS LOOP (MOBILE WARFARE + SUSPENSION + REALISTIC TANK AI)
   // ============================================================================
   let lastT = performance.now();
+  let perfStart = performance.now(), perfFrames = 0, perfAdjusted = 0;
   function animate(now) {
     requestAnimationFrame(animate);
     const dt = Math.min(0.05, (now - lastT) / 1000); lastT = now; const tSec = now / 1000;
+    // Adaptive resolution: if the device cannot hold ~30fps, step the render scale down
+    perfFrames++;
+    if (now - perfStart > 2600) {
+      const fps = perfFrames / ((now - perfStart) / 1000);
+      perfStart = now; perfFrames = 0;
+      if (fps < 26 && perfAdjusted < 2 && renderer.getPixelRatio() > 1) {
+        perfAdjusted++;
+        renderer.setPixelRatio(Math.max(1, renderer.getPixelRatio() * 0.75));
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+    }
     ciwsTurret.rotation.y += dt * 4.2;
     animatedProps.forEach(ap => { ap.obj.rotation.y += dt * ap.speed; });
 
