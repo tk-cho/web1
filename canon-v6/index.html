@@ -914,8 +914,8 @@
   scene.add(new THREE.AmbientLight(0x93a9bb, 0.42));
   const sun = new THREE.DirectionalLight(0xffe6c2, 2.35);
   sun.position.set(132, 148, -96); sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
-  sun.shadow.camera.left = -190; sun.shadow.camera.right = 190; sun.shadow.camera.top = 190; sun.shadow.camera.bottom = -190;
+  sun.shadow.mapSize.set(1024, 1024);
+  sun.shadow.camera.left = -150; sun.shadow.camera.right = 150; sun.shadow.camera.top = 150; sun.shadow.camera.bottom = -150;
   sun.shadow.camera.near = 20; sun.shadow.camera.far = 520;
   sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.35;
   scene.add(sun);
@@ -926,7 +926,7 @@
   // ---------------------------------------------------------------------------
   // Rolling terrain with grass / dry grass / soil / rock vertex blending
   // ---------------------------------------------------------------------------
-  const groundGeo = new THREE.PlaneGeometry(900, 900, 148, 148);
+  const groundGeo = new THREE.PlaneGeometry(900, 900, 118, 118);
   groundGeo.rotateX(-Math.PI / 2);
   {
     const pos = groundGeo.attributes.position;
@@ -1088,13 +1088,14 @@
   // Layered mountain ridge ring + distant tree line for a natural horizon
   // ---------------------------------------------------------------------------
   const ridgeCols = [0x5c6b52, 0x53624d, 0x475741, 0x64705a, 0x4b5a48];
-  for (let i = 0; i < 72; i++) {
-    const ang = (i / 72) * Math.PI * 2 + (i % 2) * 0.02;
+  const ridgeMats = ridgeCols.map(c => new THREE.MeshStandardMaterial({ color: c, roughness: 1, flatShading: true }));
+  for (let i = 0; i < 52; i++) {
+    const ang = (i / 52) * Math.PI * 2 + (i % 2) * 0.02;
     const dist = 268 + (i % 5) * 21;
     const hh = 22 + (i * 23 % 46), rr = 58 + (i * 17 % 52);
     const mtn = new THREE.Mesh(
       new THREE.ConeGeometry(rr, hh, 11, 1),
-      new THREE.MeshStandardMaterial({ color: ridgeCols[i % ridgeCols.length], roughness: 1, flatShading: true })
+      ridgeMats[i % ridgeMats.length]
     );
     mtn.position.set(Math.cos(ang) * dist, hh / 2 - 10, Math.sin(ang) * dist);
     mtn.rotation.y = i * 0.7;
@@ -1136,6 +1137,19 @@
   const matHeadlight = new THREE.MeshBasicMaterial({ color: 0xfff3c4 });
   const matTaillight = new THREE.MeshBasicMaterial({ color: 0xff2222 });
 
+  // Shared geometry cache — hundreds of tank parts reuse a handful of buffers
+  const _geoCache = new Map();
+  function boxG(w, h, d) {
+    const k = 'b' + w + '_' + h + '_' + d;
+    let g = _geoCache.get(k); if (!g) { g = new THREE.BoxGeometry(w, h, d); _geoCache.set(k, g); }
+    return g;
+  }
+  function cylG(rt, rb, hh, seg = 8) {
+    const k = 'c' + rt + '_' + rb + '_' + hh + '_' + seg;
+    let g = _geoCache.get(k); if (!g) { g = new THREE.CylinderGeometry(rt, rb, hh, seg); _geoCache.set(k, g); }
+    return g;
+  }
+
   function buildRealisticTankChassis(hullGrp, armorMat, accentMat, isPlayer, isEnemy, isBoss) {
     const wheels = [];
     const scale = isBoss ? 1.14 : (isPlayer ? 1.05 : 0.98);
@@ -1143,23 +1157,23 @@
     const trackMat = new THREE.MeshStandardMaterial({ color: 0x22242a, roughness: 0.88, metalness: 0.42 });
 
     // Main lower & upper hull
-    const mainHull = new THREE.Mesh(new THREE.BoxGeometry(3.55, 1.02, 6.9), armorMat);
+    const mainHull = new THREE.Mesh(boxG(3.55, 1.02, 6.9), armorMat);
     mainHull.position.set(0, 1.05, 0.1); mainHull.castShadow = true; mainHull.receiveShadow = true;
     hullGrp.add(mainHull);
 
     // Sloped front glacis plate (경사 전면 복합장갑)
-    const glacis = new THREE.Mesh(new THREE.BoxGeometry(3.50, 0.48, 1.95), armorMat);
+    const glacis = new THREE.Mesh(boxG(3.50, 0.48, 1.95), armorMat);
     glacis.position.set(0, 1.20, -3.52); glacis.rotation.x = 0.48; glacis.castShadow = true;
     hullGrp.add(glacis);
 
     // Lower front plate + driver's hatch & periscopes
-    const lfp = new THREE.Mesh(new THREE.BoxGeometry(3.48, 0.52, 0.95), accentMat);
+    const lfp = new THREE.Mesh(boxG(3.48, 0.52, 0.95), accentMat);
     lfp.position.set(0, 0.68, -3.62); lfp.rotation.x = -0.52;
     hullGrp.add(lfp);
-    const drvHatch = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.38, 0.10, 10), accentMat);
+    const drvHatch = new THREE.Mesh(cylG(0.36, 0.38, 0.10, 10), accentMat);
     drvHatch.position.set(-0.62, 1.44, -3.12); drvHatch.rotation.x = 0.48; hullGrp.add(drvHatch);
-    [-0.28, 0.0, 0.28].forEach(px => {
-      const per = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.10, 0.14), matGunMetal);
+    if (isPlayer) [-0.28, 0.0, 0.28].forEach(px => {
+      const per = new THREE.Mesh(boxG(0.20, 0.10, 0.14), matGunMetal);
       per.position.set(-0.62 + px, 1.52, -3.20); per.rotation.x = 0.48; hullGrp.add(per);
     });
     // Two tow hooks on the nose
@@ -1171,66 +1185,68 @@
     // Front ERA reactive armor bricks (반응장갑 타일 배열)
     const eraM = isEnemy ? matEnemyERA : matERA;
     for (let i = -3; i <= 3; i++) {
-      const brick = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.14, 0.55), eraM);
+      const brick = new THREE.Mesh(boxG(0.42, 0.14, 0.55), eraM);
       brick.position.set(i * 0.47, 1.40, -3.44); brick.rotation.x = 0.48;
       hullGrp.add(brick);
     }
     // Spare track links strapped to the glacis
-    const spareLinks = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.09, 0.62), trackMat);
+    const spareLinks = new THREE.Mesh(boxG(1.5, 0.09, 0.62), trackMat);
     spareLinks.position.set(0.62, 1.60, -3.10); spareLinks.rotation.x = 0.48; hullGrp.add(spareLinks);
 
     // Rear engine deck, cooling louvers, twin exhausts
-    const deck = new THREE.Mesh(new THREE.BoxGeometry(2.9, 0.14, 2.3), accentMat);
+    const deck = new THREE.Mesh(boxG(2.9, 0.14, 2.3), accentMat);
     deck.position.set(0, 1.60, 2.25); hullGrp.add(deck);
     for (let g = 0; g < 6; g++) {
-      const slat = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.06, 0.16), matRubber);
+      const slat = new THREE.Mesh(boxG(2.5, 0.06, 0.16), matRubber);
       slat.position.set(0, 1.68, 1.35 + g * 0.34); hullGrp.add(slat);
     }
     [-1.1, 1.1].forEach(ex => {
-      const muff = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.7, 8), matGunMetal);
+      const muff = new THREE.Mesh(cylG(0.14, 0.14, 0.7, 8), matGunMetal);
       muff.rotation.x = Math.PI / 2; muff.position.set(ex, 1.25, 3.65); hullGrp.add(muff);
       if (isEnemy) {
-        const drum = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 1.05, 10), armorMat);
+        const drum = new THREE.Mesh(cylG(0.28, 0.28, 1.05, 10), armorMat);
         drum.rotation.z = Math.PI / 2; drum.position.set(ex * 0.88, 1.42, 3.72); hullGrp.add(drum);
       }
     });
 
     // Headlights, taillights, convoy marker
     [-1.42, 1.42].forEach(lx => {
-      const hl = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.16, 0.12), matHeadlight);
+      const hl = new THREE.Mesh(boxG(0.26, 0.16, 0.12), matHeadlight);
       hl.position.set(lx, 1.36, -3.86); hullGrp.add(hl);
-      const tl = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.12, 0.08), matTaillight);
+      const tl = new THREE.Mesh(boxG(0.24, 0.12, 0.08), matTaillight);
       tl.position.set(lx, 1.35, 3.58); hullGrp.add(tl);
     });
 
-    // Fender stowage boxes, tow cables, mud flaps
-    [-1.62, 1.62].forEach(sx => {
-      const box = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.42, 1.9), accentMat);
+    // Fender stowage boxes, tow cables, mud flaps (player detail)
+    if (isPlayer) [-1.62, 1.62].forEach(sx => {
+      const box = new THREE.Mesh(boxG(0.62, 0.42, 1.9), accentMat);
       box.position.set(sx, 1.48, 1.55); box.castShadow = true; hullGrp.add(box);
-      const cable = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 3.4, 5), matSteel);
+      const cable = new THREE.Mesh(cylG(0.05, 0.05, 3.4, 5), matSteel);
       cable.rotation.x = Math.PI / 2; cable.position.set(sx + (sx > 0 ? -0.34 : 0.34), 1.66, -0.4); hullGrp.add(cable);
-      const flap = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.42, 0.10), matRubber);
+      const flap = new THREE.Mesh(boxG(0.72, 0.42, 0.10), matRubber);
       flap.position.set(sx, 0.86, 3.62); flap.rotation.x = 0.16; hullGrp.add(flap);
     });
 
     // Tracks, armored side skirts & rotating road wheels
     const wheelCount = isPlayer ? 7 : 6;
     [-1.92, 1.92].forEach(sideX => {
-      const trTop = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.14, 7.6), matRubber);
+      const trTop = new THREE.Mesh(boxG(0.68, 0.14, 7.6), matRubber);
       trTop.position.set(sideX, 1.00, 0); hullGrp.add(trTop);
-      const trBot = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.14, 6.7), matRubber);
+      const trBot = new THREE.Mesh(boxG(0.68, 0.14, 6.7), matRubber);
       trBot.position.set(sideX, 0.09, 0); hullGrp.add(trBot);
-      // visible track links on the top run
-      for (let t = 0; t < 8; t++) {
-        const link = new THREE.Mesh(new THREE.BoxGeometry(0.70, 0.06, 0.52), trackMat);
-        link.position.set(sideX, 1.09, -3.15 + t * 0.9); hullGrp.add(link);
+      // visible track links on the top run (player only — keeps AI draw calls low)
+      if (isPlayer) {
+        for (let t = 0; t < 8; t++) {
+          const link = new THREE.Mesh(boxG(0.70, 0.06, 0.52), trackMat);
+          link.position.set(sideX, 1.09, -3.15 + t * 0.9); hullGrp.add(link);
+        }
       }
       // Armored side skirt (사이드 스커트 반응장갑)
-      const skirt = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.62, 7.4), armorMat);
+      const skirt = new THREE.Mesh(boxG(0.14, 0.62, 7.4), armorMat);
       skirt.position.set(sideX + (sideX > 0 ? 0.34 : -0.34), 1.08, 0); skirt.castShadow = true;
       hullGrp.add(skirt);
       for (let s = 0; s < 5; s++) {
-        const eraS = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.42, 1.15), eraM);
+        const eraS = new THREE.Mesh(boxG(0.08, 0.42, 1.15), eraM);
         eraS.position.set(sideX + (sideX > 0 ? 0.43 : -0.43), 1.12, -2.5 + s * 1.25);
         hullGrp.add(eraS);
       }
@@ -1244,9 +1260,11 @@
         hullGrp.add(wGrp);
         wheels.push(wGrp);
       }
-      for (let r = 0; r < 2; r++) {
-        const roller = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.5, 10), matSteel);
-        roller.rotation.z = Math.PI / 2; roller.position.set(sideX, 1.02, -1.6 + r * 3.2); hullGrp.add(roller);
+      if (isPlayer) {
+        for (let r = 0; r < 2; r++) {
+          const roller = new THREE.Mesh(cylG(0.17, 0.17, 0.5, 10), matSteel);
+          roller.rotation.z = Math.PI / 2; roller.position.set(sideX, 1.02, -1.6 + r * 3.2); hullGrp.add(roller);
+        }
       }
     });
 
@@ -1269,24 +1287,24 @@
 
   // Player angular K2-style composite turret
   const playerTurret = new THREE.Group(); playerTurret.position.set(0, 1.66, 0.05); playerHullPivot.add(playerTurret);
-  const tBase = new THREE.Mesh(new THREE.BoxGeometry(3.15, 0.88, 3.8), pHullMat);
+  const tBase = new THREE.Mesh(boxG(3.15, 0.88, 3.8), pHullMat);
   tBase.position.set(0, 0.48, 0.35); tBase.castShadow = true; playerTurret.add(tBase);
   // Sloped cheek armor (쐐기형 전면 포탑 장갑)
   [-0.88, 0.88].forEach(cx => {
-    const cheek = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.84, 1.35), pHullMat);
+    const cheek = new THREE.Mesh(boxG(1.45, 0.84, 1.35), pHullMat);
     cheek.position.set(cx, 0.46, -1.65); cheek.rotation.y = cx > 0 ? -0.36 : 0.36; cheek.castShadow = true;
     playerTurret.add(cheek);
     // turret cheek ERA tiles
     for (let e = 0; e < 3; e++) {
-      const brick = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.52, 0.28), matERA);
+      const brick = new THREE.Mesh(boxG(0.30, 0.52, 0.28), matERA);
       brick.position.set(cx + (cx > 0 ? 0.52 : -0.52), 0.52, -1.35 - e * 0.42);
       brick.rotation.y = cx > 0 ? -0.36 : 0.36; playerTurret.add(brick);
     }
   });
   // Rear bustle ammo rack + canvas stowage + turret basket cage
-  const bustle = new THREE.Mesh(new THREE.BoxGeometry(2.85, 0.72, 1.45), pAccent);
+  const bustle = new THREE.Mesh(boxG(2.85, 0.72, 1.45), pAccent);
   bustle.position.set(0, 0.56, 2.75); bustle.castShadow = true; playerTurret.add(bustle);
-  const canvasRoll = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 2.5, 8), pCanvas);
+  const canvasRoll = new THREE.Mesh(cylG(0.2, 0.2, 2.5, 8), pCanvas);
   canvasRoll.rotation.z = Math.PI / 2; canvasRoll.position.set(0, 1.02, 2.85); playerTurret.add(canvasRoll);
   {
     const basket = new THREE.Group(); basket.position.set(0, 0.30, 3.35); playerTurret.add(basket);
@@ -1294,47 +1312,47 @@
     rim.rotation.x = Math.PI / 2; basket.add(rim);
     const rim2 = rim.clone(); rim2.position.y = -0.55; basket.add(rim2);
     for (let b = 0; b < 8; b++) {
-      const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.56, 4), matSteel);
+      const bar = new THREE.Mesh(cylG(0.028, 0.028, 0.56, 4), matSteel);
       const a = (b / 8) * Math.PI * 2;
       bar.position.set(Math.cos(a) * 0.95, -0.28, Math.sin(a) * 0.95); basket.add(bar);
     }
   }
   // Commander cupola + hatch + periscopes + roof MG
   const cupola = new THREE.Group(); cupola.position.set(-0.72, 0.92, 0.55); playerTurret.add(cupola);
-  cupola.add(new THREE.Mesh(new THREE.CylinderGeometry(0.44, 0.47, 0.26, 12), pAccent));
-  const cupLid = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.07, 12), pHullMat);
+  cupola.add(new THREE.Mesh(cylG(0.44, 0.47, 0.26, 12), pAccent));
+  const cupLid = new THREE.Mesh(cylG(0.42, 0.42, 0.07, 12), pHullMat);
   cupLid.position.y = 0.16; cupola.add(cupLid);
   for (let pz = 0; pz < 6; pz++) {
-    const per = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.09, 0.16), matGlass);
+    const per = new THREE.Mesh(boxG(0.12, 0.09, 0.16), matGlass);
     const a = (pz / 6) * Math.PI * 2;
     per.position.set(Math.cos(a) * 0.44, 0.03, Math.sin(a) * 0.44); per.rotation.y = -a; cupola.add(per);
   }
-  const mountArm = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.5, 6), matSteel);
+  const mountArm = new THREE.Mesh(cylG(0.05, 0.05, 0.5, 6), matSteel);
   mountArm.position.set(0, 0.32, 0); cupola.add(mountArm);
-  const roofMG = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.07, 1.5, 8), matGunMetal);
+  const roofMG = new THREE.Mesh(cylG(0.055, 0.07, 1.5, 8), matGunMetal);
   roofMG.rotation.x = Math.PI / 2; roofMG.position.set(0, 0.58, -0.55); cupola.add(roofMG);
-  const mgBox = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.22, 0.5), pAccent);
+  const mgBox = new THREE.Mesh(boxG(0.24, 0.22, 0.5), pAccent);
   mgBox.position.set(0, 0.52, 0.06); cupola.add(mgBox);
 
   // Gunner sight + panoramic sight + laser warning receivers
-  const sight = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 0.45, 10), pAccent);
+  const sight = new THREE.Mesh(cylG(0.22, 0.26, 0.45, 10), pAccent);
   sight.position.set(0.85, 1.12, -0.55); playerTurret.add(sight);
-  const lens = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.14, 0.08), matGlass);
+  const lens = new THREE.Mesh(boxG(0.24, 0.14, 0.08), matGlass);
   lens.position.set(0.85, 1.18, -0.78); playerTurret.add(lens);
   [-1.0, 1.0].forEach(wx => {
-    const lwr = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.16, 0.1), matGlass);
+    const lwr = new THREE.Mesh(boxG(0.16, 0.16, 0.1), matGlass);
     lwr.position.set(wx, 0.88, -1.30); playerTurret.add(lwr);
   });
 
   const playerAntennas = [];
   [-1.25, 1.25].forEach(ax => {
-    const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.03, 3.1, 6), matSteel);
+    const ant = new THREE.Mesh(cylG(0.015, 0.03, 3.1, 6), matSteel);
     ant.position.set(ax, 2.35, 2.65); playerTurret.add(ant); playerAntennas.push(ant);
   });
   // Smoke grenade launchers (좌우 3연장)
   [-1.65, 1.65].forEach(sx => {
     for (let k = 0; k < 3; k++) {
-      const sg = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.34, 6), matGunMetal);
+      const sg = new THREE.Mesh(cylG(0.055, 0.055, 0.34, 6), matGunMetal);
       sg.rotation.x = 0.7; sg.rotation.z = sx > 0 ? -0.35 : 0.35;
       sg.position.set(sx, 0.65 + k * 0.05, -0.85 + k * 0.22); playerTurret.add(sg);
     }
@@ -1342,34 +1360,34 @@
 
   // RCWS / CIWS turret
   const ciwsTurret = new THREE.Group(); ciwsTurret.position.set(-0.92, 1.12, 0.85);
-  ciwsTurret.add(new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.38, 0.42, 10), pAccent));
+  ciwsTurret.add(new THREE.Mesh(cylG(0.32, 0.38, 0.42, 10), pAccent));
   const ciwsEmitter = new THREE.Mesh(new THREE.SphereGeometry(0.20, 8, 8), new THREE.MeshBasicMaterial({ color: 0x34d399 }));
   ciwsEmitter.position.y = 0.32; ciwsTurret.add(ciwsEmitter); playerTurret.add(ciwsTurret);
 
   // 4-Tube guided missile pod
   const missilePod = new THREE.Group(); missilePod.position.set(1.98, 0.82, 0.65); missilePod.rotation.x = 0.28;
-  missilePod.add(new THREE.Mesh(new THREE.BoxGeometry(0.88, 0.68, 1.85), pAccent));
+  missilePod.add(new THREE.Mesh(boxG(0.88, 0.68, 1.85), pAccent));
   [[-0.2, 0.14], [0.2, 0.14], [-0.2, -0.14], [0.2, -0.14]].forEach(([mx, my]) => {
-    const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 1.92, 8), matGunMetal);
+    const tube = new THREE.Mesh(cylG(0.11, 0.11, 1.92, 8), matGunMetal);
     tube.rotation.x = Math.PI / 2; tube.position.set(mx, my, 0); missilePod.add(tube);
   });
   playerTurret.add(missilePod);
 
   // Main sonic rail-cannon assembly (포방패 + 배연기 + 공진코일 + 포구제퇴기)
   const gunPivot = new THREE.Group(); gunPivot.position.set(0, 0.50, -1.85); playerTurret.add(gunPivot);
-  const mantlet = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.64, 0.75), pAccent);
+  const mantlet = new THREE.Mesh(boxG(1.05, 0.64, 0.75), pAccent);
   gunPivot.add(mantlet);
-  const mantletCover = new THREE.Mesh(new THREE.BoxGeometry(1.16, 0.30, 0.28), pCanvas);
+  const mantletCover = new THREE.Mesh(boxG(1.16, 0.30, 0.28), pCanvas);
   mantletCover.position.set(0, 0.24, 0.34); mantletCover.rotation.x = 0.3; gunPivot.add(mantletCover);
   const barrelGrp = new THREE.Group(); gunPivot.add(barrelGrp);
-  const mainBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.135, 0.21, 6.2, 16), matGunMetal);
+  const mainBarrel = new THREE.Mesh(cylG(0.135, 0.21, 6.2, 16), matGunMetal);
   mainBarrel.rotation.x = Math.PI / 2; mainBarrel.position.set(0, 0, -3.1); barrelGrp.add(mainBarrel);
-  const boreEvac = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.95, 14), pAccent);
+  const boreEvac = new THREE.Mesh(cylG(0.24, 0.24, 0.95, 14), pAccent);
   boreEvac.rotation.x = Math.PI / 2; boreEvac.position.set(0, 0, -2.55); barrelGrp.add(boreEvac);
-  const muzzleBrake = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.34, 0.62), matSteel);
+  const muzzleBrake = new THREE.Mesh(boxG(0.42, 0.34, 0.62), matSteel);
   muzzleBrake.position.set(0, 0, -6.15); barrelGrp.add(muzzleBrake);
   [-0.24, 0.24].forEach(rx => {
-    const r = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.15, 4.6), pGold);
+    const r = new THREE.Mesh(boxG(0.075, 0.15, 4.6), pGold);
     r.position.set(rx, 0, -3.2); barrelGrp.add(r);
   });
   for (let i = 0; i < 5; i++) {
@@ -1377,7 +1395,7 @@
     c.position.set(0, 0, -1.45 - i * 0.86); barrelGrp.add(c);
   }
   // Coaxial machine gun beside the main gun
-  const coax = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.055, 1.1, 8), matGunMetal);
+  const coax = new THREE.Mesh(cylG(0.05, 0.055, 1.1, 8), matGunMetal);
   coax.rotation.x = Math.PI / 2; coax.position.set(0.42, -0.02, -0.9); gunPivot.add(coax);
 
   const muzzleTip = new THREE.Object3D(); muzzleTip.position.set(0, 0, -6.45); gunPivot.add(muzzleTip);
@@ -1414,7 +1432,7 @@
     scene.add(grp);
 
     const colMesh = new THREE.Mesh(
-      new THREE.BoxGeometry(w, h, d),
+      boxG(w, h, d),
       isRefl ? matReflPanel : matConcreteWall
     );
     colMesh.position.y = h / 2; colMesh.castShadow = true; colMesh.receiveShadow = true;
@@ -1422,34 +1440,34 @@
 
     if (isRefl) {
       // Steel frame & energy rib details
-      const frame = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(w+0.15, h+0.15, d+0.15)), new THREE.LineBasicMaterial({ color: 0x38bdf8 }));
+      const frame = new THREE.LineSegments(new THREE.EdgesGeometry(boxG(w+0.15, h+0.15, d+0.15)), new THREE.LineBasicMaterial({ color: 0x38bdf8 }));
       frame.position.y = h / 2; grp.add(frame);
       for (let i = -2; i <= 2; i++) {
-        const strut = new THREE.Mesh(new THREE.BoxGeometry(0.45, h + 1.2, d + 0.7), matSteelTruss);
+        const strut = new THREE.Mesh(boxG(0.45, h + 1.2, d + 0.7), matSteelTruss);
         strut.position.set((i / 2.2) * (w / 2), (h + 1.2) / 2, 0); strut.castShadow = true; grp.add(strut);
       }
       const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.42, 8, 8), new THREE.MeshBasicMaterial({ color: 0x22d3ee }));
       beacon.position.set(0, h + 1.5, 0); grp.add(beacon);
     } else {
       // Tactical Concrete Bunker: roof parapet, firing slits, sandbags, antenna
-      const roof = new THREE.Mesh(new THREE.BoxGeometry(w + 0.8, 0.65, d + 0.8), matDarkConcrete);
+      const roof = new THREE.Mesh(boxG(w + 0.8, 0.65, d + 0.8), matDarkConcrete);
       roof.position.y = h + 0.3; roof.castShadow = true; grp.add(roof);
       // Firing slits (총안구)
       for (let s = -1; s <= 1; s++) {
-        const slit = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.36, d + 0.12), new THREE.MeshBasicMaterial({ color: 0x1b1f26 }));
+        const slit = new THREE.Mesh(boxG(1.7, 0.36, d + 0.12), new THREE.MeshBasicMaterial({ color: 0x1b1f26 }));
         slit.position.set(s * (w * 0.28), h * 0.68, 0); grp.add(slit);
       }
       // Sandbag barrier in front
       for (let sb = -3; sb <= 3; sb++) {
-        const bag = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.75, 0.9), matSandbag);
+        const bag = new THREE.Mesh(boxG(1.4, 0.75, 0.9), matSandbag);
         bag.position.set(sb * 1.48, 0.38, d/2 + 0.75); bag.castShadow = true; grp.add(bag);
       }
-      const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.08, 4.5, 6), matSteelTruss);
+      const ant = new THREE.Mesh(cylG(0.05, 0.08, 4.5, 6), matSteelTruss);
       ant.position.set(w * 0.35, h + 2.5, 0); grp.add(ant);
     }
 
     // Invisible collision proxy aligned in world space
-    const proxy = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshBasicMaterial({ visible: false }));
+    const proxy = new THREE.Mesh(boxG(w, h, d), new THREE.MeshBasicMaterial({ visible: false }));
     proxy.position.set(x, h/2, z); proxy.rotation.y = rotY;
     proxy.userData = { isReflector: isRefl, w, d, radius: Math.hypot(w, d) * 0.45 };
     scene.add(proxy);
@@ -1468,17 +1486,17 @@
   // 2) Rotating Military Radar Stations (회전 레이더 기지)
   function addRadarStation(x, z) {
     const g = new THREE.Group(); g.position.set(x, terrainHeight(x, z), z); scene.add(g);
-    const base = new THREE.Mesh(new THREE.BoxGeometry(7.5, 4.2, 7.5), matConcreteWall);
+    const base = new THREE.Mesh(boxG(7.5, 4.2, 7.5), matConcreteWall);
     base.position.y = 2.1; base.castShadow = true; base.receiveShadow = true; g.add(base);
-    const tower = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.8, 6.5, 8), matSteelTruss);
+    const tower = new THREE.Mesh(cylG(1.1, 1.8, 6.5, 8), matSteelTruss);
     tower.position.y = 7.4; tower.castShadow = true; g.add(tower);
     const dishGrp = new THREE.Group(); dishGrp.position.y = 11.0; g.add(dishGrp);
-    const dish = new THREE.Mesh(new THREE.BoxGeometry(5.6, 2.2, 0.45), matReflPanel);
+    const dish = new THREE.Mesh(boxG(5.6, 2.2, 0.45), matReflPanel);
     dish.rotation.x = -0.22; dishGrp.add(dish);
-    const feed = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 1.8, 6), matSteelTruss);
+    const feed = new THREE.Mesh(cylG(0.15, 0.15, 1.8, 6), matSteelTruss);
     feed.rotation.x = Math.PI / 2; feed.position.z = 1.0; dishGrp.add(feed);
     animatedProps.push({ obj: dishGrp, speed: 1.35 });
-    const proxy = new THREE.Mesh(new THREE.BoxGeometry(8, 12, 8), new THREE.MeshBasicMaterial({ visible: false }));
+    const proxy = new THREE.Mesh(boxG(8, 12, 8), new THREE.MeshBasicMaterial({ visible: false }));
     proxy.position.set(x, 6, z); proxy.userData = { isReflector: false, w: 8, d: 8, radius: 5.5 };
     scene.add(proxy); obstacles.push(proxy);
   }
@@ -1489,10 +1507,10 @@
   function addWatchtower(x, z) {
     const g = new THREE.Group(); g.position.set(x, terrainHeight(x, z), z); scene.add(g);
     [[-1.6,-1.6],[1.6,-1.6],[-1.6,1.6],[1.6,1.6]].forEach(([lx,lz]) => {
-      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.28, 9.5, 0.28), matSteelTruss);
+      const leg = new THREE.Mesh(boxG(0.28, 9.5, 0.28), matSteelTruss);
       leg.position.set(lx, 4.75, lz); leg.castShadow = true; g.add(leg);
     });
-    const cabin = new THREE.Mesh(new THREE.BoxGeometry(4.2, 2.8, 4.2), matConcreteWall);
+    const cabin = new THREE.Mesh(boxG(4.2, 2.8, 4.2), matConcreteWall);
     cabin.position.y = 10.6; cabin.castShadow = true; g.add(cabin);
     const roof = new THREE.Mesh(new THREE.ConeGeometry(3.4, 1.4, 4), matDarkConcrete);
     roof.rotation.y = Math.PI / 4; roof.position.y = 12.7; g.add(roof);
@@ -1502,7 +1520,7 @@
   addWatchtower(-34, 48); addWatchtower(34, 48); addWatchtower(-72, -118); addWatchtower(72, -118);
 
   function addContainer(x, z, rotY, alt = false) {
-    const c = new THREE.Mesh(new THREE.BoxGeometry(3.2, 3.0, 8.2), alt ? matContainer2 : matContainer1);
+    const c = new THREE.Mesh(boxG(3.2, 3.0, 8.2), alt ? matContainer2 : matContainer1);
     c.position.set(x, terrainHeight(x, z) + 1.5, z); c.rotation.y = rotY; c.castShadow = true; c.receiveShadow = true; scene.add(c);
     c.userData = { isReflector: false, w: 3.2, d: 8.2, radius: 4.5 };
     obstacles.push(c);
@@ -1514,7 +1532,7 @@
   function addHedgehog(x, z) {
     const g = new THREE.Group(); g.position.set(x, terrainHeight(x, z) + 0.95, z); scene.add(g);
     [[0,0,0.65],[0,0,-0.65],[0.65,0,0]].forEach(([rx,ry,rz]) => {
-      const beam = new THREE.Mesh(new THREE.BoxGeometry(0.22, 2.6, 0.22), matSteelTruss);
+      const beam = new THREE.Mesh(boxG(0.22, 2.6, 0.22), matSteelTruss);
       beam.rotation.set(rx, ry, rz); beam.castShadow = true; g.add(beam);
     });
   }
@@ -1523,7 +1541,7 @@
   // 5) Detailed Pine Forests & Rock Outcrops (소나무 숲 & 바위 군락)
   function addPineTree(x, z, s = 1.0) {
     const g = new THREE.Group(); g.position.set(x, terrainHeight(x, z), z); g.scale.setScalar(s);
-    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.36, 3.4, 7), matPineBark);
+    const trunk = new THREE.Mesh(cylG(0.22, 0.36, 3.4, 7), matPineBark);
     trunk.position.y = 1.7; trunk.castShadow = true; g.add(trunk);
     const c1 = new THREE.Mesh(new THREE.ConeGeometry(2.4, 4.4, 7), matPineLeaf1); c1.position.y = 4.6; c1.castShadow = true; g.add(c1);
     const c2 = new THREE.Mesh(new THREE.ConeGeometry(1.85, 3.8, 7), matPineLeaf2); c2.position.y = 6.9; c2.castShadow = true; g.add(c2);
@@ -1717,40 +1735,40 @@
 
     if (isAlly) {
       // ---- K2-style angular composite turret ----
-      const tBody = new THREE.Mesh(new THREE.BoxGeometry(2.95, 0.82, 3.6), armorMat);
+      const tBody = new THREE.Mesh(boxG(2.95, 0.82, 3.6), armorMat);
       tBody.position.set(0, 0.44, 0.2); tBody.castShadow = true; turretGrp.add(tBody);
-      const tNose = new THREE.Mesh(new THREE.BoxGeometry(2.65, 0.72, 1.25), armorMat);
+      const tNose = new THREE.Mesh(boxG(2.65, 0.72, 1.25), armorMat);
       tNose.position.set(0, 0.42, -1.75); turretGrp.add(tNose);
       [-0.95, 0.95].forEach(cx => {
-        const cheek = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.70, 1.05), armorMat);
+        const cheek = new THREE.Mesh(boxG(1.15, 0.70, 1.05), armorMat);
         cheek.position.set(cx, 0.44, -1.55); cheek.rotation.y = cx > 0 ? -0.34 : 0.34; turretGrp.add(cheek);
       });
-      const bustle = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.66, 1.2), accentMat);
+      const bustle = new THREE.Mesh(boxG(2.6, 0.66, 1.2), accentMat);
       bustle.position.set(0, 0.50, 2.25); bustle.castShadow = true; turretGrp.add(bustle);
       // turret side ERA
       [-1.5, 1.5].forEach(sx => {
         for (let e = 0; e < 3; e++) {
-          const brick = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.46, 0.9), matERA);
+          const brick = new THREE.Mesh(boxG(0.12, 0.46, 0.9), matERA);
           brick.position.set(sx, 0.44, -0.9 + e * 1.0); turretGrp.add(brick);
         }
       });
     } else {
       // ---- T-90M Proryv low sloped turret ----
-      const tDome = new THREE.Mesh(new THREE.CylinderGeometry(1.32, 1.88, 0.82, 8), armorMat);
+      const tDome = new THREE.Mesh(cylG(1.32, 1.88, 0.82, 8), armorMat);
       tDome.position.set(0, 0.44, 0); tDome.castShadow = true; turretGrp.add(tDome);
-      const tRoof = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.22, 0.18, 8), accentMat);
+      const tRoof = new THREE.Mesh(cylG(1.0, 1.22, 0.18, 8), accentMat);
       tRoof.position.set(0, 0.90, 0); turretGrp.add(tRoof);
       [-0.85, 0.85].forEach(wx => {
-        const wBlock = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.56, 0.55), matEnemyERA);
+        const wBlock = new THREE.Mesh(boxG(0.95, 0.56, 0.55), matEnemyERA);
         wBlock.position.set(wx, 0.42, 1.55); wBlock.rotation.y = wx > 0 ? 0.42 : -0.42; turretGrp.add(wBlock);
         // Shtora-1 infrared jammer red eyes
-        const eye = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.22, 0.14), matRedEye);
+        const eye = new THREE.Mesh(boxG(0.24, 0.22, 0.14), matRedEye);
         eye.position.set(wx * 0.85, 0.50, 1.86); turretGrp.add(eye);
       });
       // Kontakt-5 ERA ring around the turret
       for (let e = 0; e < 8; e++) {
         const a = (e / 8) * Math.PI * 2;
-        const er = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.42, 0.24), matEnemyERA);
+        const er = new THREE.Mesh(boxG(0.62, 0.42, 0.24), matEnemyERA);
         er.position.set(Math.cos(a) * 1.45, 0.46, Math.sin(a) * 1.45);
         er.rotation.y = -a; turretGrp.add(er);
       }
@@ -1761,21 +1779,23 @@
     const cupola = new THREE.Group();
     cupola.position.set(isAlly ? -0.68 : 0.66, 0.92, isAlly ? 0.5 : -0.55);
     turretGrp.add(cupola);
-    cupola.add(new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.46, 0.26, 12), accentMat));
-    const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.40, 0.40, 0.07, 12), armorMat);
+    cupola.add(new THREE.Mesh(cylG(0.42, 0.46, 0.26, 12), accentMat));
+    const lid = new THREE.Mesh(cylG(0.40, 0.40, 0.07, 12), armorMat);
     lid.position.y = 0.16; cupola.add(lid);
-    for (let pz = 0; pz < 5; pz++) {
-      const per = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.09, 0.15), matGlass);
-      const a = (pz / 5) * Math.PI * 2;
-      per.position.set(Math.cos(a) * 0.42, 0.04, Math.sin(a) * 0.42); per.rotation.y = -a; cupola.add(per);
+    if (isAlly) {
+      for (let pz = 0; pz < 5; pz++) {
+        const per = new THREE.Mesh(boxG(0.12, 0.09, 0.15), matGlass);
+        const a = (pz / 5) * Math.PI * 2;
+        per.position.set(Math.cos(a) * 0.42, 0.04, Math.sin(a) * 0.42); per.rotation.y = -a; cupola.add(per);
+      }
     }
-    const mg = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.065, 1.35, 8), matGunMetal);
+    const mg = new THREE.Mesh(cylG(0.05, 0.065, 1.35, 8), matGunMetal);
     mg.rotation.x = Math.PI / 2; mg.position.set(0, 0.5, fwd * 0.75); cupola.add(mg);
 
     // Gunner sight housing
-    const sight = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.36, 0.5), accentMat);
+    const sight = new THREE.Mesh(boxG(0.46, 0.36, 0.5), accentMat);
     sight.position.set(isAlly ? 0.66 : -0.66, 0.90, fwd * 0.55); turretGrp.add(sight);
-    const sightLens = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.18, 0.06), matGlass);
+    const sightLens = new THREE.Mesh(boxG(0.30, 0.18, 0.06), matGlass);
     sightLens.position.set(isAlly ? 0.66 : -0.66, 0.92, fwd * 0.80); turretGrp.add(sightLens);
 
     // Stowage basket at the turret rear
@@ -1784,9 +1804,10 @@
       const rim = new THREE.Mesh(new THREE.TorusGeometry(0.9, 0.04, 5, 16), matSteel);
       rim.rotation.x = Math.PI / 2; basket.add(rim);
       const rim2 = rim.clone(); rim2.position.y = -0.5; basket.add(rim2);
-      for (let b = 0; b < 6; b++) {
-        const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.52, 4), matSteel);
-        const a = (b / 6) * Math.PI * 2;
+      const nBars = isAlly ? 6 : 3;
+      for (let b = 0; b < nBars; b++) {
+        const bar = new THREE.Mesh(cylG(0.026, 0.026, 0.52, 4), matSteel);
+        const a = (b / nBars) * Math.PI * 2;
         bar.position.set(Math.cos(a) * 0.9, -0.25, Math.sin(a) * 0.9); basket.add(bar);
       }
     }
@@ -1794,7 +1815,7 @@
     // Smoke grenade launchers
     [-1.45, 1.45].forEach(sx => {
       for (let k = 0; k < 3; k++) {
-        const sg = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.3, 6), matGunMetal);
+        const sg = new THREE.Mesh(cylG(0.05, 0.05, 0.3, 6), matGunMetal);
         sg.rotation.x = 0.75; sg.rotation.z = sx > 0 ? -0.3 : 0.3;
         sg.position.set(sx, 0.60 + k * 0.04, fwd * (0.7 + k * 0.2)); turretGrp.add(sg);
       }
@@ -1803,22 +1824,22 @@
     // Whip antennas
     const antennas = [];
     [-0.95, 0.95].forEach(ax => {
-      const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.026, 2.4, 5), matSteel);
+      const ant = new THREE.Mesh(cylG(0.014, 0.026, 2.4, 5), matSteel);
       ant.position.set(ax, 1.75, -fwd * 1.4); turretGrp.add(ant); antennas.push(ant);
     });
 
     // ---- Main gun assembly (mantlet + barrel + bore evacuator + muzzle brake) ----
     const gunGrp = new THREE.Group(); turretGrp.add(gunGrp);
-    const mantlet = new THREE.Mesh(new THREE.BoxGeometry(0.98, 0.62, 0.72), accentMat);
+    const mantlet = new THREE.Mesh(boxG(0.98, 0.62, 0.72), accentMat);
     mantlet.position.set(0, 0.44, fwd * 1.75); gunGrp.add(mantlet);
-    const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.165, 5.7, 12), matGunMetal);
+    const barrel = new THREE.Mesh(cylG(0.115, 0.165, 5.7, 12), matGunMetal);
     barrel.rotation.x = Math.PI / 2; barrel.position.set(0, 0.44, fwd * 4.0); gunGrp.add(barrel);
-    const evac = new THREE.Mesh(new THREE.CylinderGeometry(0.205, 0.205, 0.85, 10), accentMat);
+    const evac = new THREE.Mesh(cylG(0.205, 0.205, 0.85, 10), accentMat);
     evac.rotation.x = Math.PI / 2; evac.position.set(0, 0.44, fwd * 3.3); gunGrp.add(evac);
-    const muzzleBrake = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.19, 0.42, 10), matSteel);
+    const muzzleBrake = new THREE.Mesh(cylG(0.19, 0.19, 0.42, 10), matSteel);
     muzzleBrake.rotation.x = Math.PI / 2; muzzleBrake.position.set(0, 0.44, fwd * 6.7); gunGrp.add(muzzleBrake);
     if (cfg.isBoss) {
-      const bossRadar = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.55, 0.25), matSteel);
+      const bossRadar = new THREE.Mesh(boxG(1.8, 0.55, 0.25), matSteel);
       bossRadar.position.set(0, 1.30, -fwd * 0.75); turretGrp.add(bossRadar);
     }
 
@@ -1827,7 +1848,7 @@
     muzzleTip.rotation.y = isAlly ? 0 : Math.PI;
     gunGrp.add(muzzleTip);
 
-    const hitbox = new THREE.Mesh(new THREE.BoxGeometry(5.2, 3.6, 7.8), new THREE.MeshBasicMaterial({ visible: false }));
+    const hitbox = new THREE.Mesh(boxG(5.2, 3.6, 7.8), new THREE.MeshBasicMaterial({ visible: false }));
     hitbox.position.y = 1.6; root.add(hitbox);
     scene.add(root);
 
