@@ -901,8 +901,8 @@
     return tex;
   }
 
-  const texPlayerCamo = makeArmorTex(['#354d42', '#263932', '#4c5c49', '#212b28'], true);
-  const texAllyCamo   = makeArmorTex(['#2f4a5c', '#233847', '#3f6278', '#1c2a35'], true);
+  const texPlayerCamo = makeArmorTex(['#46604f', '#33473c', '#5c6d58', '#2a3833'], true);
+  const texAllyCamo   = makeArmorTex(['#3c5a6d', '#2c4454', '#4c7186', '#233340'], true);
   const texEnemyCamo  = makeArmorTex(['#4e4d3a', '#3a3b2c', '#5e5640', '#2b2a22'], false);
   const texBossCamo   = makeArmorTex(['#4b2323', '#331717', '#612d25', '#1f1616'], false);
   const texConcrete   = makeConcreteTex();
@@ -943,8 +943,9 @@
       const n2 = Math.sin(x * 0.142 + z * 0.118) * Math.cos(x * 0.089 - z * 0.083);
       const n3 = Math.sin(x * 0.0075 + 2.6) * Math.cos(z * 0.0068 - 1.1);
       tmpC.copy(cGrass);
-      tmpC.lerp(cDry, Math.max(0, Math.min(0.75, n1 * 0.62 + 0.26)));
-      tmpC.lerp(cDirt, Math.max(0, Math.min(0.85, n3 * 0.7 + 0.10)));
+      tmpC.lerp(cDry, Math.max(0, Math.min(0.85, n1 * 0.78 + 0.26)));
+      tmpC.lerp(cDirt, Math.max(0, Math.min(0.9, n3 * 0.85 + 0.12)));
+      tmpC.multiplyScalar(0.88 + Math.abs(n2) * 0.26);
       tmpC.lerp(cRock, Math.max(0, Math.min(0.55, h * 0.16 + Math.abs(n2) * 0.10 - 0.05)));
       colArr[i * 3] = tmpC.r; colArr[i * 3 + 1] = tmpC.g; colArr[i * 3 + 2] = tmpC.b;
     }
@@ -1609,15 +1610,15 @@
     const flash = new THREE.Mesh(geoSphere, new THREE.MeshBasicMaterial({ color: 0xffdd88, transparent: true, opacity: 0.95 }));
     flash.position.copy(pos); flash.scale.setScalar(0.85 * scale); scene.add(flash);
     muzzleFlashes.push({ mesh: flash, life: 0.13, maxLife: 0.13, scale });
-    for (let i = 0; i < 7; i++) {
-      spawnParticle(pos.clone(),
-        dir.clone().multiplyScalar(8 + Math.random() * 16).add(new THREE.Vector3((Math.random() - 0.5) * 3, Math.random() * 2.4, (Math.random() - 0.5) * 3)),
-        0xc8c2b2, (0.5 + Math.random() * 0.5) * scale, 1.0 + Math.random() * 0.9, 2.4, 0.5, 0.55);
+    for (let i = 0; i < 6; i++) {
+      spawnParticle(pos.clone().addScaledVector(dir, 0.6 + i * 0.35),
+        dir.clone().multiplyScalar(10 + Math.random() * 12).add(new THREE.Vector3((Math.random() - 0.5) * 2.2, Math.random() * 1.6, (Math.random() - 0.5) * 2.2)),
+        0xa9a49a, (0.28 + Math.random() * 0.22) * scale, 0.55 + Math.random() * 0.35, 1.1, 0.4, 0.34);
     }
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 3; i++) {
       spawnParticle(pos.clone().add(new THREE.Vector3(0, -1.1, 0)),
-        new THREE.Vector3((Math.random() - 0.5) * 5, 1.1, (Math.random() - 0.5) * 5),
-        0x8b7f68, 0.75 * scale, 0.85, 2.1, -1.3, 0.34);
+        new THREE.Vector3((Math.random() - 0.5) * 4, 0.9, (Math.random() - 0.5) * 4),
+        0x8b7f68, 0.5 * scale, 0.6, 1.4, -1.3, 0.28);
     }
   }
   function unitFire(u) {
@@ -2486,7 +2487,7 @@
         state.dustTimer = 0.075;
         [-1.9, 1.9].forEach(sideX => {
           const wp = new THREE.Vector3(sideX, 0.35, 3.6).applyMatrix4(playerRoot.matrixWorld);
-          spawnParticle(wp, new THREE.Vector3((Math.random()-0.5)*1.8, 1.2 + Math.random()*1.1, (Math.random()-0.5)*1.8), 0x8f826d, 0.65, 0.72, 1.9, -0.8, 0.42);
+          spawnParticle(wp, new THREE.Vector3((Math.random()-0.5)*1.8, 1.2 + Math.random()*1.1, (Math.random()-0.5)*1.8), 0x8f826d, 0.5, 0.62, 1.3, -0.8, 0.34);
         });
       }
 
@@ -2540,7 +2541,7 @@
       const aimD = new THREE.Vector3(0, 0, -1).applyQuaternion(aimQ).normalize();
       const twp = new THREE.Vector3(); playerTurret.getWorldPosition(twp);
       if (state.camMode === 'tps') {
-        camera.position.lerp(twp.clone().addScaledVector(aimD, state.zoom?-6.2:-14.5).add(new THREE.Vector3(0, state.zoom?2.8:5.4, 0)), Math.min(1, dt*14));
+        camera.position.lerp(twp.clone().addScaledVector(aimD, state.zoom?-6.6:-16.0).add(new THREE.Vector3(0, state.zoom?3.2:6.6, 0)), Math.min(1, dt*14));
         camera.lookAt(twp.clone().addScaledVector(aimD, 75).add(new THREE.Vector3(0, 1.0, 0)));
       } else if (state.camMode === 'fps') {
         const fp = twp.clone().add(new THREE.Vector3(0, 1.95, 0)).addScaledVector(aimD, 3.4);
