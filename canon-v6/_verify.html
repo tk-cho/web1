@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>V6.1 레이아웃 검증 하네스</title>
+<style>
+  html, body { margin: 0; background: #101418; color: #cbd5e1; font: 12px/1.4 monospace; }
+  #stage { position: relative; width: 390px; height: 844px; }
+  iframe { border: 0; display: block; width: 390px; height: 844px; }
+</style>
+<script>
+  window.__errs = [];
+  window.addEventListener('error', function (e) {
+    window.__errs.push('error: ' + (e.message || '') + ' @' + (e.filename || '') + ':' + (e.lineno || 0));
+  }, true);
+  window.addEventListener('unhandledrejection', function (e) {
+    window.__errs.push('rejection: ' + (e.reason && e.reason.message ? e.reason.message : e.reason));
+  });
+</script>
+</head>
+<body>
+<div id="stage"><iframe id="game" src="./index.html?verify=1"></iframe></div>
+<script>
+  document.getElementById('game').addEventListener('load', function () {
+    try {
+      var w = this.contentWindow;
+      w.addEventListener('error', function (e) { window.__errs.push('inner error: ' + (e.message || '')); });
+      w.addEventListener('unhandledrejection', function (e) { window.__errs.push('inner rejection: ' + (e.reason && e.reason.message ? e.reason.message : e.reason)); });
+      window.__ready = true;
+    } catch (err) { window.__errs.push('hook: ' + err.message); }
+  });
+
+  window.__overlap = function () {
+    var f = document.getElementById('game');
+    var d = f.contentDocument, win = f.contentWindow;
+    var sel = '#hud .panel, #hud button, #hud #touch-pad, #hud #radio-box, #hud #mobile-right, #banner-msg';
+    var all = [].slice.call(d.querySelectorAll(sel));
+    var vis = all.filter(function (el) {
+      var r = el.getBoundingClientRect(), s = win.getComputedStyle(el);
+      return r.width > 1 && r.height > 1 && s.display !== 'none' && s.visibility !== 'hidden' && s.opacity !== '0';
+    });
+    function inside(a, b) { return a !== b && a.contains(b); }
+    var bad = [];
+    for (var i = 0; i < vis.length; i++) {
+      for (var j = i + 1; j < vis.length; j++) {
+        var A = vis[i], B = vis[j];
+        if (inside(A, B) || inside(B, A)) continue;
+        var a = A.getBoundingClientRect(), b = B.getBoundingClientRect();
+        var ox = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+        var oy = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+        if (ox > 1 && oy > 1) {
+          bad.push({
+            a: (A.id || A.className || A.tagName) + ':' + (A.textContent || '').trim().slice(0, 12),
+            b: (B.id || B.className || B.tagName) + ':' + (B.textContent || '').trim().slice(0, 12),
+            overlap: Math.round(ox * oy)
+          });
+        }
+      }
+    }
+    var boxes = vis.map(function (el) {
+      var r = el.getBoundingClientRect();
+      return (el.id || el.tagName) + ' ' + Math.round(r.left) + ',' + Math.round(r.top) + ' ' + Math.round(r.width) + 'x' + Math.round(r.height);
+    });
+    return JSON.stringify({
+      viewport: win.innerWidth + 'x' + win.innerHeight,
+      checked: vis.length,
+      overlaps: bad.length,
+      pairs: bad,
+      scrollW: d.documentElement.scrollWidth,
+      scrollH: d.documentElement.scrollHeight,
+      boxes: boxes,
+      errors: window.__errs
+    });
+  };
+
+  window.__setSize = function (w, h) {
+    var st = document.getElementById('stage'), f = document.getElementById('game');
+    st.style.width = w + 'px'; st.style.height = h + 'px';
+    f.style.width = w + 'px'; f.style.height = h + 'px';
+    return w + 'x' + h;
+  };
+</script>
+</body>
+</html>
