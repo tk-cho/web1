@@ -740,7 +740,7 @@
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.06;
+  renderer.toneMappingExposure = 1.02;
   wrap.appendChild(renderer.domElement);
 
   // ---------------------------------------------------------------------------
@@ -760,24 +760,24 @@
     const c = document.createElement('canvas'); c.width = 2048; c.height = 1024;
     const ctx = c.getContext('2d');
     const g = ctx.createLinearGradient(0, 0, 0, 1024);
-    g.addColorStop(0.00, '#2b5f9e');
-    g.addColorStop(0.20, '#4c82b8');
-    g.addColorStop(0.42, '#8cb4d4');
-    g.addColorStop(0.58, '#c3cfd4');
-    g.addColorStop(0.66, '#e2d2b4');
-    g.addColorStop(0.74, '#d8c2a0');
-    g.addColorStop(1.00, '#8d8a7c');
+    g.addColorStop(0.00, '#1d5591');
+    g.addColorStop(0.18, '#3572ae');
+    g.addColorStop(0.38, '#79a8cd');
+    g.addColorStop(0.55, '#aec3d2');
+    g.addColorStop(0.64, '#dcccaa');
+    g.addColorStop(0.72, '#cbb693');
+    g.addColorStop(1.00, '#8a8778');
     ctx.fillStyle = g; ctx.fillRect(0, 0, 2048, 1024);
 
     // Sun glow (matches the directional light azimuth) + soft disc
     const sx = 1360, sy = 430;
-    const sg = ctx.createRadialGradient(sx, sy, 8, sx, sy, 330);
-    sg.addColorStop(0, 'rgba(255,246,214,0.95)');
-    sg.addColorStop(0.12, 'rgba(255,235,180,0.55)');
-    sg.addColorStop(0.45, 'rgba(255,224,164,0.18)');
+    const sg = ctx.createRadialGradient(sx, sy, 6, sx, sy, 230);
+    sg.addColorStop(0, 'rgba(255,248,224,0.85)');
+    sg.addColorStop(0.10, 'rgba(255,238,192,0.36)');
+    sg.addColorStop(0.42, 'rgba(255,228,172,0.11)');
     sg.addColorStop(1, 'rgba(255,224,164,0)');
-    ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(sx, sy, 330, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = 'rgba(255,251,235,0.92)'; ctx.beginPath(); ctx.arc(sx, sy, 26, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(sx, sy, 230, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,252,240,0.9)'; ctx.beginPath(); ctx.arc(sx, sy, 17, 0, Math.PI * 2); ctx.fill();
 
     // Layered fair-weather clouds
     const puff = (cx, cy, rx, ry, alpha, tint) => {
@@ -910,8 +910,8 @@
   // ---------------------------------------------------------------------------
   // Natural daylight: warm low sun + cool sky fill + soft ambient bounce
   // ---------------------------------------------------------------------------
-  scene.add(new THREE.HemisphereLight(0xbfd8f2, 0x6b5c42, 0.85));
-  scene.add(new THREE.AmbientLight(0x8fa6b8, 0.28));
+  scene.add(new THREE.HemisphereLight(0xc6dcf4, 0x736245, 1.0));
+  scene.add(new THREE.AmbientLight(0x93a9bb, 0.42));
   const sun = new THREE.DirectionalLight(0xffe6c2, 2.35);
   sun.position.set(132, 148, -96); sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
@@ -931,19 +931,21 @@
   {
     const pos = groundGeo.attributes.position;
     const colArr = new Float32Array(pos.count * 3);
-    const cGrass = new THREE.Color(0x62713f), cDry = new THREE.Color(0x86814f),
-          cDirt = new THREE.Color(0x6f5c41), cRock = new THREE.Color(0x807b6d);
+    const cGrass = new THREE.Color(0x5d7136), cDry = new THREE.Color(0x93885a),
+          cDirt = new THREE.Color(0x7d6547), cRock = new THREE.Color(0x8d887b);
     const tmpC = new THREE.Color();
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i), z = pos.getZ(i);
       const h = terrainHeight(x, z);
       pos.setY(i, h);
-      const n1 = (Math.sin(x * 0.048 + 1.3) * Math.cos(z * 0.043 - 0.4)
-                + Math.sin(x * 0.016 - 2.1) * 0.7 + Math.sin(z * 0.021 + 0.9) * 0.6) / 2.3;
-      const n2 = Math.sin(x * 0.115 + z * 0.091);
-      tmpC.copy(cGrass).lerp(cDirt, Math.max(0, Math.min(1, n1 * 0.62 + 0.30)));
-      tmpC.lerp(cDry, Math.max(0, Math.min(0.55, n2 * 0.3 + 0.16)));
-      if (h > 2.2) tmpC.lerp(cRock, Math.min(0.45, (h - 2.2) * 0.22));
+      const n1 = (Math.sin(x * 0.019 + 1.3) * Math.cos(z * 0.017 - 0.4)
+                + Math.sin(x * 0.052 - 2.1) * 0.45 + Math.cos(z * 0.045 + 0.9) * 0.45) / 1.9;
+      const n2 = Math.sin(x * 0.142 + z * 0.118) * Math.cos(x * 0.089 - z * 0.083);
+      const n3 = Math.sin(x * 0.0075 + 2.6) * Math.cos(z * 0.0068 - 1.1);
+      tmpC.copy(cGrass);
+      tmpC.lerp(cDry, Math.max(0, Math.min(0.75, n1 * 0.62 + 0.26)));
+      tmpC.lerp(cDirt, Math.max(0, Math.min(0.85, n3 * 0.7 + 0.10)));
+      tmpC.lerp(cRock, Math.max(0, Math.min(0.55, h * 0.16 + Math.abs(n2) * 0.10 - 0.05)));
       colArr[i * 3] = tmpC.r; colArr[i * 3 + 1] = tmpC.g; colArr[i * 3 + 2] = tmpC.b;
     }
     groundGeo.setAttribute('color', new THREE.BufferAttribute(colArr, 3));
@@ -1061,20 +1063,43 @@
     scene.add(inst);
   }
 
+  {
+    const rockGeo = new THREE.DodecahedronGeometry(0.34, 0);
+    const rockMat = new THREE.MeshStandardMaterial({ color: 0x8a857a, roughness: 0.95, flatShading: true });
+    const COUNT = 700;
+    const inst = new THREE.InstancedMesh(rockGeo, rockMat, COUNT);
+    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), s = new THREE.Vector3(), p = new THREE.Vector3();
+    let placed = 0, guard = 0;
+    while (placed < COUNT && guard < COUNT * 6) {
+      guard++;
+      const x = (Math.random() - 0.5) * 460, z = (Math.random() - 0.5) * 420 - 10;
+      if (Math.abs(x) < 10 || Math.abs(z + 15) < 10) continue;
+      const sc = 0.4 + Math.random() * 1.5;
+      e.set(Math.random() * 2, Math.random() * 6, Math.random() * 2); q.setFromEuler(e);
+      s.set(sc, sc * 0.6, sc * 0.9);
+      p.set(x, terrainHeight(x, z) + sc * 0.12, z);
+      m4.compose(p, q, s); inst.setMatrixAt(placed++, m4);
+    }
+    inst.count = placed; inst.castShadow = false; inst.receiveShadow = true;
+    scene.add(inst);
+  }
+
   // ---------------------------------------------------------------------------
   // Layered mountain ridge ring + distant tree line for a natural horizon
   // ---------------------------------------------------------------------------
-  const ridgeCols = [0x51603f, 0x47563c, 0x3d4c36, 0x5a6650];
-  for (let i = 0; i < 56; i++) {
-    const ang = (i / 56) * Math.PI * 2 + (i % 2) * 0.03;
-    const dist = 292 + (i % 4) * 26;
-    const hh = 34 + (i * 19 % 58), rr = 40 + (i * 13 % 32);
+  const ridgeCols = [0x5c6b52, 0x53624d, 0x475741, 0x64705a, 0x4b5a48];
+  for (let i = 0; i < 72; i++) {
+    const ang = (i / 72) * Math.PI * 2 + (i % 2) * 0.02;
+    const dist = 268 + (i % 5) * 21;
+    const hh = 22 + (i * 23 % 46), rr = 58 + (i * 17 % 52);
     const mtn = new THREE.Mesh(
-      new THREE.ConeGeometry(rr, hh, 8, 1),
+      new THREE.ConeGeometry(rr, hh, 11, 1),
       new THREE.MeshStandardMaterial({ color: ridgeCols[i % ridgeCols.length], roughness: 1, flatShading: true })
     );
-    mtn.position.set(Math.cos(ang) * dist, hh / 2 - 6, Math.sin(ang) * dist);
-    mtn.rotation.y = i * 1.1; scene.add(mtn);
+    mtn.position.set(Math.cos(ang) * dist, hh / 2 - 10, Math.sin(ang) * dist);
+    mtn.rotation.y = i * 0.7;
+    mtn.scale.set(1.25 + (i % 4) * 0.3, 1, 1.1 + (i % 3) * 0.25);
+    scene.add(mtn);
   }
   {
     const treeGeo = new THREE.ConeGeometry(2.6, 9.5, 6);
@@ -1371,9 +1396,9 @@
   const animatedProps = []; // Rotating radar dishes, beacons
 
   const matConcreteWall = new THREE.MeshStandardMaterial({ map: texConcrete, roughness: 0.9, metalness: 0.08 });
-  const matDarkConcrete = new THREE.MeshStandardMaterial({ color: 0x3b3935, roughness: 0.94 });
-  const matReflPanel    = new THREE.MeshStandardMaterial({ color: 0x164e78, roughness: 0.22, metalness: 0.72 });
-  const matSteelTruss   = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.48, metalness: 0.75 });
+  const matDarkConcrete = new THREE.MeshStandardMaterial({ color: 0x55524a, roughness: 0.94 });
+  const matReflPanel    = new THREE.MeshStandardMaterial({ color: 0x2c6484, roughness: 0.34, metalness: 0.55 });
+  const matSteelTruss   = new THREE.MeshStandardMaterial({ color: 0x53616f, roughness: 0.55, metalness: 0.62 });
   const matSandbag      = new THREE.MeshStandardMaterial({ color: 0x8b7d63, roughness: 0.96 });
   const matPineBark     = new THREE.MeshStandardMaterial({ color: 0x473323, roughness: 0.95 });
   const matPineLeaf1    = new THREE.MeshStandardMaterial({ color: 0x243b26, roughness: 0.9, flatShading: true });
@@ -1411,7 +1436,7 @@
       roof.position.y = h + 0.3; roof.castShadow = true; grp.add(roof);
       // Firing slits (총안구)
       for (let s = -1; s <= 1; s++) {
-        const slit = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.55, d + 0.12), new THREE.MeshBasicMaterial({ color: 0x0b0f17 }));
+        const slit = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.36, d + 0.12), new THREE.MeshBasicMaterial({ color: 0x1b1f26 }));
         slit.position.set(s * (w * 0.28), h * 0.68, 0); grp.add(slit);
       }
       // Sandbag barrier in front
@@ -2497,7 +2522,7 @@
         camera.position.lerp(twp.clone().addScaledVector(aimD, state.zoom?-6.2:-14.5).add(new THREE.Vector3(0, state.zoom?2.8:5.4, 0)), Math.min(1, dt*14));
         camera.lookAt(twp.clone().addScaledVector(aimD, 75).add(new THREE.Vector3(0, 1.0, 0)));
       } else if (state.camMode === 'fps') {
-        const fp = twp.clone().add(new THREE.Vector3(0, 1.15, 0)).addScaledVector(aimD, 1.5);
+        const fp = twp.clone().add(new THREE.Vector3(0, 1.95, 0)).addScaledVector(aimD, 3.4);
         camera.position.copy(fp); camera.lookAt(fp.clone().addScaledVector(aimD, 90));
       } else {
         camera.position.lerp(playerRoot.position.clone().add(new THREE.Vector3(0, state.zoom?48:90, state.zoom?22:44)), Math.min(1, dt*7));
