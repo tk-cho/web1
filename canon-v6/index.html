@@ -932,7 +932,7 @@
   {
     const pos = groundGeo.attributes.position;
     const colArr = new Float32Array(pos.count * 3);
-    const cGrass = new THREE.Color(0x5d7136), cDry = new THREE.Color(0x93885a),
+    const cGrass = new THREE.Color(0x54702f), cDry = new THREE.Color(0x8a8452),
           cDirt = new THREE.Color(0x7d6547), cRock = new THREE.Color(0x8d887b);
     const tmpC = new THREE.Color();
     for (let i = 0; i < pos.count; i++) {
@@ -944,7 +944,7 @@
       const n2 = Math.sin(x * 0.142 + z * 0.118) * Math.cos(x * 0.089 - z * 0.083);
       const n3 = Math.sin(x * 0.0075 + 2.6) * Math.cos(z * 0.0068 - 1.1);
       tmpC.copy(cGrass);
-      tmpC.lerp(cDry, Math.max(0, Math.min(0.85, n1 * 0.78 + 0.26)));
+      tmpC.lerp(cDry, Math.max(0, Math.min(0.7, n1 * 0.55 + 0.20)));
       tmpC.lerp(cDirt, Math.max(0, Math.min(0.9, n3 * 0.85 + 0.12)));
       tmpC.multiplyScalar(0.88 + Math.abs(n2) * 0.26);
       tmpC.lerp(cRock, Math.max(0, Math.min(0.55, h * 0.16 + Math.abs(n2) * 0.10 - 0.05)));
@@ -1393,7 +1393,7 @@
     r.position.set(rx, 0, -3.2); barrelGrp.add(r);
   });
   for (let i = 0; i < 5; i++) {
-    const c = new THREE.Mesh(new THREE.TorusGeometry(0.27, 0.03, 8, 20), pGlow);
+    const c = new THREE.Mesh(new THREE.TorusGeometry(0.21, 0.02, 8, 18), pGlow);
     c.position.set(0, 0, -1.45 - i * 0.86); barrelGrp.add(c);
   }
   // Coaxial machine gun beside the main gun
@@ -1597,7 +1597,7 @@
     dome.position.copy(pos); scene.add(dome);
     shockDomes.push({ mesh: dome, life: 0.45, maxLife: 0.45, maxScale: big ? 14.5 : 5.5 });
     for (let i = 0; i < (big ? 16 : 7); i++) spawnParticle(pos.clone().add(new THREE.Vector3(0, 1, 0)), new THREE.Vector3((Math.random()-0.5)*(big?16:7), Math.random()*(big?14:6)+2, (Math.random()-0.5)*(big?16:7)), [0xfff2a6, 0xff9922, 0xff4411][i%3], big?1.2:0.55, big?0.85:0.42, 2.2, -4, 0.92);
-    for (let i = 0; i < (big ? 14 : 5); i++) spawnParticle(pos.clone().add(new THREE.Vector3(0, 1.4, 0)), new THREE.Vector3((Math.random()-0.5)*7, Math.random()*7+3.5, (Math.random()-0.5)*7), 0x1a1a1d, big?1.4:0.65, big?2.1:1.1, 2.5, 1.2, 0.72);
+    for (let i = 0; i < (big ? 14 : 5); i++) spawnParticle(pos.clone().add(new THREE.Vector3(0, 1.4, 0)), new THREE.Vector3((Math.random()-0.5)*7, Math.random()*7+3.5, (Math.random()-0.5)*7), 0x3c3c40, big?1.05:0.55, big?1.8:1.0, 1.7, 1.2, 0.5);
     for (let i = 0; i < (big ? 14 : 6); i++) spawnParticle(pos.clone().add(new THREE.Vector3(0, 1.2, 0)), new THREE.Vector3((Math.random()-0.5)*26, Math.random()*17+5, (Math.random()-0.5)*26), i%2===0?0xffcc44:0x323740, big?0.85:0.45, big?1.5:0.8, 0, -24, 1, true);
   }
   function attachFire(anchor, offset, intensity = 1.0) { if (activeFires.length < 28) activeFires.push({ anchor, offset: offset.clone(), timer: 0, intensity }); }
