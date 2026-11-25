@@ -5,48 +5,66 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>PROJECT CANON V6.0 — MOBILE WARFARE &amp; REALISTIC 3D EDITION (연구 4호 기동전투 업그레이드)</title>
 <style>
-  * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+  * { box-sizing: border-box; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
   html, body {
     margin: 0; padding: 0; width: 100%; height: 100%;
-    overflow: hidden; background: #070d18;
+    overflow: hidden; background: #0a1018;
     font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', 'Consolas', sans-serif;
     color: #e2f1ff;
   }
   #canvas-wrap { position: fixed; inset: 0; touch-action: none; }
 
+  /* ---------- HUD GRID (desktop): guaranteed non-overlapping areas ---------- */
   #hud {
     position: fixed; inset: 0; pointer-events: none;
-    display: flex; flex-direction: column; justify-content: space-between;
-    padding: 10px 14px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+    gap: 8px 12px;
+    padding: calc(10px + env(safe-area-inset-top, 0px)) calc(14px + env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) calc(14px + env(safe-area-inset-left, 0px));
   }
-  .hud-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
-  .hud-bottom { display: flex; justify-content: space-between; align-items: flex-end; gap: 10px; }
+  #hud-status  { grid-area: 1 / 1 / 2 / 2; justify-self: start; }
+  #hud-actions { grid-area: 2 / 1 / 3 / 2; justify-self: start; }
+  #hud-weapons { grid-area: 3 / 1 / 4 / 2; justify-self: start; }
+  #target-panel{ grid-area: 1 / 2 / 4 / 4; justify-self: end; align-self: start; }
+  #radio-box   { grid-area: 4 / 1 / 5 / 2; align-self: start; justify-self: start; }
+  #hud-fft     { grid-area: 5 / 1 / 6 / 2; justify-self: start; }
+  #hud-controls{ grid-area: 5 / 2 / 6 / 3; justify-self: start; }
+  #minimap-box { grid-area: 5 / 3 / 6 / 4; justify-self: end; align-self: end; }
+  #banner-msg  { position: fixed; left: 50%; top: 14%; transform: translateX(-50%); }
+  #mobile-right, #cam-cycle-wrap { display: none; }
+  #touch-pad { display: none; grid-area: 4 / 1 / 5 / 2; align-self: end; justify-self: start; }
+  body.touch-ui #touch-pad { display: flex; }
+
   .panel {
-    background: rgba(6, 13, 25, 0.82);
-    border: 1px solid rgba(56, 189, 248, 0.45);
-    box-shadow: 0 0 22px rgba(0, 0, 0, 0.5), inset 0 0 12px rgba(14, 165, 233, 0.08);
-    border-radius: 7px; padding: 8px 12px;
-    backdrop-filter: blur(5px);
+    background: rgba(8, 16, 26, 0.80);
+    border: 1px solid rgba(96, 178, 226, 0.42);
+    box-shadow: 0 4px 26px rgba(0, 0, 0, 0.55), inset 0 0 14px rgba(30, 120, 170, 0.10);
+    border-radius: 8px; padding: 8px 12px;
+    backdrop-filter: blur(6px);
   }
-  .tag { font-size: 10px; letter-spacing: 1.2px; color: #38bdf8; font-weight: 800; }
-  .gold { color: #fbbf24; text-shadow: 0 0 8px rgba(251,191,36,0.55); }
-  .cyan { color: #22d3ee; text-shadow: 0 0 8px rgba(34,211,238,0.55); }
-  .red  { color: #fb7185; text-shadow: 0 0 8px rgba(251,113,133,0.6); }
-  .green{ color: #34d399; text-shadow: 0 0 8px rgba(52,211,153,0.55); }
-  .orange{ color: #fb923c; text-shadow: 0 0 8px rgba(251,146,60,0.65); }
+  .tag { font-size: 10px; letter-spacing: 1.1px; color: #7dd3fc; font-weight: 800; }
+  .gold { color: #fbbf24; text-shadow: 0 0 8px rgba(251,191,36,0.5); }
+  .cyan { color: #22d3ee; text-shadow: 0 0 8px rgba(34,211,238,0.5); }
+  .red  { color: #fb7185; text-shadow: 0 0 8px rgba(251,113,133,0.55); }
+  .green{ color: #34d399; text-shadow: 0 0 8px rgba(52,211,153,0.5); }
+  .orange{ color: #fb923c; text-shadow: 0 0 8px rgba(251,146,60,0.6); }
 
   .row { display: flex; gap: 10px; align-items: center; margin-top: 4px; font-size: 12px; flex-wrap: wrap; }
-  .bar-bg { width: 115px; height: 8px; background: rgba(255,255,255,0.12); border-radius: 4px; overflow: hidden; }
+  .bar-bg { width: 108px; height: 8px; background: rgba(255,255,255,0.12); border-radius: 4px; overflow: hidden; }
   .bar-fill { height: 100%; transition: width 0.12s; }
   .bar-hp { background: linear-gradient(90deg, #ef4444, #f59e0b, #22c55e); }
   .bar-sh { background: linear-gradient(90deg, #0ea5e9, #67e8f9); }
+  .lock-row { display: none; font-size: 11px; margin-top: 3px; color: #cfe6ff; }
 
-  .hud-btns { pointer-events: auto; display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap; }
+  .hud-btns, #hud-actions, #hud-weapons { pointer-events: auto; display: flex; gap: 5px; flex-wrap: wrap; }
+  #hud-actions, #hud-weapons { pointer-events: auto; }
   .hud-btn {
-    background: rgba(15, 32, 56, 0.92); color: #e0f2fe;
-    border: 1px solid rgba(56,189,248,0.5); border-radius: 5px;
-    padding: 4px 8px; font-size: 11px; font-weight: 700; cursor: pointer;
-    transition: all 0.12s;
+    background: rgba(12, 26, 44, 0.92); color: #e0f2fe;
+    border: 1px solid rgba(96, 178, 226, 0.5); border-radius: 6px;
+    padding: 5px 9px; font-size: 11px; font-weight: 700; cursor: pointer;
+    transition: background 0.12s, box-shadow 0.12s;
+    white-space: nowrap;
   }
   .hud-btn:hover { background: rgba(24, 54, 92, 0.96); }
   .hud-btn.active { background: #0284c7; border-color: #fbbf24; color: #fff; box-shadow: 0 0 12px rgba(56,189,248,0.55); }
@@ -54,58 +72,78 @@
   .hud-btn.cruise-on { background: rgba(245, 158, 11, 0.34); border-color: #fbbf24; color: #fef08a; box-shadow: 0 0 10px rgba(251,191,36,0.45); }
   .hud-btn.gift-btn { background: linear-gradient(90deg, #7c3aed, #db2777); border-color: #fbcfe8; color: #fff; }
 
+  /* ---------- Radio log ---------- */
   #radio-box {
-    margin-top: 8px; max-width: 430px;
-    background: rgba(4, 18, 22, 0.86);
-    border: 1px solid rgba(52, 211, 153, 0.55);
+    max-width: 430px; width: 100%;
+    background: rgba(4, 16, 20, 0.86);
+    border: 1px solid rgba(52, 211, 153, 0.5);
     border-left: 4px solid #34d399;
-    border-radius: 6px; padding: 7px 11px;
-    font-size: 12px; color: #d1fae5; line-height: 1.45;
-    display: none;
+    border-radius: 7px; padding: 6px 10px;
+    font-size: 12px; color: #d1fae5; line-height: 1.4;
+    display: block;
   }
   .radio-hdr { font-size: 10px; font-weight: 900; color: #34d399; letter-spacing: 1px; display: flex; align-items: center; gap: 6px; }
-  .radio-dot { width: 7px; height: 7px; border-radius: 50%; background: #34d399; box-shadow: 0 0 8px #34d399; animation: blink 0.8s infinite; }
-  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
+  .radio-hdr .freq { margin-left: auto; color: #6ee7b7; opacity: 0.75; font-weight: 700; letter-spacing: 0.4px; }
+  .radio-dot { width: 7px; height: 7px; border-radius: 50%; background: #34d399; box-shadow: 0 0 8px #34d399; animation: blink 0.9s infinite; flex: 0 0 auto; }
+  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.22; } }
+  #radio-log { margin-top: 3px; display: flex; flex-direction: column; gap: 2px; }
+  .rl { display: flex; gap: 6px; font-size: 11.5px; opacity: 0.55; animation: rlIn 0.25s ease-out; }
+  .rl:last-child { opacity: 1; }
+  .rl-cs { flex: 0 0 auto; font-weight: 900; color: #6ee7b7; font-size: 10.5px; letter-spacing: 0.2px; padding-top: 1px; }
+  .rl-tx { flex: 1 1 auto; color: #e8fff7; }
+  .rl.prio .rl-tx { color: #fde68a; font-weight: 700; }
+  @keyframes rlIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; } }
 
   #reticle-wrap { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); pointer-events: none; width: 230px; height: 230px; }
-  #beat-feedback { position: fixed; left: 50%; top: calc(50% + 88px); transform: translateX(-50%); font-size: 15px; font-weight: 900; pointer-events: none; text-shadow: 0 2px 10px #000; }
+  #beat-feedback { position: fixed; left: 50%; top: calc(50% + 88px); transform: translateX(-50%); font-size: 15px; font-weight: 900; pointer-events: none; text-shadow: 0 2px 10px #000; white-space: nowrap; }
   #banner-msg {
-    position: fixed; left: 50%; top: 14%; transform: translateX(-50%);
     font-size: 18px; font-weight: 900; padding: 7px 18px; border-radius: 8px;
     background: rgba(7, 15, 28, 0.92); border: 2px solid #fbbf24; color: #fef08a;
     box-shadow: 0 0 26px rgba(251, 191, 36, 0.45);
     opacity: 0; transition: opacity 0.25s; pointer-events: none; text-align: center;
+    max-width: 74vw; z-index: 20;
   }
 
-  #fps-vignette { position: fixed; inset: 0; pointer-events: none; opacity: 0; background: radial-gradient(circle, transparent 50%, rgba(0, 14, 28, 0.86) 100%); transition: opacity 0.2s; }
+  #fps-vignette { position: fixed; inset: 0; pointer-events: none; opacity: 0; background: radial-gradient(circle, transparent 52%, rgba(0, 14, 28, 0.8) 100%); transition: opacity 0.2s; }
   #shield-vignette { position: fixed; inset: 0; pointer-events: none; opacity: 0; background: radial-gradient(circle, transparent 55%, rgba(34, 211, 238, 0.35) 100%); transition: opacity 0.2s; }
   #damage-flash { position: fixed; inset: 0; pointer-events: none; opacity: 0; background: radial-gradient(circle, transparent 42%, rgba(239,68,68,0.62) 100%); transition: opacity 0.14s; }
 
   #fft-canvas { width: 245px; height: 64px; display: block; background: rgba(2,8,18,0.9); border: 1px solid rgba(34,211,238,0.35); border-radius: 4px; }
-  #minimap-box { pointer-events: auto; cursor: pointer; }
+  #minimap-box { pointer-events: auto; cursor: pointer; padding: 6px; }
   #minimap-canvas { width: 210px; height: 210px; display: block; background: rgba(2,10,20,0.93); border: 1.5px solid rgba(56,189,248,0.6); border-radius: 7px; }
 
+  /* ---------- Virtual joystick ---------- */
   #touch-pad {
-    position: fixed; left: 16px; bottom: 130px; z-index: 30;
-    display: none; pointer-events: auto; gap: 6px; flex-direction: column; align-items: center;
+    width: 126px; height: 126px; border-radius: 50%;
+    align-items: center; justify-content: center;
+    background: radial-gradient(circle at 50% 50%, rgba(20, 44, 70, 0.42), rgba(6, 14, 24, 0.32));
+    border: 1.5px solid rgba(56, 189, 248, 0.5);
+    box-shadow: inset 0 0 22px rgba(14, 165, 233, 0.16);
+    pointer-events: auto; touch-action: none; z-index: 30;
   }
-  .t-row { display: flex; gap: 6px; }
-  .t-btn {
-    width: 50px; height: 50px; border-radius: 50%;
-    background: rgba(14, 165, 233, 0.28); border: 1.5px solid rgba(56,189,248,0.7);
-    color: #fff; font-size: 16px; font-weight: 900; cursor: pointer;
+  #stick-knob {
+    width: 54px; height: 54px; border-radius: 50%;
+    background: radial-gradient(circle at 36% 30%, #a5e4ff, #0369a1 72%);
+    border: 1.5px solid rgba(224, 242, 254, 0.75);
+    box-shadow: 0 0 18px rgba(56, 189, 248, 0.55);
+    pointer-events: none;
   }
   #touch-fire {
-    position: fixed; right: 24px; bottom: 250px; z-index: 30; display: none; pointer-events: auto;
-    width: 74px; height: 74px; border-radius: 50%;
-    background: radial-gradient(circle, #fb923c, #dc2626); border: 2px solid #fef08a;
-    color: #fff; font-size: 14px; font-weight: 900; box-shadow: 0 0 20px rgba(239,68,68,0.6);
+    pointer-events: auto; touch-action: none;
+    width: 88px; height: 88px; border-radius: 50%;
+    background: radial-gradient(circle at 40% 32%, #fca5a5, #dc2626 70%);
+    border: 2.5px solid #fef08a; color: #fff;
+    font-size: 14px; font-weight: 900; letter-spacing: 1px;
+    box-shadow: 0 0 24px rgba(239,68,68,0.65);
   }
+  #touch-fire:active { transform: scale(0.95); }
+  #mobile-right { align-items: center; justify-content: flex-end; gap: 6px; flex-direction: column; }
 
   .modal-bg {
     position: fixed; inset: 0; z-index: 60;
     background: radial-gradient(circle at 50% 42%, rgba(16, 36, 68, 0.94), rgba(4, 8, 16, 0.98));
-    display: flex; align-items: center; justify-content: center; padding: 14px;
+    display: flex; align-items: center; justify-content: center;
+    padding: calc(10px + env(safe-area-inset-top, 0px)) 12px calc(10px + env(safe-area-inset-bottom, 0px));
   }
   .modal {
     max-width: 820px; width: 100%; max-height: 94vh; overflow-y: auto;
@@ -161,8 +199,79 @@
     align-items: center; justify-content: center; flex-direction: column;
   }
   #big-map-canvas {
-    width: 580px; height: 580px; max-width: 92vw; max-height: 78vh;
+    width: 580px; height: 580px; max-width: 92vw; max-height: 74vh;
     background: #040d1a; border: 2px solid #38bdf8; border-radius: 10px;
+  }
+
+  /* ======================= TABLET / PHONE LAYOUT ======================= */
+  @media (max-width: 900px) {
+    #hud {
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+      gap: 5px;
+      padding: calc(6px + env(safe-area-inset-top, 0px)) calc(6px + env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) calc(6px + env(safe-area-inset-left, 0px));
+    }
+    #hud-status  { grid-area: 1 / 1 / 2 / 2; justify-self: stretch; }
+    #minimap-box { grid-area: 1 / 2 / 2 / 3; justify-self: end; align-self: start; padding: 4px; }
+    #minimap-canvas { width: 88px; height: 88px; border-radius: 6px; }
+    #minimap-box .tag { font-size: 7.5px; letter-spacing: 0.2px; }
+    #hud-actions { grid-area: 2 / 1 / 3 / 3; justify-self: stretch; flex-wrap: nowrap; gap: 4px; }
+    #hud-weapons { grid-area: 3 / 1 / 4 / 3; justify-self: stretch; flex-wrap: nowrap; gap: 4px; }
+    #target-panel { display: none; }
+    #hud-fft, #hud-controls { display: none; }
+    #radio-box {
+      grid-area: 4 / 1 / 5 / 3; align-self: end; justify-self: stretch;
+      max-width: none; max-height: 78px; overflow: hidden; font-size: 11px; padding: 5px 8px;
+    }
+    #radio-log .rl { font-size: 10.5px; }
+    #radio-log .rl:not(:last-child) { display: none; }
+    #touch-pad { grid-area: 5 / 1 / 6 / 2; align-self: end; justify-self: start; display: flex; }
+    #mobile-right { grid-area: 5 / 2 / 6 / 3; align-self: end; justify-self: end; display: flex; }
+    #banner-msg { position: static; transform: none; grid-area: 4 / 1 / 5 / 3; align-self: start; justify-self: center; font-size: 13.5px; padding: 6px 12px; max-width: 96%; }
+    #reticle-wrap { width: 168px; height: 168px; }
+    #reticle-wrap svg { width: 168px; height: 168px; }
+    #beat-feedback { font-size: 12.5px; top: calc(50% + 62px); }
+
+    .panel { padding: 6px 8px; border-radius: 7px; }
+    .tag { font-size: 9px; letter-spacing: 0.5px; }
+    .row { gap: 7px; font-size: 10.5px; margin-top: 2px; }
+    .bar-bg { width: 78px; height: 7px; }
+    .lock-row { display: none !important; }
+    #hud-status .row .opt { display: none; }
+    .hud-btn { flex: 1 1 0; min-width: 0; padding: 7px 3px; font-size: 11px; line-height: 1.1; text-align: center; }
+    .hud-btn .lbl { display: none; }
+    #btn-cam-tps, #btn-cam-fps, #btn-cam-top, .gift-btn { display: none; }
+    #cam-cycle-wrap { display: block; flex: 1 1 0; }
+    #cam-cycle-wrap .hud-btn { width: 100%; }
+    #hud-actions .hud-btn, #hud-weapons .hud-btn { height: 36px; }
+    #overlay .modal { padding: 16px 14px; }
+    #overlay h1 { font-size: 19px; }
+    .scale-grid { grid-template-columns: 1fr; gap: 7px; }
+    .scale-card { padding: 8px 10px; }
+    .scale-title { font-size: 13px; }
+    .scale-desc { font-size: 10.5px; }
+    .modal { padding: 16px 15px; }
+  }
+
+  /* ======================= PHONE LANDSCAPE ======================= */
+  @media (max-width: 1000px) and (max-height: 560px) and (orientation: landscape) {
+    #hud {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      grid-template-rows: auto auto minmax(0, 1fr) auto;
+      gap: 4px 6px;
+    }
+    #hud-status  { grid-area: 1 / 1 / 2 / 3; justify-self: start; }
+    #minimap-box { grid-area: 1 / 3 / 2 / 4; }
+    #minimap-canvas { width: 66px; height: 66px; }
+    #hud-actions { grid-area: 2 / 1 / 3 / 4; }
+    #hud-weapons { grid-area: 3 / 1 / 4 / 2; align-self: end; justify-self: start; flex-wrap: wrap; max-width: 44vw; }
+    #radio-box { grid-area: 3 / 2 / 4 / 3; align-self: end; justify-self: stretch; max-height: 56px; }
+    #touch-pad { grid-area: 4 / 1 / 5 / 2; align-self: end; display: flex; }
+    #mobile-right { grid-area: 4 / 3 / 5 / 4; display: flex; }
+    #banner-msg { grid-area: 3 / 2 / 4 / 3; align-self: start; }
+    #reticle-wrap { width: 132px; height: 132px; }
+    #reticle-wrap svg { width: 132px; height: 132px; }
+    #touch-fire { width: 74px; height: 74px; font-size: 12px; }
   }
 </style>
 </head>
@@ -192,17 +301,6 @@
 <div id="beat-feedback"></div>
 <div id="banner-msg"></div>
 
-<!-- Touch Pad -->
-<div id="touch-pad">
-  <button class="t-btn" ontouchstart="window._tKey('KeyW',1)" ontouchend="window._tKey('KeyW',0)">▲</button>
-  <div class="t-row">
-    <button class="t-btn" ontouchstart="window._tKey('KeyA',1)" ontouchend="window._tKey('KeyA',0)">◀</button>
-    <button class="t-btn" ontouchstart="window._tKey('KeyS',1)" ontouchend="window._tKey('KeyS',0)">▼</button>
-    <button class="t-btn" ontouchstart="window._tKey('KeyD',1)" ontouchend="window._tKey('KeyD',0)">▶</button>
-  </div>
-</div>
-<button id="touch-fire" ontouchstart="window._fireNow()">🔥발사</button>
-
 <!-- Enlarged Tactical Map -->
 <div id="big-map-overlay" onclick="window._toggleBigMap(false)">
   <div style="margin-bottom:8px; font-size:14px; font-weight:800; color:#38bdf8;">
@@ -213,89 +311,101 @@
 
 <!-- HUD -->
 <div id="hud">
-  <div class="hud-top">
-    <div>
-      <div class="panel">
-        <div class="tag" id="hud-mode-tag">PROJECT CANON V6.0 · MOBILE WARFARE &amp; REALISM 3D</div>
-        <div class="row">
-          <span>아군 <strong id="hud-allies" class="cyan">0</strong></span>
-          <span>적전차 <strong id="hud-etanks" class="red">0</strong></span>
-          <span>항공·드론 <strong id="hud-eair" class="orange">0</strong></span>
-          <span>격파 <strong id="hud-kills" class="green">0</strong></span>
-          <span>요격 <strong id="hud-def" class="cyan">0</strong></span>
-          <span>SCORE <strong id="hud-score" class="gold">0</strong></span>
-        </div>
-        <div class="row" style="margin-top:4px;">
-          <span>장갑</span>
-          <div class="bar-bg"><div id="hp-bar" class="bar-fill bar-hp" style="width:100%"></div></div>
-          <strong id="hud-hp">100%</strong>
-          <span>방어막</span>
-          <div class="bar-bg" style="width:82px;"><div id="sh-bar" class="bar-fill bar-sh" style="width:100%"></div></div>
-          <strong id="hud-spd" class="cyan">0</strong>km/h
-          <span id="hud-drive-mode" class="gold" style="font-size:11px;font-weight:800;">[자율기동전투]</span>
-        </div>
-        <div class="hud-btns">
-          <button id="btn-cam-tps" class="hud-btn active" onclick="window._setCameraMode('tps')">🎥 3인칭 [V]</button>
-          <button id="btn-cam-fps" class="hud-btn" onclick="window._setCameraMode('fps')">🎯 1인칭 [V]</button>
-          <button id="btn-cam-top" class="hud-btn" onclick="window._setCameraMode('top')">🛰️ 탑뷰 [V]</button>
-          <button id="btn-cruise" class="hud-btn cruise-on" onclick="window._toggleAutoDrive()">🚜 기동전투 ON [Q]</button>
-          <button class="hud-btn" onclick="window._toggleBigMap()">🗺️ 지도 [M]</button>
-          <button id="btn-auto-def" class="hud-btn auto-on" onclick="window._toggleAutoDef()">🤖 자동방어 ON [T]</button>
-          <button class="hud-btn" onclick="window._orderAllies()">📣 아군돌격 [G]</button>
-          <button class="hud-btn" onclick="window._openSettings()">⚙️ 설정</button>
-          <button class="hud-btn gift-btn" onclick="window._openGiftModal()">🎁 선물</button>
-        </div>
-        <div class="hud-btns">
-          <button id="btn-wpn-sonic" class="hud-btn active" onclick="window._setWeapon('sonic')">⚡ 1. 공진포</button>
-          <button id="btn-wpn-he" class="hud-btn" onclick="window._setWeapon('he')">🔥 2. 120mm</button>
-          <button id="btn-wpn-msl" class="hud-btn" onclick="window._setWeapon('missile')">🚀 3. 유도미사일</button>
-          <button class="hud-btn" onclick="window._snapTarget()">🎯 자동조준 [Tab]</button>
-          <button class="hud-btn" onclick="window._triggerShield(false)">🛡️ 방어막 [F]</button>
-          <button class="hud-btn" onclick="window._triggerSmoke()">💨 연막수리 [C]</button>
-        </div>
-      </div>
-
-      <div id="radio-box">
-        <div class="radio-hdr"><span class="radio-dot"></span> <span id="radio-sender">CH-01 전술 사령부 무전</span></div>
-        <div id="radio-text" style="margin-top:3px;"></div>
-      </div>
+  <!-- 1. Unit status -->
+  <div id="hud-status" class="panel">
+    <div class="tag" id="hud-mode-tag">PROJECT CANON V6.0 · MOBILE WARFARE &amp; REALISM 3D</div>
+    <div class="row">
+      <span>아군 <strong id="hud-allies" class="cyan">0</strong></span>
+      <span>적전차 <strong id="hud-etanks" class="red">0</strong></span>
+      <span>항공·드론 <strong id="hud-eair" class="orange">0</strong></span>
+      <span>격파 <strong id="hud-kills" class="green">0</strong></span>
+      <span class="opt">요격 <strong id="hud-def" class="cyan">0</strong></span>
+      <span>SCORE <strong id="hud-score" class="gold">0</strong></span>
     </div>
+    <div class="row" style="margin-top:3px;">
+      <span>장갑</span>
+      <div class="bar-bg"><div id="hp-bar" class="bar-fill bar-hp" style="width:100%"></div></div>
+      <strong id="hud-hp">100%</strong>
+      <span class="opt">방어막</span>
+      <div class="bar-bg opt" style="width:70px;"><div id="sh-bar" class="bar-fill bar-sh" style="width:100%"></div></div>
+      <strong id="hud-spd" class="cyan">0</strong>km/h
+      <span id="hud-drive-mode" class="gold" style="font-size:11px;font-weight:800;">[자율기동전투]</span>
+    </div>
+    <div class="lock-row" id="hud-lock"></div>
+  </div>
 
-    <div class="panel" style="min-width:290px;">
-      <div class="tag">TARGET &amp; COMMS TELEMETRY</div>
-      <div id="target-info" style="font-size:12px; margin-top:4px; line-height:1.5;">
-        전장 규모를 선택하고 출격하십시오!
-      </div>
+  <!-- 2. Command / camera buttons -->
+  <div id="hud-actions">
+    <button id="btn-cam-tps" class="hud-btn active" onclick="window._setCameraMode('tps')">🎥 <span class="lbl">3인칭</span> [V]</button>
+    <button id="btn-cam-fps" class="hud-btn" onclick="window._setCameraMode('fps')">🎯 <span class="lbl">1인칭</span></button>
+    <button id="btn-cam-top" class="hud-btn" onclick="window._setCameraMode('top')">🛰️ <span class="lbl">탑뷰</span></button>
+    <div id="cam-cycle-wrap"><button id="btn-cam-cycle" class="hud-btn" onclick="window._cycleCamera()">🎥</button></div>
+    <button id="btn-cruise" class="hud-btn cruise-on" onclick="window._toggleAutoDrive()">🚜 <span class="lbl">기동전투 ON</span> [Q]</button>
+    <button id="btn-auto-def" class="hud-btn auto-on" onclick="window._toggleAutoDef()">🤖 <span class="lbl">자동방어 ON</span> [T]</button>
+    <button class="hud-btn" onclick="window._orderAllies()">📣 <span class="lbl">아군돌격</span> [G]</button>
+    <button class="hud-btn" onclick="window._toggleBigMap()">🗺️ <span class="lbl">지도</span> [M]</button>
+    <button class="hud-btn" onclick="window._openSettings()">⚙️ <span class="lbl">설정</span></button>
+    <button class="hud-btn gift-btn" onclick="window._openGiftModal()">🎁 선물</button>
+  </div>
+
+  <!-- 3. Weapons / skills -->
+  <div id="hud-weapons">
+    <button id="btn-wpn-sonic" class="hud-btn active" onclick="window._setWeapon('sonic')">⚡ <span class="lbl">1. 공진포</span></button>
+    <button id="btn-wpn-he" class="hud-btn" onclick="window._setWeapon('he')">🔥 <span class="lbl">2. 120mm</span></button>
+    <button id="btn-wpn-msl" class="hud-btn" onclick="window._setWeapon('missile')">🚀 <span class="lbl">3. 유도탄</span></button>
+    <button class="hud-btn" onclick="window._snapTarget()">🎯 <span class="lbl">자동조준 [Tab]</span></button>
+    <button class="hud-btn" onclick="window._triggerShield(false)">🛡️ <span class="lbl">방어막 [F]</span></button>
+    <button class="hud-btn" onclick="window._triggerSmoke()">💨 <span class="lbl">연막수리 [C]</span></button>
+  </div>
+
+  <!-- 4. Target telemetry (desktop) -->
+  <div id="target-panel" class="panel" style="min-width:290px;">
+    <div class="tag">TARGET &amp; COMMS TELEMETRY</div>
+    <div id="target-info" style="font-size:12px; margin-top:4px; line-height:1.5;">
+      전장 규모를 선택하고 출격하십시오!
     </div>
   </div>
 
-  <div class="hud-bottom">
-    <div class="panel">
-      <div class="tag" style="display:flex; justify-content:space-between; margin-bottom:4px;">
-        <span>ACOUSTIC FFT (80~220Hz)</span>
-        <span id="echo-status" class="cyan">2-AXIS STAB · DIRECT</span>
-      </div>
-      <canvas id="fft-canvas" width="245" height="64"></canvas>
-      <div class="row" style="margin-top:4px;">
-        <span>발진: <strong id="hud-freq" class="gold">135.0 Hz</strong></span>
-        <span>무장: <strong id="hud-wpn" class="orange">공진 레일포</strong></span>
-      </div>
-    </div>
+  <!-- 5. Radio log -->
+  <div id="radio-box">
+    <div class="radio-hdr"><span class="radio-dot"></span><span id="radio-sender">CH-01 전술 무전망</span><span class="freq">143.250 MHz</span></div>
+    <div id="radio-log"></div>
+  </div>
 
-    <div class="panel controls">
-      <div class="tag" style="margin-bottom:3px;">V6.0 기동전투 프로 컨트롤 (주행 + 자이로 안정화 사격)</div>
-      • <kbd>WASD</kbd> 직접 기동 (누르면 수동 전환) · <kbd>Q</kbd> <strong>자율 기동전투 ON/OFF</strong> · <kbd>E</kbd> 터보<br>
-      • <kbd>마우스 이동/드래그</kbd> 360° 독립포탑 조준 · <kbd>Tab</kbd> <strong>자동 표적 락온</strong> · <kbd>좌클릭/SPACE</kbd> 발사<br>
-      • <kbd>1·2·3</kbd> 무장 · <kbd>V</kbd> 3인칭·1인칭·탑뷰 · <kbd>G</kbd> 아군돌격 · <kbd>F</kbd> 방어막 · <kbd>C</kbd> 연막수리
+  <!-- 6. Acoustic FFT -->
+  <div id="hud-fft" class="panel">
+    <div class="tag" style="display:flex; justify-content:space-between; margin-bottom:4px; gap:10px;">
+      <span>ACOUSTIC FFT (80~220Hz)</span>
+      <span id="echo-status" class="cyan">2-AXIS STAB · DIRECT</span>
     </div>
+    <canvas id="fft-canvas" width="245" height="64"></canvas>
+    <div class="row" style="margin-top:4px;">
+      <span>발진: <strong id="hud-freq" class="gold">135.0 Hz</strong></span>
+      <span>무장: <strong id="hud-wpn" class="orange">공진 레일포</strong></span>
+    </div>
+  </div>
 
-    <div id="minimap-box" class="panel" style="padding:7px;" onclick="window._toggleBigMap(true)">
-      <div class="tag" style="display:flex; justify-content:space-between; margin-bottom:3px;">
-        <span>ALL-DOMAIN RADAR</span>
-        <span class="gold">[M 확대]</span>
-      </div>
-      <canvas id="minimap-canvas" width="210" height="210"></canvas>
+  <!-- 7. Keyboard hints -->
+  <div id="hud-controls" class="panel controls">
+    <div class="tag" style="margin-bottom:3px;">V6.0 기동전투 프로 컨트롤 (주행 + 자이로 안정화 사격)</div>
+    • <kbd>WASD</kbd> 직접 기동 (누르면 수동 전환) · <kbd>Q</kbd> <strong>자율 기동전투 ON/OFF</strong> · <kbd>E</kbd> 터보<br>
+    • <kbd>마우스 이동/드래그</kbd> 360° 독립포탑 조준 · <kbd>Tab</kbd> <strong>자동 표적 락온</strong> · <kbd>좌클릭/SPACE</kbd> 발사<br>
+    • <kbd>1·2·3</kbd> 무장 · <kbd>V</kbd> 3인칭·1인칭·탑뷰 · <kbd>G</kbd> 아군돌격 · <kbd>F</kbd> 방어막 · <kbd>C</kbd> 연막수리
+  </div>
+
+  <!-- 8. Radar -->
+  <div id="minimap-box" class="panel" onclick="window._toggleBigMap(true)">
+    <div class="tag" style="display:flex; justify-content:space-between; margin-bottom:3px; gap:8px;">
+      <span>ALL-DOMAIN RADAR</span>
+      <span class="gold">[M]</span>
     </div>
+    <canvas id="minimap-canvas" width="210" height="210"></canvas>
+  </div>
+
+  <!-- 9. Virtual joystick + fire (touch devices / small screens) -->
+  <div id="touch-pad"><div id="stick-knob"></div></div>
+  <div id="mobile-right">
+    <button id="touch-fire">발사</button>
   </div>
 </div>
 
@@ -517,39 +627,34 @@
       this.engOsc.frequency.setTargetAtTime(40 + s * 3.4, this.ctx.currentTime, 0.08);
       this.engGain.gain.setTargetAtTime(0.04 + Math.min(0.06, s * 0.0025), this.ctx.currentTime, 0.1);
     }
-    playRadioChatter(sender, textKo, priority = false) {
-      if (!this.ctx) return;
-      const now = this.ctx.currentTime;
-      const squelch = (t0, dur) => {
-        const src = this.ctx.createBufferSource(); src.buffer = this.noiseBuf;
-        const bp = this.ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1850; bp.Q.value = 2.8;
-        const g = this.ctx.createGain();
-        g.gain.setValueAtTime(0.16, t0); g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
-        src.connect(bp); bp.connect(g); g.connect(this.sfxBus);
-        src.start(t0); src.stop(t0 + dur + 0.02);
-      };
-      const rogerBeep = (t0, f1, f2) => {
-        const o = this.ctx.createOscillator(), g = this.ctx.createGain();
-        o.type = 'sine'; o.frequency.setValueAtTime(f1, t0); o.frequency.setValueAtTime(f2, t0 + 0.055);
-        g.gain.setValueAtTime(0.15, t0); g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.12);
-        o.connect(g); g.connect(this.sfxBus); o.start(t0); o.stop(t0 + 0.13);
-      };
-      squelch(now, 0.14); rogerBeep(now + 0.06, 1320, 1760);
-      squelch(now + 1.15, 0.12); rogerBeep(now + 1.22, 1760, 1180);
-
-      const box = document.getElementById('radio-box');
-      document.getElementById('radio-sender').textContent = sender;
-      document.getElementById('radio-text').textContent = `“${textKo}”`;
-      box.style.display = 'block';
-      clearTimeout(this._radioHideT);
-      this._radioHideT = setTimeout(() => { box.style.display = 'none'; }, 5200);
-
-      if (this.voiceOn && 'speechSynthesis' in window) {
+    playRadioChatter(sender, textKo, priority = false, speak = true) {
+      if (this.ctx) {
+        const now = this.ctx.currentTime;
+        const squelch = (t0, dur) => {
+          const src = this.ctx.createBufferSource(); src.buffer = this.noiseBuf;
+          const bp = this.ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1850; bp.Q.value = 2.8;
+          const g = this.ctx.createGain();
+          g.gain.setValueAtTime(0.16, t0); g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+          src.connect(bp); bp.connect(g); g.connect(this.sfxBus);
+          src.start(t0); src.stop(t0 + dur + 0.02);
+        };
+        const rogerBeep = (t0, f1, f2) => {
+          const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+          o.type = 'sine'; o.frequency.setValueAtTime(f1, t0); o.frequency.setValueAtTime(f2, t0 + 0.055);
+          g.gain.setValueAtTime(0.15, t0); g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.12);
+          o.connect(g); g.connect(this.sfxBus); o.start(t0); o.stop(t0 + 0.13);
+        };
+        squelch(now, 0.12); rogerBeep(now + 0.05, 1320, 1760);
+      }
+      if (window.__pushRadio) window.__pushRadio(sender, textKo, priority);
+      const hdr = document.getElementById('radio-sender');
+      if (hdr) hdr.textContent = sender;
+      if (speak && this.voiceOn && 'speechSynthesis' in window) {
         try {
           if (priority) window.speechSynthesis.cancel();
           if (!window.speechSynthesis.speaking) {
             const u = new SpeechSynthesisUtterance(textKo);
-            u.lang = 'ko-KR'; u.rate = 1.15; u.pitch = 0.85; u.volume = Math.min(1, this.sfxVol);
+            u.lang = 'ko-KR'; u.rate = 1.12; u.pitch = 0.85; u.volume = Math.min(1, this.sfxVol * 0.9);
             window.speechSynthesis.speak(u);
           }
         } catch (_) {}
@@ -625,65 +730,125 @@
   // ============================================================================
   const wrap = document.getElementById('canvas-wrap');
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x1b293d);
-  scene.fog = new THREE.FogExp2(0x1f2d40, 0.0021);
+  scene.background = new THREE.Color(0x9fb6c8);
+  scene.fog = new THREE.Fog(0xc3d0da, 105, 690);
 
-  const camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.2, 950);
+  const camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.2, 1400);
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.22;
+  renderer.toneMappingExposure = 1.06;
   wrap.appendChild(renderer.domElement);
 
-  // Sky Dome Gradient (Dramatic Dusk Tactical Sky)
+  // ---------------------------------------------------------------------------
+  // Natural terrain height field (gentle rolling ground, flat along the roads)
+  // ---------------------------------------------------------------------------
+  function terrainHeight(x, z) {
+    let h = Math.sin(x * 0.0113) * Math.cos(z * 0.0097) * 1.75
+          + Math.sin(x * 0.0267 + 1.7) * Math.sin(z * 0.0229 - 0.6) * 0.62
+          + Math.sin((x + z) * 0.0051 + 2.1) * 1.15;
+    const flatA = Math.min(1, Math.abs(x) / 17);       // road running north-south
+    const flatB = Math.min(1, Math.abs(z + 15) / 16);   // road running east-west
+    const detail = Math.min(1, Math.hypot(x, z + 15) / 60);
+    return h * Math.min(flatA, flatB) * (0.35 + detail * 0.65);
+  }
+
   function makeSkyTex() {
-    const c = document.createElement('canvas'); c.width = 512; c.height = 256;
+    const c = document.createElement('canvas'); c.width = 2048; c.height = 1024;
     const ctx = c.getContext('2d');
-    const g = ctx.createLinearGradient(0, 0, 0, 256);
-    g.addColorStop(0.0, '#0a1628');
-    g.addColorStop(0.42, '#1d3557');
-    g.addColorStop(0.70, '#4a607a');
-    g.addColorStop(0.86, '#c27d55');
-    g.addColorStop(1.0, '#2a2d34');
-    ctx.fillStyle = g; ctx.fillRect(0, 0, 512, 256);
-    // Subtle clouds
-    for (let i = 0; i < 45; i++) {
-      ctx.fillStyle = `rgba(255, 224, 195, ${0.04 + Math.random()*0.07})`;
-      ctx.beginPath();
-      ctx.ellipse(Math.random()*512, 115 + Math.random()*75, 28 + Math.random()*55, 6 + Math.random()*12, 0, 0, Math.PI*2);
-      ctx.fill();
+    const g = ctx.createLinearGradient(0, 0, 0, 1024);
+    g.addColorStop(0.00, '#2b5f9e');
+    g.addColorStop(0.20, '#4c82b8');
+    g.addColorStop(0.42, '#8cb4d4');
+    g.addColorStop(0.58, '#c3cfd4');
+    g.addColorStop(0.66, '#e2d2b4');
+    g.addColorStop(0.74, '#d8c2a0');
+    g.addColorStop(1.00, '#8d8a7c');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, 2048, 1024);
+
+    // Sun glow (matches the directional light azimuth) + soft disc
+    const sx = 1360, sy = 430;
+    const sg = ctx.createRadialGradient(sx, sy, 8, sx, sy, 330);
+    sg.addColorStop(0, 'rgba(255,246,214,0.95)');
+    sg.addColorStop(0.12, 'rgba(255,235,180,0.55)');
+    sg.addColorStop(0.45, 'rgba(255,224,164,0.18)');
+    sg.addColorStop(1, 'rgba(255,224,164,0)');
+    ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(sx, sy, 330, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,251,235,0.92)'; ctx.beginPath(); ctx.arc(sx, sy, 26, 0, Math.PI * 2); ctx.fill();
+
+    // Layered fair-weather clouds
+    const puff = (cx, cy, rx, ry, alpha, tint) => {
+      const rg = ctx.createRadialGradient(cx, cy, 1, cx, cy, rx);
+      rg.addColorStop(0, `rgba(${tint},${alpha})`);
+      rg.addColorStop(0.55, `rgba(${tint},${alpha * 0.55})`);
+      rg.addColorStop(1, `rgba(${tint},0)`);
+      ctx.save(); ctx.translate(cx, cy); ctx.scale(1, ry / rx); ctx.translate(-cx, -cy);
+      ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(cx, cy, rx, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    };
+    for (let b = 0; b < 7; b++) {
+      const baseY = 210 + b * 62;
+      const count = 5 + (b % 3);
+      for (let i = 0; i < count; i++) {
+        const cx = ((i / count) * 2048 + b * 137 + Math.random() * 190) % 2048;
+        const cy = baseY + (Math.random() - 0.5) * 46;
+        const rx = 120 + Math.random() * 210, ry = 26 + Math.random() * 46;
+        const warm = cy > 520;
+        puff(cx, cy + 10, rx * 1.15, ry * 1.2, warm ? 0.10 : 0.13, warm ? '255,238,214' : '236,244,252');
+        puff(cx, cy, rx, ry, warm ? 0.30 : 0.42, warm ? '255,247,232' : '252,254,255');
+        puff(cx - rx * 0.25, cy - ry * 0.35, rx * 0.62, ry * 0.72, 0.35, '255,255,255');
+      }
     }
-    return new THREE.CanvasTexture(c);
+    // Haze band at the horizon
+    const hz = ctx.createLinearGradient(0, 640, 0, 780);
+    hz.addColorStop(0, 'rgba(226,214,190,0)');
+    hz.addColorStop(0.6, 'rgba(226,214,190,0.34)');
+    hz.addColorStop(1, 'rgba(200,196,180,0.55)');
+    ctx.fillStyle = hz; ctx.fillRect(0, 640, 2048, 140);
+
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
   }
   const skyDome = new THREE.Mesh(
-    new THREE.SphereGeometry(480, 24, 16),
-    new THREE.MeshBasicMaterial({ map: makeSkyTex(), side: THREE.BackSide, fog: false })
+    new THREE.SphereGeometry(760, 48, 32),
+    new THREE.MeshBasicMaterial({ map: makeSkyTex(), side: THREE.BackSide, fog: false, depthWrite: false })
   );
   scene.add(skyDome);
+  scene.background = null;
 
-  // Realistic Ground Texture (Soil, Grass patches, Gravel, Tire/Tank Ruts)
+  // Neutral high-frequency ground detail (vertex colors carry the hue)
   function makeGroundTex() {
     const c = document.createElement('canvas'); c.width = 512; c.height = 512;
     const ctx = c.getContext('2d');
-    ctx.fillStyle = '#3d392e'; ctx.fillRect(0, 0, 512, 512);
-    // Organic patches
-    for (let i = 0; i < 180; i++) {
-      ctx.fillStyle = i % 3 === 0 ? 'rgba(62, 76, 48, 0.28)' : (i % 3 === 1 ? 'rgba(84, 72, 54, 0.25)' : 'rgba(34, 31, 26, 0.25)');
+    ctx.fillStyle = '#c9c9c9'; ctx.fillRect(0, 0, 512, 512);
+    for (let i = 0; i < 2600; i++) {
+      const v = 150 + Math.random() * 105;
+      ctx.fillStyle = `rgba(${v},${v},${v},0.5)`;
       ctx.beginPath();
-      ctx.arc(Math.random()*512, Math.random()*512, 12 + Math.random()*36, 0, Math.PI*2);
+      ctx.arc(Math.random() * 512, Math.random() * 512, 2 + Math.random() * 12, 0, Math.PI * 2);
       ctx.fill();
     }
-    // Fine grit & pebbles
-    for (let i = 0; i < 9000; i++) {
-      ctx.fillStyle = Math.random() > 0.5 ? 'rgba(120,108,88,0.26)' : 'rgba(18,16,14,0.3)';
-      ctx.fillRect(Math.random()*512, Math.random()*512, Math.random()*2.5+0.8, Math.random()*2.5+0.8);
+    for (let i = 0; i < 16000; i++) {
+      const v = Math.random() > 0.5 ? 235 : 130;
+      ctx.fillStyle = `rgba(${v},${v},${v},0.30)`;
+      ctx.fillRect(Math.random() * 512, Math.random() * 512, Math.random() * 2.2 + 0.6, Math.random() * 2.2 + 0.6);
     }
-    const tex = new THREE.CanvasTexture(c); tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(32, 32);
+    // dry grass streaks
+    for (let i = 0; i < 900; i++) {
+      ctx.strokeStyle = `rgba(${215 + Math.random() * 40},${215 + Math.random() * 30},${180 + Math.random() * 40},0.22)`;
+      ctx.lineWidth = 1;
+      const x = Math.random() * 512, y = Math.random() * 512;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + (Math.random() - 0.5) * 7, y - 3 - Math.random() * 7); ctx.stroke();
+    }
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(120, 120);
+    tex.colorSpace = THREE.SRGBColorSpace;
     return tex;
   }
+  const groundDetailTex = makeGroundTex();
 
   // Procedural Military Camouflage + Panel Lines + Rivets Texture
   function makeArmorTex(palette, isDigital = true) {
@@ -742,50 +907,191 @@
   const texBossCamo   = makeArmorTex(['#4b2323', '#331717', '#612d25', '#1f1616'], false);
   const texConcrete   = makeConcreteTex();
 
-  // Lighting (Warm Sun + Cool Sky Hemisphere + Rim)
-  scene.add(new THREE.HemisphereLight(0x9bc4f2, 0x453b2c, 0.95));
-  const sun = new THREE.DirectionalLight(0xffd7a8, 2.15);
-  sun.position.set(130, 155, -95); sun.castShadow = true;
+  // ---------------------------------------------------------------------------
+  // Natural daylight: warm low sun + cool sky fill + soft ambient bounce
+  // ---------------------------------------------------------------------------
+  scene.add(new THREE.HemisphereLight(0xbfd8f2, 0x6b5c42, 0.85));
+  scene.add(new THREE.AmbientLight(0x8fa6b8, 0.28));
+  const sun = new THREE.DirectionalLight(0xffe6c2, 2.35);
+  sun.position.set(132, 148, -96); sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
-  sun.shadow.camera.left = -220; sun.shadow.camera.right = 220; sun.shadow.camera.top = 220; sun.shadow.camera.bottom = -220;
-  sun.shadow.bias = -0.0005;
+  sun.shadow.camera.left = -190; sun.shadow.camera.right = 190; sun.shadow.camera.top = 190; sun.shadow.camera.bottom = -190;
+  sun.shadow.camera.near = 20; sun.shadow.camera.far = 520;
+  sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.35;
   scene.add(sun);
+  scene.add(sun.target);
+  const sunFill = new THREE.DirectionalLight(0xa8c8ea, 0.42);
+  sunFill.position.set(-120, 70, 120); scene.add(sunFill);
 
+  // ---------------------------------------------------------------------------
+  // Rolling terrain with grass / dry grass / soil / rock vertex blending
+  // ---------------------------------------------------------------------------
+  const groundGeo = new THREE.PlaneGeometry(900, 900, 148, 148);
+  groundGeo.rotateX(-Math.PI / 2);
+  {
+    const pos = groundGeo.attributes.position;
+    const colArr = new Float32Array(pos.count * 3);
+    const cGrass = new THREE.Color(0x62713f), cDry = new THREE.Color(0x86814f),
+          cDirt = new THREE.Color(0x6f5c41), cRock = new THREE.Color(0x807b6d);
+    const tmpC = new THREE.Color();
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i), z = pos.getZ(i);
+      const h = terrainHeight(x, z);
+      pos.setY(i, h);
+      const n1 = (Math.sin(x * 0.048 + 1.3) * Math.cos(z * 0.043 - 0.4)
+                + Math.sin(x * 0.016 - 2.1) * 0.7 + Math.sin(z * 0.021 + 0.9) * 0.6) / 2.3;
+      const n2 = Math.sin(x * 0.115 + z * 0.091);
+      tmpC.copy(cGrass).lerp(cDirt, Math.max(0, Math.min(1, n1 * 0.62 + 0.30)));
+      tmpC.lerp(cDry, Math.max(0, Math.min(0.55, n2 * 0.3 + 0.16)));
+      if (h > 2.2) tmpC.lerp(cRock, Math.min(0.45, (h - 2.2) * 0.22));
+      colArr[i * 3] = tmpC.r; colArr[i * 3 + 1] = tmpC.g; colArr[i * 3 + 2] = tmpC.b;
+    }
+    groundGeo.setAttribute('color', new THREE.BufferAttribute(colArr, 3));
+    groundGeo.computeVertexNormals();
+  }
   const ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(820, 820),
-    new THREE.MeshStandardMaterial({ map: makeGroundTex(), roughness: 0.94, metalness: 0.04 })
+    groundGeo,
+    new THREE.MeshStandardMaterial({ map: groundDetailTex, vertexColors: true, roughness: 0.97, metalness: 0.02 })
   );
-  ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+  ground.receiveShadow = true; scene.add(ground);
 
-  // Asphalt Tactical Roads (Crossroads + Perimeter Loop)
-  const roadMat = new THREE.MeshStandardMaterial({ color: 0x2c2f33, roughness: 0.92 });
-  const stripeMat = new THREE.MeshBasicMaterial({ color: 0xd4b259 });
+  // Asphalt tactical roads with gravel shoulders (laid on the flattened corridors)
+  const roadMat = new THREE.MeshStandardMaterial({ color: 0x3a3d41, roughness: 0.95, metalness: 0.04 });
+  const shoulderMat = new THREE.MeshStandardMaterial({ color: 0x7a6f5a, roughness: 0.98 });
+  const stripeMat = new THREE.MeshBasicMaterial({ color: 0xd8bd77 });
   function addRoad(x, z, w, l, rotY = 0) {
+    const sh = new THREE.Mesh(new THREE.PlaneGeometry(w + 4.5, l), shoulderMat);
+    sh.rotation.x = -Math.PI / 2; sh.rotation.z = rotY; sh.position.set(x, 0.02, z); sh.receiveShadow = true; scene.add(sh);
     const r = new THREE.Mesh(new THREE.PlaneGeometry(w, l), roadMat);
-    r.rotation.x = -Math.PI / 2; r.rotation.z = rotY; r.position.set(x, 0.04, z); r.receiveShadow = true; scene.add(r);
+    r.rotation.x = -Math.PI / 2; r.rotation.z = rotY; r.position.set(x, 0.035, z); r.receiveShadow = true; scene.add(r);
     const dashes = Math.floor(l / 14);
     for (let i = 0; i < dashes; i++) {
-      const d = new THREE.Mesh(new THREE.PlaneGeometry(0.32, 5.5), stripeMat);
+      const d = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 5.5), stripeMat);
       d.rotation.x = -Math.PI / 2;
-      const off = -l/2 + i*14 + 7;
-      d.position.set(x + Math.sin(rotY)*off, 0.06, z + Math.cos(rotY)*off);
+      const off = -l / 2 + i * 14 + 7;
+      d.position.set(x + Math.sin(rotY) * off, 0.05, z + Math.cos(rotY) * off);
       d.rotation.z = rotY; scene.add(d);
     }
   }
-  addRoad(0, -10, 13, 360, 0);
-  addRoad(0, -15, 11, 360, Math.PI / 2);
+  addRoad(0, -10, 13, 380, 0);
+  addRoad(0, -15, 11, 380, Math.PI / 2);
 
-  // Layered Mountain Ridge Ring
-  for (let i = 0; i < 44; i++) {
-    const ang = (i / 44) * Math.PI * 2 + (i % 2) * 0.04;
-    const dist = 325 + (i % 3) * 32;
-    const h = 38 + (i * 17 % 52), r = 42 + (i * 11 % 30);
+  // ---------------------------------------------------------------------------
+  // Grass tufts & low scrub (instanced, one draw call each)
+  // ---------------------------------------------------------------------------
+  function makeBladeTex() {
+    const c = document.createElement('canvas'); c.width = 128; c.height = 96;
+    const ctx = c.getContext('2d'); ctx.clearRect(0, 0, 128, 96);
+    for (let i = 0; i < 46; i++) {
+      const x = 8 + Math.random() * 112, hgt = 34 + Math.random() * 58;
+      const g = ctx.createLinearGradient(0, 96, 0, 96 - hgt);
+      g.addColorStop(0, 'rgba(74,88,44,0.85)');
+      g.addColorStop(0.6, 'rgba(112,128,62,0.95)');
+      g.addColorStop(1, 'rgba(160,168,96,0.85)');
+      ctx.strokeStyle = g; ctx.lineWidth = 1.6 + Math.random() * 1.6; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(x, 96); ctx.quadraticCurveTo(x + (Math.random() - 0.5) * 16, 96 - hgt * 0.6, x + (Math.random() - 0.5) * 26, 96 - hgt); ctx.stroke();
+    }
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+  }
+  function makeCrossedBladeGeo() {
+    const g = new THREE.BufferGeometry();
+    const w = 1.5, h = 0.95;
+    const verts = [], uvs = [], idx = [];
+    const quads = [
+      [[-w / 2, 0, 0], [w / 2, 0, 0], [w / 2, h, 0], [-w / 2, h, 0]],
+      [[0, 0, -w / 2], [0, 0, w / 2], [0, h, w / 2], [0, h, -w / 2]]
+    ];
+    quads.forEach((q, qi) => {
+      q.forEach(v => verts.push(v[0], v[1], v[2]));
+      uvs.push(0, 0, 1, 0, 1, 1, 0, 1);
+      const o = qi * 4; idx.push(o, o + 1, o + 2, o, o + 2, o + 3);
+    });
+    g.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+    g.setIndex(idx); g.computeVertexNormals();
+    return g;
+  }
+  {
+    const grassGeo = makeCrossedBladeGeo();
+    const grassMat = new THREE.MeshStandardMaterial({
+      map: makeBladeTex(), transparent: true, alphaTest: 0.3, side: THREE.DoubleSide,
+      roughness: 0.95, metalness: 0, color: 0xb9c48c, depthWrite: true
+    });
+    const COUNT = 1500;
+    const inst = new THREE.InstancedMesh(grassGeo, grassMat, COUNT);
+    inst.instanceMatrix.setUsage(THREE.StaticDrawUsage);
+    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), s = new THREE.Vector3(), p = new THREE.Vector3();
+    let placed = 0, guard = 0;
+    while (placed < COUNT && guard < COUNT * 8) {
+      guard++;
+      const x = (Math.random() - 0.5) * 480, z = (Math.random() - 0.5) * 440 - 10;
+      if (Math.abs(x) < 9 || Math.abs(z + 15) < 9) continue;          // keep asphalt clear
+      const h = terrainHeight(x, z);
+      e.set(0, Math.random() * Math.PI, (Math.random() - 0.5) * 0.12);
+      q.setFromEuler(e);
+      const sc = 0.75 + Math.random() * 1.1;
+      s.set(sc, sc * (0.8 + Math.random() * 0.6), sc);
+      p.set(x, h - 0.05, z);
+      m4.compose(p, q, s); inst.setMatrixAt(placed++, m4);
+    }
+    inst.count = placed;
+    inst.receiveShadow = true;
+    scene.add(inst);
+  }
+  {
+    const bushGeo = new THREE.IcosahedronGeometry(1, 0);
+    const bushMat = new THREE.MeshStandardMaterial({ color: 0x4d5c33, roughness: 0.95, flatShading: true });
+    const COUNT = 150;
+    const inst = new THREE.InstancedMesh(bushGeo, bushMat, COUNT);
+    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), s = new THREE.Vector3(), p = new THREE.Vector3();
+    let placed = 0, guard = 0;
+    while (placed < COUNT && guard < COUNT * 8) {
+      guard++;
+      const x = (Math.random() - 0.5) * 430, z = (Math.random() - 0.5) * 400 - 10;
+      if (Math.abs(x) < 12 || Math.abs(z + 15) < 11) continue;
+      if (Math.hypot(x, z - 82) < 26) continue;
+      e.set(Math.random(), Math.random() * Math.PI, Math.random() * 0.4);
+      q.setFromEuler(e);
+      const sc = 0.7 + Math.random() * 1.5;
+      s.set(sc * 1.25, sc * 0.72, sc * 1.1);
+      p.set(x, terrainHeight(x, z) + sc * 0.32, z);
+      m4.compose(p, q, s); inst.setMatrixAt(placed++, m4);
+    }
+    inst.count = placed; inst.castShadow = true; inst.receiveShadow = true;
+    scene.add(inst);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Layered mountain ridge ring + distant tree line for a natural horizon
+  // ---------------------------------------------------------------------------
+  const ridgeCols = [0x51603f, 0x47563c, 0x3d4c36, 0x5a6650];
+  for (let i = 0; i < 56; i++) {
+    const ang = (i / 56) * Math.PI * 2 + (i % 2) * 0.03;
+    const dist = 292 + (i % 4) * 26;
+    const hh = 34 + (i * 19 % 58), rr = 40 + (i * 13 % 32);
     const mtn = new THREE.Mesh(
-      new THREE.ConeGeometry(r, h, 7),
-      new THREE.MeshStandardMaterial({ color: i % 2 === 0 ? 0x222d3d : 0x2b3644, roughness: 0.98, flatShading: true })
+      new THREE.ConeGeometry(rr, hh, 8, 1),
+      new THREE.MeshStandardMaterial({ color: ridgeCols[i % ridgeCols.length], roughness: 1, flatShading: true })
     );
-    mtn.position.set(Math.cos(ang)*dist, h/2 - 2, Math.sin(ang)*dist);
+    mtn.position.set(Math.cos(ang) * dist, hh / 2 - 6, Math.sin(ang) * dist);
     mtn.rotation.y = i * 1.1; scene.add(mtn);
+  }
+  {
+    const treeGeo = new THREE.ConeGeometry(2.6, 9.5, 6);
+    const treeMat = new THREE.MeshStandardMaterial({ color: 0x35452f, roughness: 1, flatShading: true });
+    const COUNT = 260;
+    const inst = new THREE.InstancedMesh(treeGeo, treeMat, COUNT);
+    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), s = new THREE.Vector3(), p = new THREE.Vector3();
+    for (let i = 0; i < COUNT; i++) {
+      const ang = Math.random() * Math.PI * 2, dist = 175 + Math.random() * 105;
+      const x = Math.cos(ang) * dist, z = Math.sin(ang) * dist - 10;
+      const sc = 0.7 + Math.random() * 1.5;
+      e.set(0, Math.random() * Math.PI, 0); q.setFromEuler(e);
+      s.set(sc, sc * (0.9 + Math.random() * 0.5), sc);
+      p.set(x, terrainHeight(x, z) + 4.2 * sc, z);
+      m4.compose(p, q, s); inst.setMatrixAt(i, m4);
+    }
+    scene.add(inst);
   }
 
   // ============================================================================
@@ -809,39 +1115,52 @@
     const wheels = [];
     const scale = isBoss ? 1.14 : (isPlayer ? 1.05 : 0.98);
     hullGrp.scale.setScalar(scale);
+    const trackMat = new THREE.MeshStandardMaterial({ color: 0x22242a, roughness: 0.88, metalness: 0.42 });
 
-    // Main Lower & Upper Hull
+    // Main lower & upper hull
     const mainHull = new THREE.Mesh(new THREE.BoxGeometry(3.55, 1.02, 6.9), armorMat);
     mainHull.position.set(0, 1.05, 0.1); mainHull.castShadow = true; mainHull.receiveShadow = true;
     hullGrp.add(mainHull);
 
-    // Sloped Front Glacis Plate (경사 전면 복합장갑)
-    const glacis = new THREE.Mesh(new THREE.BoxGeometry(3.50, 0.48, 1.85), armorMat);
-    glacis.position.set(0, 1.18, -3.55); glacis.rotation.x = 0.48; glacis.castShadow = true;
+    // Sloped front glacis plate (경사 전면 복합장갑)
+    const glacis = new THREE.Mesh(new THREE.BoxGeometry(3.50, 0.48, 1.95), armorMat);
+    glacis.position.set(0, 1.20, -3.52); glacis.rotation.x = 0.48; glacis.castShadow = true;
     hullGrp.add(glacis);
 
-    // Lower Front Plate
+    // Lower front plate + driver's hatch & periscopes
     const lfp = new THREE.Mesh(new THREE.BoxGeometry(3.48, 0.52, 0.95), accentMat);
     lfp.position.set(0, 0.68, -3.62); lfp.rotation.x = -0.52;
     hullGrp.add(lfp);
+    const drvHatch = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.38, 0.10, 10), accentMat);
+    drvHatch.position.set(-0.62, 1.44, -3.12); drvHatch.rotation.x = 0.48; hullGrp.add(drvHatch);
+    [-0.28, 0.0, 0.28].forEach(px => {
+      const per = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.10, 0.14), matGunMetal);
+      per.position.set(-0.62 + px, 1.52, -3.20); per.rotation.x = 0.48; hullGrp.add(per);
+    });
+    // Two tow hooks on the nose
+    [-1.15, 1.15].forEach(hx => {
+      const hook = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.045, 5, 10), matSteel);
+      hook.position.set(hx, 0.72, -4.02); hook.rotation.y = Math.PI / 2; hullGrp.add(hook);
+    });
 
-    // Front ERA Reactive Armor Bricks (반응장갑 타일 배열)
+    // Front ERA reactive armor bricks (반응장갑 타일 배열)
     const eraM = isEnemy ? matEnemyERA : matERA;
     for (let i = -3; i <= 3; i++) {
       const brick = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.14, 0.55), eraM);
-      brick.position.set(i * 0.47, 1.38, -3.45); brick.rotation.x = 0.48;
+      brick.position.set(i * 0.47, 1.40, -3.44); brick.rotation.x = 0.48;
       hullGrp.add(brick);
     }
+    // Spare track links strapped to the glacis
+    const spareLinks = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.09, 0.62), trackMat);
+    spareLinks.position.set(0.62, 1.60, -3.10); spareLinks.rotation.x = 0.48; hullGrp.add(spareLinks);
 
-    // Rear Engine Deck & Cooling Louvers (후면 엔진 방열 그릴)
+    // Rear engine deck, cooling louvers, twin exhausts
     const deck = new THREE.Mesh(new THREE.BoxGeometry(2.9, 0.14, 2.3), accentMat);
     deck.position.set(0, 1.60, 2.25); hullGrp.add(deck);
     for (let g = 0; g < 6; g++) {
       const slat = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.06, 0.16), matRubber);
       slat.position.set(0, 1.68, 1.35 + g * 0.34); hullGrp.add(slat);
     }
-
-    // Twin Rear Exhausts + External Fuel Drums (예비 연료 드럼)
     [-1.1, 1.1].forEach(ex => {
       const muff = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.7, 8), matGunMetal);
       muff.rotation.x = Math.PI / 2; muff.position.set(ex, 1.25, 3.65); hullGrp.add(muff);
@@ -851,24 +1170,37 @@
       }
     });
 
-    // Headlights & Taillights
+    // Headlights, taillights, convoy marker
     [-1.42, 1.42].forEach(lx => {
       const hl = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.16, 0.12), matHeadlight);
-      hl.position.set(lx, 1.34, -3.88); hullGrp.add(hl);
+      hl.position.set(lx, 1.36, -3.86); hullGrp.add(hl);
       const tl = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.12, 0.08), matTaillight);
       tl.position.set(lx, 1.35, 3.58); hullGrp.add(tl);
     });
 
-    // Tracks, Armored Side Skirts & 14 Rotating Road Wheels!
+    // Fender stowage boxes, tow cables, mud flaps
+    [-1.62, 1.62].forEach(sx => {
+      const box = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.42, 1.9), accentMat);
+      box.position.set(sx, 1.48, 1.55); box.castShadow = true; hullGrp.add(box);
+      const cable = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 3.4, 5), matSteel);
+      cable.rotation.x = Math.PI / 2; cable.position.set(sx + (sx > 0 ? -0.34 : 0.34), 1.66, -0.4); hullGrp.add(cable);
+      const flap = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.42, 0.10), matRubber);
+      flap.position.set(sx, 0.86, 3.62); flap.rotation.x = 0.16; hullGrp.add(flap);
+    });
+
+    // Tracks, armored side skirts & rotating road wheels
     const wheelCount = isPlayer ? 7 : 6;
     [-1.92, 1.92].forEach(sideX => {
-      // Track Belt Top & Bottom
       const trTop = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.14, 7.6), matRubber);
       trTop.position.set(sideX, 1.00, 0); hullGrp.add(trTop);
       const trBot = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.14, 6.7), matRubber);
       trBot.position.set(sideX, 0.09, 0); hullGrp.add(trBot);
-
-      // Armored Side Skirt (사이드 스커트 반응장갑)
+      // visible track links on the top run
+      for (let t = 0; t < 8; t++) {
+        const link = new THREE.Mesh(new THREE.BoxGeometry(0.70, 0.06, 0.52), trackMat);
+        link.position.set(sideX, 1.09, -3.15 + t * 0.9); hullGrp.add(link);
+      }
+      // Armored side skirt (사이드 스커트 반응장갑)
       const skirt = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.62, 7.4), armorMat);
       skirt.position.set(sideX + (sideX > 0 ? 0.34 : -0.34), 1.08, 0); skirt.castShadow = true;
       hullGrp.add(skirt);
@@ -877,8 +1209,7 @@
         eraS.position.set(sideX + (sideX > 0 ? 0.43 : -0.43), 1.12, -2.5 + s * 1.25);
         hullGrp.add(eraS);
       }
-
-      // Rotating Road Wheels
+      // Rotating road wheels + return rollers
       for (let w = 0; w < wheelCount; w++) {
         const wz = -2.95 + (w / (wheelCount - 1)) * 5.9;
         const wGrp = new THREE.Group();
@@ -887,6 +1218,10 @@
         wGrp.add(new THREE.Mesh(wheelRimGeo, matSteel));
         hullGrp.add(wGrp);
         wheels.push(wGrp);
+      }
+      for (let r = 0; r < 2; r++) {
+        const roller = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.5, 10), matSteel);
+        roller.rotation.z = Math.PI / 2; roller.position.set(sideX, 1.02, -1.6 + r * 3.2); hullGrp.add(roller);
       }
     });
 
@@ -899,40 +1234,79 @@
   const playerRoot = new THREE.Group(); playerRoot.position.set(0, 0, 82); scene.add(playerRoot);
   const playerHullPivot = new THREE.Group(); playerRoot.add(playerHullPivot); // Suspension pitch/roll pivot
 
-  const pHullMat = new THREE.MeshStandardMaterial({ map: texPlayerCamo, roughness: 0.48, metalness: 0.42 });
-  const pAccent  = new THREE.MeshStandardMaterial({ color: 0x1e2c33, roughness: 0.45, metalness: 0.65 });
+  const pHullMat = new THREE.MeshStandardMaterial({ map: texPlayerCamo, roughness: 0.52, metalness: 0.38 });
+  const pAccent  = new THREE.MeshStandardMaterial({ color: 0x1e2c33, roughness: 0.48, metalness: 0.62 });
   const pGlow    = new THREE.MeshBasicMaterial({ color: 0x22d3ee });
   const pGold    = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.28, metalness: 0.85 });
+  const pCanvas  = new THREE.MeshStandardMaterial({ color: 0x5a5b46, roughness: 0.95, metalness: 0.05 });
 
   const playerWheels = buildRealisticTankChassis(playerHullPivot, pHullMat, pAccent, true, false, false);
 
-  // Player Angular K2-Style Composite Turret
+  // Player angular K2-style composite turret
   const playerTurret = new THREE.Group(); playerTurret.position.set(0, 1.66, 0.05); playerHullPivot.add(playerTurret);
   const tBase = new THREE.Mesh(new THREE.BoxGeometry(3.15, 0.88, 3.8), pHullMat);
   tBase.position.set(0, 0.48, 0.35); tBase.castShadow = true; playerTurret.add(tBase);
-  // Sloped Cheek Armor (쐐기형 전면 포탑 장갑)
+  // Sloped cheek armor (쐐기형 전면 포탑 장갑)
   [-0.88, 0.88].forEach(cx => {
     const cheek = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.84, 1.35), pHullMat);
     cheek.position.set(cx, 0.46, -1.65); cheek.rotation.y = cx > 0 ? -0.36 : 0.36; cheek.castShadow = true;
     playerTurret.add(cheek);
+    // turret cheek ERA tiles
+    for (let e = 0; e < 3; e++) {
+      const brick = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.52, 0.28), matERA);
+      brick.position.set(cx + (cx > 0 ? 0.52 : -0.52), 0.52, -1.35 - e * 0.42);
+      brick.rotation.y = cx > 0 ? -0.36 : 0.36; playerTurret.add(brick);
+    }
   });
-  // Rear Bustle Ammo Rack + Stowage Basket
+  // Rear bustle ammo rack + canvas stowage + turret basket cage
   const bustle = new THREE.Mesh(new THREE.BoxGeometry(2.85, 0.72, 1.45), pAccent);
   bustle.position.set(0, 0.56, 2.75); bustle.castShadow = true; playerTurret.add(bustle);
-  // Commander Hatch + KCPS Panoramic Sight + Twin Whip Antennas
-  const hatch = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.48, 0.16, 12), pAccent);
-  hatch.position.set(0.78, 0.96, 0.45); playerTurret.add(hatch);
+  const canvasRoll = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 2.5, 8), pCanvas);
+  canvasRoll.rotation.z = Math.PI / 2; canvasRoll.position.set(0, 1.02, 2.85); playerTurret.add(canvasRoll);
+  {
+    const basket = new THREE.Group(); basket.position.set(0, 0.30, 3.35); playerTurret.add(basket);
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.95, 0.045, 6, 18), matSteel);
+    rim.rotation.x = Math.PI / 2; basket.add(rim);
+    const rim2 = rim.clone(); rim2.position.y = -0.55; basket.add(rim2);
+    for (let b = 0; b < 8; b++) {
+      const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.56, 4), matSteel);
+      const a = (b / 8) * Math.PI * 2;
+      bar.position.set(Math.cos(a) * 0.95, -0.28, Math.sin(a) * 0.95); basket.add(bar);
+    }
+  }
+  // Commander cupola + hatch + periscopes + roof MG
+  const cupola = new THREE.Group(); cupola.position.set(-0.72, 0.92, 0.55); playerTurret.add(cupola);
+  cupola.add(new THREE.Mesh(new THREE.CylinderGeometry(0.44, 0.47, 0.26, 12), pAccent));
+  const cupLid = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.07, 12), pHullMat);
+  cupLid.position.y = 0.16; cupola.add(cupLid);
+  for (let pz = 0; pz < 6; pz++) {
+    const per = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.09, 0.16), matGlass);
+    const a = (pz / 6) * Math.PI * 2;
+    per.position.set(Math.cos(a) * 0.44, 0.03, Math.sin(a) * 0.44); per.rotation.y = -a; cupola.add(per);
+  }
+  const mountArm = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.5, 6), matSteel);
+  mountArm.position.set(0, 0.32, 0); cupola.add(mountArm);
+  const roofMG = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.07, 1.5, 8), matGunMetal);
+  roofMG.rotation.x = Math.PI / 2; roofMG.position.set(0, 0.58, -0.55); cupola.add(roofMG);
+  const mgBox = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.22, 0.5), pAccent);
+  mgBox.position.set(0, 0.52, 0.06); cupola.add(mgBox);
+
+  // Gunner sight + panoramic sight + laser warning receivers
   const sight = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 0.45, 10), pAccent);
   sight.position.set(0.85, 1.12, -0.55); playerTurret.add(sight);
   const lens = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.14, 0.08), matGlass);
   lens.position.set(0.85, 1.18, -0.78); playerTurret.add(lens);
+  [-1.0, 1.0].forEach(wx => {
+    const lwr = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.16, 0.1), matGlass);
+    lwr.position.set(wx, 0.88, -1.30); playerTurret.add(lwr);
+  });
 
   const playerAntennas = [];
   [-1.25, 1.25].forEach(ax => {
     const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.03, 3.1, 6), matSteel);
     ant.position.set(ax, 2.35, 2.65); playerTurret.add(ant); playerAntennas.push(ant);
   });
-  // Smoke Grenade Launchers (좌우 3연장)
+  // Smoke grenade launchers (좌우 3연장)
   [-1.65, 1.65].forEach(sx => {
     for (let k = 0; k < 3; k++) {
       const sg = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.34, 6), matGunMetal);
@@ -941,40 +1315,48 @@
     }
   });
 
-  // RCWS / CIWS Turret
+  // RCWS / CIWS turret
   const ciwsTurret = new THREE.Group(); ciwsTurret.position.set(-0.92, 1.12, 0.85);
   ciwsTurret.add(new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.38, 0.42, 10), pAccent));
   const ciwsEmitter = new THREE.Mesh(new THREE.SphereGeometry(0.20, 8, 8), new THREE.MeshBasicMaterial({ color: 0x34d399 }));
   ciwsEmitter.position.y = 0.32; ciwsTurret.add(ciwsEmitter); playerTurret.add(ciwsTurret);
 
-  // 4-Tube Guided Missile Pod
+  // 4-Tube guided missile pod
   const missilePod = new THREE.Group(); missilePod.position.set(1.98, 0.82, 0.65); missilePod.rotation.x = 0.28;
   missilePod.add(new THREE.Mesh(new THREE.BoxGeometry(0.88, 0.68, 1.85), pAccent));
-  [[-0.2,0.14],[0.2,0.14],[-0.2,-0.14],[0.2,-0.14]].forEach(([mx,my]) => {
+  [[-0.2, 0.14], [0.2, 0.14], [-0.2, -0.14], [0.2, -0.14]].forEach(([mx, my]) => {
     const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 1.92, 8), matGunMetal);
     tube.rotation.x = Math.PI / 2; tube.position.set(mx, my, 0); missilePod.add(tube);
   });
   playerTurret.add(missilePod);
 
-  // Main Sonic Rail-Cannon Gun Assembly (배연기 + 공진코일 + 포구제퇴기)
+  // Main sonic rail-cannon assembly (포방패 + 배연기 + 공진코일 + 포구제퇴기)
   const gunPivot = new THREE.Group(); gunPivot.position.set(0, 0.50, -1.85); playerTurret.add(gunPivot);
   const mantlet = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.64, 0.75), pAccent);
   gunPivot.add(mantlet);
+  const mantletCover = new THREE.Mesh(new THREE.BoxGeometry(1.16, 0.30, 0.28), pCanvas);
+  mantletCover.position.set(0, 0.24, 0.34); mantletCover.rotation.x = 0.3; gunPivot.add(mantletCover);
   const barrelGrp = new THREE.Group(); gunPivot.add(barrelGrp);
   const mainBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.135, 0.21, 6.2, 16), matGunMetal);
   mainBarrel.rotation.x = Math.PI / 2; mainBarrel.position.set(0, 0, -3.1); barrelGrp.add(mainBarrel);
-  // Bore Evacuator (배연기)
   const boreEvac = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.95, 14), pAccent);
   boreEvac.rotation.x = Math.PI / 2; boreEvac.position.set(0, 0, -2.55); barrelGrp.add(boreEvac);
-  // Muzzle Brake (포구 제퇴기)
   const muzzleBrake = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.34, 0.62), matSteel);
   muzzleBrake.position.set(0, 0, -6.15); barrelGrp.add(muzzleBrake);
-  // Dual Resonance Rails & 5 Glowing Coils
-  [-0.24, 0.24].forEach(rx => { const r = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.15, 4.6), pGold); r.position.set(rx, 0, -3.2); barrelGrp.add(r); });
-  for (let i = 0; i < 5; i++) { const c = new THREE.Mesh(new THREE.TorusGeometry(0.27, 0.03, 8, 20), pGlow); c.position.set(0, 0, -1.45 - i * 0.86); barrelGrp.add(c); }
+  [-0.24, 0.24].forEach(rx => {
+    const r = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.15, 4.6), pGold);
+    r.position.set(rx, 0, -3.2); barrelGrp.add(r);
+  });
+  for (let i = 0; i < 5; i++) {
+    const c = new THREE.Mesh(new THREE.TorusGeometry(0.27, 0.03, 8, 20), pGlow);
+    c.position.set(0, 0, -1.45 - i * 0.86); barrelGrp.add(c);
+  }
+  // Coaxial machine gun beside the main gun
+  const coax = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.055, 1.1, 8), matGunMetal);
+  coax.rotation.x = Math.PI / 2; coax.position.set(0.42, -0.02, -0.9); gunPivot.add(coax);
 
   const muzzleTip = new THREE.Object3D(); muzzleTip.position.set(0, 0, -6.45); gunPivot.add(muzzleTip);
-  const muzzleLight = new THREE.PointLight(0xffaa44, 0, 48); muzzleTip.add(muzzleLight);
+  const muzzleLight = new THREE.PointLight(0xffb14a, 0, 52, 2); muzzleTip.add(muzzleLight);
   const muzzleCone = new THREE.Mesh(new THREE.ConeGeometry(0.95, 2.8, 10), new THREE.MeshBasicMaterial({ color: 0xffcc55, transparent: true, opacity: 0 }));
   muzzleCone.rotation.x = -Math.PI / 2; muzzleCone.position.set(0, 0, -1.3); muzzleTip.add(muzzleCone);
 
@@ -1003,7 +1385,7 @@
   // 1) Acoustic Reflector Array Towers (음향 공진 반사탑) & Reinforced Tactical Bunkers
   function addStructure(x, z, w, h, d, rotY, isRefl) {
     const grp = new THREE.Group();
-    grp.position.set(x, 0, z); grp.rotation.y = rotY;
+    grp.position.set(x, terrainHeight(x, z), z); grp.rotation.y = rotY;
     scene.add(grp);
 
     const colMesh = new THREE.Mesh(
@@ -1060,7 +1442,7 @@
 
   // 2) Rotating Military Radar Stations (회전 레이더 기지)
   function addRadarStation(x, z) {
-    const g = new THREE.Group(); g.position.set(x, 0, z); scene.add(g);
+    const g = new THREE.Group(); g.position.set(x, terrainHeight(x, z), z); scene.add(g);
     const base = new THREE.Mesh(new THREE.BoxGeometry(7.5, 4.2, 7.5), matConcreteWall);
     base.position.y = 2.1; base.castShadow = true; base.receiveShadow = true; g.add(base);
     const tower = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.8, 6.5, 8), matSteelTruss);
@@ -1080,7 +1462,7 @@
 
   // 3) Military Watchtowers & Supply Containers (감시초소 & 군용 컨테이너)
   function addWatchtower(x, z) {
-    const g = new THREE.Group(); g.position.set(x, 0, z); scene.add(g);
+    const g = new THREE.Group(); g.position.set(x, terrainHeight(x, z), z); scene.add(g);
     [[-1.6,-1.6],[1.6,-1.6],[-1.6,1.6],[1.6,1.6]].forEach(([lx,lz]) => {
       const leg = new THREE.Mesh(new THREE.BoxGeometry(0.28, 9.5, 0.28), matSteelTruss);
       leg.position.set(lx, 4.75, lz); leg.castShadow = true; g.add(leg);
@@ -1096,7 +1478,7 @@
 
   function addContainer(x, z, rotY, alt = false) {
     const c = new THREE.Mesh(new THREE.BoxGeometry(3.2, 3.0, 8.2), alt ? matContainer2 : matContainer1);
-    c.position.set(x, 1.5, z); c.rotation.y = rotY; c.castShadow = true; c.receiveShadow = true; scene.add(c);
+    c.position.set(x, terrainHeight(x, z) + 1.5, z); c.rotation.y = rotY; c.castShadow = true; c.receiveShadow = true; scene.add(c);
     c.userData = { isReflector: false, w: 3.2, d: 8.2, radius: 4.5 };
     obstacles.push(c);
   }
@@ -1105,7 +1487,7 @@
 
   // 4) Czech Hedgehog Anti-Tank Obstacles (대전차 철골 장애물)
   function addHedgehog(x, z) {
-    const g = new THREE.Group(); g.position.set(x, 0.95, z); scene.add(g);
+    const g = new THREE.Group(); g.position.set(x, terrainHeight(x, z) + 0.95, z); scene.add(g);
     [[0,0,0.65],[0,0,-0.65],[0.65,0,0]].forEach(([rx,ry,rz]) => {
       const beam = new THREE.Mesh(new THREE.BoxGeometry(0.22, 2.6, 0.22), matSteelTruss);
       beam.rotation.set(rx, ry, rz); beam.castShadow = true; g.add(beam);
@@ -1115,7 +1497,7 @@
 
   // 5) Detailed Pine Forests & Rock Outcrops (소나무 숲 & 바위 군락)
   function addPineTree(x, z, s = 1.0) {
-    const g = new THREE.Group(); g.position.set(x, 0, z); g.scale.setScalar(s);
+    const g = new THREE.Group(); g.position.set(x, terrainHeight(x, z), z); g.scale.setScalar(s);
     const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.36, 3.4, 7), matPineBark);
     trunk.position.y = 1.7; trunk.castShadow = true; g.add(trunk);
     const c1 = new THREE.Mesh(new THREE.ConeGeometry(2.4, 4.4, 7), matPineLeaf1); c1.position.y = 4.6; c1.castShadow = true; g.add(c1);
@@ -1124,7 +1506,7 @@
     scene.add(g);
   }
   function addRockCluster(x, z, s = 1.0) {
-    const g = new THREE.Group(); g.position.set(x, 0, z);
+    const g = new THREE.Group(); g.position.set(x, terrainHeight(x, z), z);
     for (let k = 0; k < 3; k++) {
       const r = new THREE.Mesh(new THREE.DodecahedronGeometry((1.2 + k * 0.55) * s, 0), matRock);
       r.position.set((k - 1) * 1.4 * s, (0.6 + k * 0.25) * s, (k % 2 - 0.5) * 1.3 * s);
@@ -1175,77 +1557,267 @@
   }
   function attachFire(anchor, offset, intensity = 1.0) { if (activeFires.length < 28) activeFires.push({ anchor, offset: offset.clone(), timer: 0, intensity }); }
 
+  // ============================================================================
+  // 6-b. GUN FX + BATTLEFIELD RADIO NET (아군 콜사인 실시간 무전 교신)
+  // ============================================================================
+  const muzzleFlashes = [];
+  let lastGunSoundT = 0;
+  function spawnMuzzleFlash(pos, dir, scale = 1) {
+    const flash = new THREE.Mesh(geoSphere, new THREE.MeshBasicMaterial({ color: 0xffdd88, transparent: true, opacity: 0.95 }));
+    flash.position.copy(pos); flash.scale.setScalar(0.85 * scale); scene.add(flash);
+    muzzleFlashes.push({ mesh: flash, life: 0.13, maxLife: 0.13, scale });
+    for (let i = 0; i < 7; i++) {
+      spawnParticle(pos.clone(),
+        dir.clone().multiplyScalar(8 + Math.random() * 16).add(new THREE.Vector3((Math.random() - 0.5) * 3, Math.random() * 2.4, (Math.random() - 0.5) * 3)),
+        0xc8c2b2, (0.5 + Math.random() * 0.5) * scale, 1.0 + Math.random() * 0.9, 2.4, 0.5, 0.55);
+    }
+    for (let i = 0; i < 4; i++) {
+      spawnParticle(pos.clone().add(new THREE.Vector3(0, -1.1, 0)),
+        new THREE.Vector3((Math.random() - 0.5) * 5, 1.1, (Math.random() - 0.5) * 5),
+        0x8b7f68, 0.75 * scale, 0.85, 2.1, -1.3, 0.34);
+    }
+  }
+  function unitFire(u) {
+    u.recoil = 0.85;
+    const wp = new THREE.Vector3(); u.muzzleTip.getWorldPosition(wp);
+    const wq = new THREE.Quaternion(); u.muzzleTip.getWorldQuaternion(wq);
+    const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(wq).normalize();
+    spawnMuzzleFlash(wp, dir, u.isBoss ? 1.35 : 1.0);
+    const d = wp.distanceTo(playerRoot.position);
+    const nowS = performance.now() / 1000;
+    if (d < 170 && nowS - lastGunSoundT > 0.22) {
+      lastGunSoundT = nowS;
+      audio.play120mm();
+      if (d < 45) state.screenShake = Math.max(state.screenShake, 0.18);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Tactical radio net: call signs talk to each other about what they see
+  // ---------------------------------------------------------------------------
+  function pushRadioLog(sender, text, prio) {
+    const log = document.getElementById('radio-log');
+    if (!log) return;
+    const row = document.createElement('div');
+    row.className = 'rl' + (prio ? ' prio' : '');
+    const cs = document.createElement('span'); cs.className = 'rl-cs'; cs.textContent = sender;
+    const tx = document.createElement('span'); tx.className = 'rl-tx'; tx.textContent = text;
+    row.appendChild(cs); row.appendChild(tx);
+    log.appendChild(row);
+    while (log.children.length > 6) log.removeChild(log.firstChild);
+  }
+  window.__pushRadio = (sender, text, prio) => pushRadioLog(sender, text, prio);
+
+  setTimeout(() => pushRadioLog('본부', '전 부대, 무전 점검. 이상 무. 대기 상태 유지.', false), 900);
+  const comms = {
+    queue: [], timer: 1.2, ambient: 9, said: new Map(), voiceGap: 0,
+    say(sender, text, opt = {}) {
+      const now = performance.now() / 1000;
+      const last = this.said.get(text);
+      if (last && now - last < 40) return;
+      this.said.set(text, now);
+      if (this.queue.length > 4) return;
+      this.queue.push({ sender, text, prio: !!opt.prio, voice: opt.voice !== false });
+    },
+    allyCs(i) { return `${i + 1}호차`; },
+    randomAllyCs() { const n = allies.filter(a => a.state === 'active').length; return n > 0 ? `${1 + Math.floor(Math.random() * n)}호차` : '1호차'; },
+    update(dt) {
+      this.timer -= dt; this.voiceGap -= dt;
+      if (this.timer <= 0 && this.queue.length) {
+        const m = this.queue.shift();
+        this.timer = m.prio ? 4.2 : 3.3;
+        audio.playRadioChatter(m.sender, m.text, m.prio, m.voice && this.voiceGap <= 0);
+        if (m.voice) this.voiceGap = 6.5;
+      }
+      this.ambient -= dt;
+      if (this.ambient <= 0) {
+        this.ambient = 16 + Math.random() * 14;
+        if (state.running && enemies.filter(e => e.state === 'active').length > 0) {
+          const pool = [
+            ['본부', '전 부대, 적 포성 뜸하다. 재장전 중으로 판단, 기동 기회 확보.'],
+            ['항공정찰', '본부, 항공정찰. 적 후방 보급로 차량 4대 북측 이동 중.'],
+            ['2호차', '연료 70%, 탄약 충분. 계속 기동 가능.'],
+            ['본부', '전 부대, 도로 축선 확보 유지. 측면 경계 철저.'],
+            ['3호차', '본부, 시야 확보. 현재 표적 없음.'],
+            ['정비반', '전차대, 궤도 장력 정상. 이상 무.'],
+            ['1호차', '본부, 좌측 능선에 적 기갑 열상 접촉. 계속 감시 중.'],
+            ['본부', '전 부대, 아군 전차 손실 최소화. 엄폐 기동 유지.']
+          ];
+          const pick = pool[Math.floor(Math.random() * pool.length)];
+          this.say(pick[0], pick[1]);
+        }
+      }
+    }
+  };
+  function callFireMission() {
+    const alive = enemies.filter(e => e.state === 'active');
+    if (!alive.length) return;
+    const tgt = alive[Math.floor(Math.random() * alive.length)];
+    comms.say('1호차', '포병지원, 1호차. 적 전차 집결지 좌표 송신. 사격 요청!', { prio: true });
+    setTimeout(() => {
+      if (!state.running) return;
+      comms.say('포병지원', '요청 확인. 155mm 집속탄 사격 개시!', { prio: true });
+      const base = tgt.root.position.clone();
+      for (let i = 0; i < 3; i++) {
+        setTimeout(() => {
+          if (!state.running) return;
+          const p = base.clone().add(new THREE.Vector3((Math.random() - 0.5) * 16, 0.6, (Math.random() - 0.5) * 16));
+          p.y = terrainHeight(p.x, p.z) + 0.6;
+          spawnExplosion(p, true);
+          enemies.forEach(e => { if (e.state === 'active' && e.root.position.distanceTo(p) < 9) damageTank(e, 42, 12, false); });
+        }, 900 + i * 780);
+      }
+      setTimeout(() => comms.say('1호차', '포병지원, 명중! 적 진지에 명중탄 확인!', { prio: true }), 3600);
+    }, 2400);
+  }
+
   function createTankUnit(isAlly, cfg) {
     const root = new THREE.Group(); root.position.set(cfg.x, 0, cfg.z);
     const hullGrp = new THREE.Group(); root.add(hullGrp);
     const armorMat = new THREE.MeshStandardMaterial({
       map: isAlly ? texAllyCamo : (cfg.isBoss ? texBossCamo : texEnemyCamo),
-      roughness: 0.56, metalness: 0.36
+      roughness: 0.58, metalness: 0.34
     });
-    const accentMat = new THREE.MeshStandardMaterial({ color: isAlly ? 0x1e2c36 : 0x262622, roughness: 0.55, metalness: 0.55 });
+    const accentMat = new THREE.MeshStandardMaterial({ color: isAlly ? 0x1e2c36 : 0x262622, roughness: 0.55, metalness: 0.52 });
     const wheels = buildRealisticTankChassis(hullGrp, armorMat, accentMat, false, !isAlly, !!cfg.isBoss);
+    const scl = cfg.isBoss ? 1.14 : 0.98;
 
-    // IFF Tactical Beacon (compact tactical transponder)
+    // IFF tactical beacon
     const beacon = new THREE.Mesh(new THREE.OctahedronGeometry(0.36, 0), new THREE.MeshBasicMaterial({ color: isAlly ? 0x38bdf8 : (cfg.isBoss ? 0xfbbf24 : 0xfb7185) }));
     beacon.position.set(0, 3.65, 0); root.add(beacon);
 
-    // Realistic Turret: K2 Angular for Allies vs T-90M Low-Profile Wedge + Shtora Red Eyes for Enemies
     const turretGrp = new THREE.Group();
-    turretGrp.position.set(0, 1.64 * (cfg.isBoss ? 1.14 : 0.98), 0.15);
+    turretGrp.position.set(0, 1.64 * scl, 0.15);
     root.add(turretGrp);
 
     if (isAlly) {
+      // ---- K2-style angular composite turret ----
       const tBody = new THREE.Mesh(new THREE.BoxGeometry(2.95, 0.82, 3.6), armorMat);
       tBody.position.set(0, 0.44, 0.2); tBody.castShadow = true; turretGrp.add(tBody);
       const tNose = new THREE.Mesh(new THREE.BoxGeometry(2.65, 0.72, 1.25), armorMat);
       tNose.position.set(0, 0.42, -1.75); turretGrp.add(tNose);
-      const gun = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.16, 5.6, 12), matGunMetal);
-      gun.rotation.x = Math.PI / 2; gun.position.set(0, 0.45, -4.1); turretGrp.add(gun);
-      const evac = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.20, 0.8, 10), accentMat);
-      evac.rotation.x = Math.PI / 2; evac.position.set(0, 0.45, -3.4); turretGrp.add(evac);
+      [-0.95, 0.95].forEach(cx => {
+        const cheek = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.70, 1.05), armorMat);
+        cheek.position.set(cx, 0.44, -1.55); cheek.rotation.y = cx > 0 ? -0.34 : 0.34; turretGrp.add(cheek);
+      });
+      const bustle = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.66, 1.2), accentMat);
+      bustle.position.set(0, 0.50, 2.25); bustle.castShadow = true; turretGrp.add(bustle);
+      // turret side ERA
+      [-1.5, 1.5].forEach(sx => {
+        for (let e = 0; e < 3; e++) {
+          const brick = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.46, 0.9), matERA);
+          brick.position.set(sx, 0.44, -0.9 + e * 1.0); turretGrp.add(brick);
+        }
+      });
     } else {
-      // T-90M Proryv Low Sloped Turret
-      const tDome = new THREE.Mesh(new THREE.CylinderGeometry(1.32, 1.88, 0.78, 8), armorMat);
-      tDome.position.set(0, 0.42, 0); tDome.castShadow = true; turretGrp.add(tDome);
-      // Kontakt-5 Wedge ERA Cheeks
+      // ---- T-90M Proryv low sloped turret ----
+      const tDome = new THREE.Mesh(new THREE.CylinderGeometry(1.32, 1.88, 0.82, 8), armorMat);
+      tDome.position.set(0, 0.44, 0); tDome.castShadow = true; turretGrp.add(tDome);
+      const tRoof = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.22, 0.18, 8), accentMat);
+      tRoof.position.set(0, 0.90, 0); turretGrp.add(tRoof);
       [-0.85, 0.85].forEach(wx => {
         const wBlock = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.56, 0.55), matEnemyERA);
         wBlock.position.set(wx, 0.42, 1.55); wBlock.rotation.y = wx > 0 ? 0.42 : -0.42; turretGrp.add(wBlock);
-        // Shtora-1 Infrared Jammer Red Eyes (T-90 시그니처 붉은 눈!)
+        // Shtora-1 infrared jammer red eyes
         const eye = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.22, 0.14), matRedEye);
         eye.position.set(wx * 0.85, 0.50, 1.86); turretGrp.add(eye);
       });
-      // 125mm Smoothbore Barrel + Bore Evacuator
-      const gun = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.17, 5.7, 12), matGunMetal);
-      gun.rotation.x = Math.PI / 2; gun.position.set(0, 0.44, 3.85); turretGrp.add(gun);
-      const evac = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.21, 0.85, 10), accentMat);
-      evac.rotation.x = Math.PI / 2; evac.position.set(0, 0.44, 3.15); turretGrp.add(evac);
-      // Commander MG & Antenna
-      const mg = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 1.4, 6), matGunMetal);
-      mg.rotation.x = Math.PI / 2; mg.position.set(0.65, 1.05, 0.6); turretGrp.add(mg);
-      if (cfg.isBoss) {
-        const bossRadar = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.55, 0.25), matSteel);
-        bossRadar.position.set(0, 1.35, -0.75); turretGrp.add(bossRadar);
+      // Kontakt-5 ERA ring around the turret
+      for (let e = 0; e < 8; e++) {
+        const a = (e / 8) * Math.PI * 2;
+        const er = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.42, 0.24), matEnemyERA);
+        er.position.set(Math.cos(a) * 1.45, 0.46, Math.sin(a) * 1.45);
+        er.rotation.y = -a; turretGrp.add(er);
       }
     }
-    const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.025, 2.5, 5), matSteel);
-    ant.position.set(-1.0, 1.9, isAlly ? 1.5 : -1.2); turretGrp.add(ant);
+
+    // ---- Shared turret fittings (cupola, MG, sights, antennas, smoke, basket) ----
+    const fwd = isAlly ? -1 : 1;   // gun direction along local Z
+    const cupola = new THREE.Group();
+    cupola.position.set(isAlly ? -0.68 : 0.66, 0.92, isAlly ? 0.5 : -0.55);
+    turretGrp.add(cupola);
+    cupola.add(new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.46, 0.26, 12), accentMat));
+    const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.40, 0.40, 0.07, 12), armorMat);
+    lid.position.y = 0.16; cupola.add(lid);
+    for (let pz = 0; pz < 5; pz++) {
+      const per = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.09, 0.15), matGlass);
+      const a = (pz / 5) * Math.PI * 2;
+      per.position.set(Math.cos(a) * 0.42, 0.04, Math.sin(a) * 0.42); per.rotation.y = -a; cupola.add(per);
+    }
+    const mg = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.065, 1.35, 8), matGunMetal);
+    mg.rotation.x = Math.PI / 2; mg.position.set(0, 0.5, fwd * 0.75); cupola.add(mg);
+
+    // Gunner sight housing
+    const sight = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.36, 0.5), accentMat);
+    sight.position.set(isAlly ? 0.66 : -0.66, 0.90, fwd * 0.55); turretGrp.add(sight);
+    const sightLens = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.18, 0.06), matGlass);
+    sightLens.position.set(isAlly ? 0.66 : -0.66, 0.92, fwd * 0.80); turretGrp.add(sightLens);
+
+    // Stowage basket at the turret rear
+    {
+      const basket = new THREE.Group(); basket.position.set(0, 0.34, -fwd * 2.55); turretGrp.add(basket);
+      const rim = new THREE.Mesh(new THREE.TorusGeometry(0.9, 0.04, 5, 16), matSteel);
+      rim.rotation.x = Math.PI / 2; basket.add(rim);
+      const rim2 = rim.clone(); rim2.position.y = -0.5; basket.add(rim2);
+      for (let b = 0; b < 6; b++) {
+        const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.52, 4), matSteel);
+        const a = (b / 6) * Math.PI * 2;
+        bar.position.set(Math.cos(a) * 0.9, -0.25, Math.sin(a) * 0.9); basket.add(bar);
+      }
+    }
+
+    // Smoke grenade launchers
+    [-1.45, 1.45].forEach(sx => {
+      for (let k = 0; k < 3; k++) {
+        const sg = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.3, 6), matGunMetal);
+        sg.rotation.x = 0.75; sg.rotation.z = sx > 0 ? -0.3 : 0.3;
+        sg.position.set(sx, 0.60 + k * 0.04, fwd * (0.7 + k * 0.2)); turretGrp.add(sg);
+      }
+    });
+
+    // Whip antennas
+    const antennas = [];
+    [-0.95, 0.95].forEach(ax => {
+      const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.026, 2.4, 5), matSteel);
+      ant.position.set(ax, 1.75, -fwd * 1.4); turretGrp.add(ant); antennas.push(ant);
+    });
+
+    // ---- Main gun assembly (mantlet + barrel + bore evacuator + muzzle brake) ----
+    const gunGrp = new THREE.Group(); turretGrp.add(gunGrp);
+    const mantlet = new THREE.Mesh(new THREE.BoxGeometry(0.98, 0.62, 0.72), accentMat);
+    mantlet.position.set(0, 0.44, fwd * 1.75); gunGrp.add(mantlet);
+    const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.165, 5.7, 12), matGunMetal);
+    barrel.rotation.x = Math.PI / 2; barrel.position.set(0, 0.44, fwd * 4.0); gunGrp.add(barrel);
+    const evac = new THREE.Mesh(new THREE.CylinderGeometry(0.205, 0.205, 0.85, 10), accentMat);
+    evac.rotation.x = Math.PI / 2; evac.position.set(0, 0.44, fwd * 3.3); gunGrp.add(evac);
+    const muzzleBrake = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.19, 0.42, 10), matSteel);
+    muzzleBrake.rotation.x = Math.PI / 2; muzzleBrake.position.set(0, 0.44, fwd * 6.7); gunGrp.add(muzzleBrake);
+    if (cfg.isBoss) {
+      const bossRadar = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.55, 0.25), matSteel);
+      bossRadar.position.set(0, 1.30, -fwd * 0.75); turretGrp.add(bossRadar);
+    }
+
+    const muzzleTip = new THREE.Object3D();
+    muzzleTip.position.set(0, 0.44, fwd * 7.0);
+    muzzleTip.rotation.y = isAlly ? 0 : Math.PI;
+    gunGrp.add(muzzleTip);
 
     const hitbox = new THREE.Mesh(new THREE.BoxGeometry(5.2, 3.6, 7.8), new THREE.MeshBasicMaterial({ visible: false }));
     hitbox.position.y = 1.6; root.add(hitbox);
     scene.add(root);
 
     const u = {
-      isAlly, name: cfg.name, root, hullGrp, turretGrp, hitbox, armorMat, beacon, wheels,
+      isAlly, name: cfg.name, root, hullGrp, turretGrp, gunGrp, muzzleTip, antennas, hitbox, armorMat, beacon, wheels,
       hullYaw: isAlly ? 0 : Math.PI,
       strafeDir: (Math.random() > 0.5 ? 1 : -1),
       strafeTimer: 2.5 + Math.random() * 4,
-      dustTimer: 0,
+      dustTimer: Math.random() * 0.3,
       baseFreq: (12 * (cfg.rpm || 1350)) / 120,
       hp: cfg.isBoss ? 240 : (isAlly ? 135 : 105),
       maxHp: cfg.isBoss ? 240 : (isAlly ? 135 : 105),
       stress: 0, onFire: false, state: 'active',
-      fireCd: 2 + Math.random() * 4.5, isBoss: !!cfg.isBoss
+      fireCd: 1.4 + Math.random() * 4.5, isBoss: !!cfg.isBoss,
+      recoil: 0, recoilDir: fwd, gunElev: 0, speed: 0, talkTimer: 3 + Math.random() * 8
     };
     hitbox.userData = { unit: u, isEnemyTank: !isAlly };
     if (isAlly) allies.push(u); else enemies.push(u);
@@ -1267,7 +1839,8 @@
     scene.add(root);
     const jet = { name: '적 Su-34 전투폭격기', root, hitbox, vel: new THREE.Vector3(-side*56, 0, (Math.random()-0.5)*10), hp: 75, state: 'active', bombTimer: 1.5, bombsLeft: 3 };
     hitbox.userData = { aircraft: jet }; aircrafts.push(jet);
-    audio.playRadioChatter('CH-02 방공관제소', '경고! 적 Su-34 전투폭격기 편대 저공 공습 진입! 기동 회피 및 CIWS 요격 대기!', true);
+    comms.say('방공관제소', '경고! 적 Su-34 편대 저공 공습 진입! 기동 회피, CIWS 요격 대기!', { prio: true });
+    if (Math.random() < 0.55) setTimeout(() => comms.say('항공정찰', '적 폭격기 편대 3시 방향, 고도 400. 요격 요청!', { voice: false }), 2100);
   }
 
   function spawnDrone() {
@@ -1287,6 +1860,7 @@
     const tgt = (aliveA.length > 0 && Math.random() < 0.45) ? aliveA[Math.floor(Math.random()*aliveA.length)].root : playerRoot;
     const dr = { name: '적 FPV 자폭 드론', root, hitbox, targetRoot: tgt, hp: 25, state: 'active', speed: 24 + Math.random()*8 };
     hitbox.userData = { drone: dr }; drones.push(dr);
+    if (Math.random() < 0.4) comms.say('1호차', '적 자폭드론 다수 접근! 상공 경계!', { voice: false });
   }
 
   function dropBomb(jet) {
@@ -1344,6 +1918,7 @@
     heCd: 0, missileCd: 0, shieldActive: 0, shieldCd: 0, smokeActive: 0, smokeCd: 0,
     recoil: 0, screenShake: 0, jetSpawnTimer: 6, droneSpawnTimer: 3.5,
     lockedObj: null, keys: {},
+    moveX: 0, moveY: 0, terrPitch: 0, terrRoll: 0, lastAimInput: 0, autoAim: true,
   };
 
   window._selectScale = (k) => { state.scaleKey = k; ['platoon','company','division'].forEach(x => document.getElementById(`sc-${x}`).classList.toggle('selected', x===k)); };
@@ -1358,26 +1933,30 @@
   };
   function updateDriveUI() {
     const b = document.getElementById('btn-cruise');
-    b.textContent = `🚜 기동전투 ${state.autoDrive ? 'ON' : 'OFF'} [Q]`;
+    b.innerHTML = `🚜 <span class="lbl">기동전투 ${state.autoDrive ? 'ON' : 'OFF'} [Q]</span>`;
     b.classList.toggle('cruise-on', state.autoDrive);
     document.getElementById('hud-drive-mode').textContent = state.autoDrive ? '[자율기동전투]' : '[수동조종]';
   }
   window._toggleAutoDrive = () => {
     state.autoDrive = !state.autoDrive;
     updateDriveUI();
-    audio.playRadioChatter('CH-01 조종수', state.autoDrive ? '라저! 자율 전술 기동전투 개시! 적 포탄을 회피하며 측면 돌파합니다!' : '수동 조종 전환 완료! WASD로 직접 기동하십시오!');
+    comms.say('조종수', state.autoDrive ? '자율 전술 기동전투 개시! 적 포탄을 회피하며 측면 돌파합니다!' : '수동 조종 전환 완료. 직접 기동하십시오!', { voice: false });
     showBanner(state.autoDrive ? '🚜 연구 4호 자율 기동전투 ON (달리면서 교전!)' : '🎮 수동 주행 모드 (WASD 직접 기동)', '#fbbf24');
   };
   window._toggleAutoDef = () => {
     state.autoDefense = !state.autoDefense;
     const b = document.getElementById('btn-auto-def');
-    b.textContent = `🤖 자동방어 ${state.autoDefense?'ON':'OFF'} [T]`; b.classList.toggle('auto-on', state.autoDefense);
-    audio.playRadioChatter('CH-04 CIWS 방공시스템', state.autoDefense ? '자동 요격 방어망 가동 완료. 드론과 폭탄을 추적합니다.' : '자동 방어 해제. 수동 사격 모드로 전환합니다.');
+    b.innerHTML = `🤖 <span class="lbl">자동방어 ${state.autoDefense?'ON':'OFF'} [T]</span>`; b.classList.toggle('auto-on', state.autoDefense);
+    comms.say('CIWS', state.autoDefense ? '자동 요격 방어망 가동 완료. 드론과 폭탄을 추적합니다.' : '자동 방어 해제. 수동 사격 모드로 전환합니다.', { voice: false });
   };
   window._orderAllies = () => {
     if (!state.running) return;
     state.allyCharge = !state.allyCharge;
-    audio.playRadioChatter('CH-01 아군 기갑중대', state.allyCharge ? '라저 대장님! 전 부대 최대 속력으로 측면 기동 돌격 개시!' : '라저! 아군 전차대 기동 산개 진형으로 전환합니다!', true);
+    comms.say('본부', state.allyCharge ? '전 부대 최대 속력, 측면 기동 돌격 개시!' : '아군 전차대, 기동 산개 진형으로 전환!', { prio: true });
+    if (state.allyCharge) {
+      setTimeout(() => comms.say(comms.randomAllyCs(), '돌격! 측면으로 붙는다!', { voice: false }), 1600);
+      if (Math.random() < 0.6) setTimeout(() => callFireMission(), 9000);
+    }
     showBanner(state.allyCharge ? '📣 전 부대 기동 총돌격 명령 하달!!' : '🛡️ 전 부대 전술 방어 기동 전환', '#38bdf8');
   };
   window._snapTarget = () => {
@@ -1407,7 +1986,7 @@
     state.smokeActive = 4.5; state.smokeCd = 11.0; state.hp = Math.min(100, state.hp + 25);
     document.getElementById('hud-hp').textContent = `${state.hp}%`; document.getElementById('hp-bar').style.width = `${state.hp}%`;
     for (let i = 0; i < 16; i++) { const a=(i/16)*Math.PI*2; spawnParticle(playerRoot.position.clone().add(new THREE.Vector3(Math.cos(a)*5.5, 1.5, Math.sin(a)*5.5)), new THREE.Vector3(Math.cos(a)*3, 1.8, Math.sin(a)*3), 0x94a3b8, 2.2, 3.8, 1.8, 0.2, 0.65); }
-    audio.playRadioChatter('CH-03 정비반', '전술 연막 살포 및 나노봇 장갑 긴급 복구 완료! 내구도 25% 회복!');
+    comms.say('정비반', '전술 연막 살포, 나노봇 장갑 복구 완료. 내구도 25% 회복!', { voice: false });
   };
   window._toggleBigMap = (f) => { state.bigMapOpen = typeof f==='boolean' ? f : !state.bigMapOpen; document.getElementById('big-map-overlay').style.display = state.bigMapOpen?'flex':'none'; if (state.bigMapOpen && document.pointerLockElement) document.exitPointerLock(); };
   window._openSettings = () => { if (document.pointerLockElement) document.exitPointerLock(); document.getElementById('settings-modal').style.display = 'flex'; };
@@ -1415,17 +1994,77 @@
     audio.setVolumes(document.getElementById('sl-bgm').value/100, document.getElementById('sl-sfx').value/100, document.getElementById('chk-voice').checked);
     state.mouseSens = document.getElementById('sl-sens').value * 0.0001;
     const showT = document.getElementById('chk-touch').checked;
-    document.getElementById('touch-pad').style.display = showT ? 'flex' : 'none';
-    document.getElementById('touch-fire').style.display = showT ? 'block' : 'none';
+    document.body.classList.toggle('touch-ui', showT);
     document.getElementById('settings-modal').style.display = 'none';
+  };
+  window._cycleCamera = () => {
+    const order = ['tps', 'fps', 'top'];
+    window._setCameraMode(order[(order.indexOf(state.camMode) + 1) % order.length]);
   };
   window._tKey = (code, down) => { state.keys[code] = !!down; if (down && ['KeyW','KeyA','KeyS','KeyD'].includes(code) && state.autoDrive) { state.autoDrive = false; updateDriveUI(); } };
   window._fireNow = () => firePlayerWeapon();
 
-  if ('ontouchstart' in window) {
-    document.getElementById('touch-pad').style.display = 'flex';
-    document.getElementById('touch-fire').style.display = 'block';
-    document.getElementById('chk-touch').checked = true;
+  // ---------------------------------------------------------------------------
+  // Analog virtual joystick (pointer events → works with finger and mouse)
+  // ---------------------------------------------------------------------------
+  const padEl = document.getElementById('touch-pad');
+  const knobEl = document.getElementById('stick-knob');
+  const stick = { active: false, pointerId: null, maxR: 40 };
+  function stickMove(e) {
+    const r = padEl.getBoundingClientRect();
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    let dx = e.clientX - cx, dy = e.clientY - cy;
+    const len = Math.hypot(dx, dy) || 1;
+    const lim = stick.maxR;
+    if (len > lim) { dx = (dx / len) * lim; dy = (dy / len) * lim; }
+    knobEl.style.transform = `translate(${dx}px, ${dy}px)`;
+    state.moveX = Math.max(-1, Math.min(1, dx / lim));
+    state.moveY = Math.max(-1, Math.min(1, dy / lim));
+    if (Math.hypot(state.moveX, state.moveY) > 0.25 && state.autoDrive) {
+      state.autoDrive = false; updateDriveUI();
+      comms.say('본부', '지휘전차 수동 조종 전환. 조종수, 기동 개시.', { voice: false });
+    }
+  }
+  function stickReset() {
+    stick.active = false; stick.pointerId = null;
+    knobEl.style.transform = 'translate(0px, 0px)';
+    state.moveX = 0; state.moveY = 0;
+  }
+  if (padEl) {
+    padEl.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      stick.active = true; stick.pointerId = e.pointerId;
+      try { padEl.setPointerCapture(e.pointerId); } catch (_) {}
+      stickMove(e);
+    });
+    padEl.addEventListener('pointermove', (e) => { if (stick.active && e.pointerId === stick.pointerId) stickMove(e); });
+    padEl.addEventListener('pointerup', (e) => { if (e.pointerId === stick.pointerId) stickReset(); });
+    padEl.addEventListener('pointercancel', () => stickReset());
+    padEl.addEventListener('lostpointercapture', () => stickReset());
+  }
+  // Fire button with auto-repeat while held
+  const fireBtn = document.getElementById('touch-fire');
+  let fireHeld = false, fireRepeat = null;
+  function startFire(e) {
+    if (e) e.preventDefault();
+    fireHeld = true; firePlayerWeapon();
+    clearInterval(fireRepeat);
+    fireRepeat = setInterval(() => { if (fireHeld) firePlayerWeapon(); else clearInterval(fireRepeat); }, 260);
+  }
+  function stopFire() { fireHeld = false; clearInterval(fireRepeat); fireRepeat = null; }
+  if (fireBtn) {
+    fireBtn.addEventListener('pointerdown', startFire);
+    fireBtn.addEventListener('pointerup', stopFire);
+    fireBtn.addEventListener('pointercancel', stopFire);
+    fireBtn.addEventListener('pointerleave', stopFire);
+  }
+
+  // Touch / coarse-pointer UI activation
+  const coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+  if ('ontouchstart' in window || coarse || window.innerWidth <= 900) {
+    document.body.classList.add('touch-ui');
+    const chk = document.getElementById('chk-touch');
+    if (chk) chk.checked = true;
   }
 
   let bannerT = null;
@@ -1458,7 +2097,10 @@
     }
     state.jetSpawnTimer = 5.5; state.droneSpawnTimer = 3.5;
     updateDriveUI();
-    audio.playRadioChatter('CH-01 작전사령부', `연구 4호 기동전투 엔진 가동! 2축 포탑 안정화 완료. 달리면서 적 기갑부대를 격파하십시오!`, true);
+    comms.queue.length = 0; comms.said.clear(); comms.timer = 1.2;
+    comms.say('본부', '연구 4호 기동전투 엔진 가동! 2축 포탑 안정화 완료. 전 부대 전개하라!', { prio: true });
+    setTimeout(() => comms.say('1호차', '본부, 1호차. 전방 열상 접촉! 적 전차 다수 확인!', { prio: true }), 2400);
+    setTimeout(() => comms.say('본부', '확인. 각 차량 표적 분담, 기동 사격 개시!', { prio: true }), 5600);
   }
 
   // ============================================================================
@@ -1486,6 +2128,12 @@
   function damageTank(u, dmg, stressGain = 0, byPlayer = false) {
     if (u.state !== 'active') return;
     u.hp = Math.max(0, u.hp - dmg); u.stress = Math.min(100, u.stress + stressGain);
+    if (u.isAlly && u.hp > 0 && Math.random() < 0.22) {
+      const idx = allies.indexOf(u);
+      const cs = idx >= 0 ? comms.allyCs(idx) : '아군 전차';
+      comms.say(cs, Math.random() < 0.5 ? '피격! 장갑 손상, 엄호 요청!' : '적 탄 명중! 차체 손상, 수리 필요!', { prio: true });
+      setTimeout(() => comms.say('본부', `확인. ${cs} 후퇴 엄호, 인접 차량 지원 사격!`, { voice: false }), 1800);
+    }
     if (!u.onFire && u.hp <= u.maxHp * 0.55) { u.onFire = true; attachFire(u.root, new THREE.Vector3(0, 1.8, -1.6), 1.0); }
     if ((u.stress >= 100 && !u.isAlly) || u.hp <= 0) {
       const cap = (u.stress >= 100 && u.hp > 0 && !u.isAlly);
@@ -1499,8 +2147,16 @@
       }
       if (!u.isAlly) {
         state.kills++; state.score += byPlayer ? (cap ? 1500 : 1000) : 300;
-        if (byPlayer && state.kills % 2 === 1) audio.playRadioChatter('CH-01 아군 2호차', cap ? '나이스 샷 대장님! 기동 사격으로 적 전차 무손상 나포 확인!' : '기동 명중 확인! 적 T-90M 포탑 완파!');
+        if (byPlayer) {
+          comms.say(comms.randomAllyCs(), cap ? '대장님 나이스 샷! 적 전차 무손상 나포 확인!' : '격파 확인! 적 T-90M 포탑 비산!', { prio: state.kills % 3 === 1 });
+        } else if (Math.random() < 0.4) {
+          comms.say(comms.randomAllyCs(), '협조 사격 격파 확인! 표적 소멸!');
+        }
         if (enemies.every(e => e.state !== 'active')) setTimeout(() => endBattle(true), 1800);
+      } else {
+        const idx = allies.indexOf(u);
+        comms.say(idx >= 0 ? comms.allyCs(idx) : '아군 전차', '차체 관통! 전투불능!', { prio: true });
+        setTimeout(() => comms.say('본부', '손실 확인. 남은 차량, 대형 유지하고 측면 경계!', { voice: false }), 2000);
       }
     }
   }
@@ -1508,7 +2164,7 @@
     if (jet.state !== 'active') return;
     jet.state = 'destroyed'; spawnExplosion(jet.root.position.clone(), true); scene.remove(jet.root);
     state.kills++; state.score += byP ? 2200 : 800;
-    audio.playRadioChatter('CH-02 방공관제소', '확인! 적 Su-34 전투폭격기 격추 성공!', true);
+    comms.say('방공관제소', '확인! 적 Su-34 전투폭격기 격추 성공!', { prio: true });
   }
   function destroyDrone(dr, byCIWS = false) {
     if (dr.state !== 'active') return;
@@ -1521,7 +2177,7 @@
     res.textContent = win ? `🏆 ${SCALES[state.scaleKey].label} 완전 승리!! 격파·나포 ${state.kills} · 자동요격 ${state.intercepted} · 점수 ${state.score.toLocaleString()} PT` : `⚠️ 지휘전차 전투불능! 격파 ${state.kills} · 점수 ${state.score.toLocaleString()} PT`;
     document.getElementById('btn-start').textContent = '🔄 다시 기동전투 출격!';
     document.getElementById('overlay').style.display = 'flex';
-    audio.playRadioChatter('CH-01 작전사령부', win ? '전 전선 기동 제압 완료! 대장님의 지휘로 대승을 거두었습니다!' : '지휘전차 긴급 철수! 재정비 후 반격하십시오!', true);
+    comms.say('본부', win ? '전 전선 기동 제압 완료! 대장님의 지휘로 대승을 거두었습니다!' : '지휘전차 긴급 철수! 재정비 후 반격하십시오!', { prio: true });
   }
 
   function firePlayerWeapon() {
@@ -1571,7 +2227,7 @@
       particles.push({ mesh: r, vel: dir.clone().multiplyScalar(138), life: 0.65, maxLife: 0.65, grow: 4.5, grav: 0 });
     }
     if (locked) {
-      if (locked.type === 'tank') damageTank(locked.obj, 14, 28 * state.comboMult, true);
+      if (locked.type === 'tank') { damageTank(locked.obj, 14, 28 * state.comboMult, true); if (Math.random() < 0.5) comms.say(comms.randomAllyCs(), '지휘전차 명중! 관통 확인!', { voice: false }); }
       else if (locked.type === 'jet') destroyJet(locked.obj, true);
       else if (locked.type === 'drone') destroyDrone(locked.obj, false);
     }
@@ -1604,6 +2260,7 @@
       state.turretYaw -= (e.clientX - state.lastMouseX) * s * 1.4;
       state.gunPitch = Math.max(-0.18, Math.min(0.65, state.gunPitch - (e.clientY - state.lastMouseY) * s * 1.4));
       state.lastMouseX = e.clientX; state.lastMouseY = e.clientY;
+      state.lastAimInput = performance.now();
     }
   });
   renderer.domElement.addEventListener('mousedown', (e) => {
@@ -1622,6 +2279,7 @@
     if (!state.running || !e.touches[0]) return;
     const dx = e.touches[0].clientX - tLastX, dy = e.touches[0].clientY - tLastY;
     state.turretYaw -= dx * 0.005; state.gunPitch = Math.max(-0.18, Math.min(0.65, state.gunPitch - dy * 0.004));
+    state.lastAimInput = performance.now();
     tLastX = e.touches[0].clientX; tLastY = e.touches[0].clientY;
   });
 
@@ -1669,7 +2327,11 @@
   }
   function renderMap(ctx, size, span) {
     ctx.clearRect(0, 0, size, size);
+    ctx.fillStyle = 'rgba(24, 36, 26, 0.88)'; ctx.fillRect(0, 0, size, size);
     const cx = size/2, cy = size/2, sc = size/span;
+    ctx.fillStyle = 'rgba(86, 88, 84, 0.55)';
+    ctx.fillRect(cx + (0 - 6.5 - playerRoot.position.x) * sc, 0, 13 * sc, size);
+    ctx.fillRect(0, cy + (-20.5 - playerRoot.position.z) * sc, size, 11 * sc);
     ctx.strokeStyle = 'rgba(56,189,248,0.14)'; ctx.lineWidth = 1;
     for (let g = size/8; g < size; g += size/8) { ctx.beginPath(); ctx.moveTo(g,0); ctx.lineTo(g,size); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0,g); ctx.lineTo(size,g); ctx.stroke(); }
     const px = playerRoot.position.x, pz = playerRoot.position.z;
@@ -1699,8 +2361,10 @@
       const aliveE = enemies.filter(e=>e.state==='active'), aliveA = allies.filter(a=>a.state==='active');
 
       // --- 1. Player Movement: Autonomous Mobile Combat OR Manual WASD ---
-      let accel = (state.keys['KeyW'] ? 1 : 0) - (state.keys['KeyS'] ? 1 : 0);
-      let turn  = (state.keys['KeyA'] ? 1 : 0) - (state.keys['KeyD'] ? 1 : 0);
+      let accel = (state.keys['KeyW'] ? 1 : 0) - (state.keys['KeyS'] ? 1 : 0) - state.moveY;
+      let turn  = (state.keys['KeyA'] ? 1 : 0) - (state.keys['KeyD'] ? 1 : 0) - state.moveX;
+      accel = Math.max(-1, Math.min(1.25, accel));
+      turn  = Math.max(-1, Math.min(1, turn));
       const boost = state.keys['KeyE'] ? 1.55 : 1.0;
 
       if (state.autoDrive) {
@@ -1749,6 +2413,14 @@
       playerRoot.position.addScaledVector(fwd, state.hullSpeed * dt);
       resolveObstacleCollision(playerRoot.position, 3.6);
       playerRoot.rotation.y = state.hullYaw;
+      // Terrain following + slope pitch/roll
+      playerRoot.position.y = terrainHeight(playerRoot.position.x, playerRoot.position.z);
+      const thA = terrainHeight(playerRoot.position.x + fwd.x * 3.2, playerRoot.position.z + fwd.z * 3.2);
+      const thB = terrainHeight(playerRoot.position.x - fwd.x * 3.2, playerRoot.position.z - fwd.z * 3.2);
+      const thR = terrainHeight(playerRoot.position.x - fwd.z * 2.4, playerRoot.position.z + fwd.x * 2.4);
+      const thL = terrainHeight(playerRoot.position.x + fwd.z * 2.4, playerRoot.position.z - fwd.x * 2.4);
+      state.terrPitch += (Math.atan2(thA - thB, 6.4) - state.terrPitch) * Math.min(1, dt * 6);
+      state.terrRoll  += (Math.atan2(thR - thL, 4.8) - state.terrRoll) * Math.min(1, dt * 6);
 
       // Realistic Tank Suspension Pitch/Roll + Rotating Road Wheels + Whip Antenna Sway + Dust Plume!
       const accelDelta = (state.hullSpeed - prevSpeed) / Math.max(dt, 0.001);
@@ -1756,8 +2428,8 @@
       const targetRoll  = Math.max(-0.07, Math.min(0.07, turn * (state.hullSpeed / 22) * 0.055));
       state.hullPitch += (targetPitch - state.hullPitch) * Math.min(1, dt * 8);
       state.hullRoll  += (targetRoll - state.hullRoll) * Math.min(1, dt * 8);
-      playerHullPivot.rotation.x = state.hullPitch;
-      playerHullPivot.rotation.z = state.hullRoll;
+      playerHullPivot.rotation.x = state.hullPitch + state.terrPitch;
+      playerHullPivot.rotation.z = state.hullRoll + state.terrRoll;
 
       playerWheels.forEach(w => { w.rotation.x -= state.hullSpeed * dt * 2.1; });
       playerAntennas.forEach((a, idx) => { a.rotation.x = Math.min(0.35, Math.abs(state.hullSpeed) * 0.012) + Math.sin(tSec * 7 + idx) * 0.05; });
@@ -1780,6 +2452,24 @@
       if (state.keys['ArrowUp']) state.gunPitch = Math.min(0.65, state.gunPitch + 0.85 * dt);
       if (state.keys['ArrowDown']) state.gunPitch = Math.max(-0.18, state.gunPitch - 0.85 * dt);
 
+      // Touch aim assist: gently track the nearest threat when the gunner is idle
+      if (state.autoAim && document.body.classList.contains('touch-ui') && aliveE.length) {
+        if (performance.now() - state.lastAimInput > 1700) {
+          let best = null, bestD = 240;
+          for (const e of aliveE) {
+            const d = e.root.position.distanceTo(playerRoot.position);
+            if (d < bestD) { bestD = d; best = e; }
+          }
+          if (best) {
+            const v = new THREE.Vector3().subVectors(best.root.position.clone().add(new THREE.Vector3(0, 1.6, 0)), playerRoot.position.clone().add(new THREE.Vector3(0, 2.3, 0)));
+            const wantYaw = Math.atan2(-v.x, -v.z);
+            const diff = wrapAngle(wantYaw - state.turretYaw);
+            if (Math.abs(diff) < 0.7) state.turretYaw += diff * Math.min(1, dt * 1.1);
+            const wantPitch = Math.max(-0.15, Math.min(0.5, Math.atan2(v.y, Math.hypot(v.x, v.z))));
+            state.gunPitch += (wantPitch - state.gunPitch) * Math.min(1, dt * 0.8);
+          }
+        }
+      }
       // 2-Axis Gyro Stabilized Turret & Gun (차체가 회전/흔들려도 포탑 조준 고정!)
       playerTurret.rotation.y = state.turretYaw - state.hullYaw;
       gunPivot.rotation.x = state.gunPitch - state.hullPitch * 0.85;
@@ -1868,19 +2558,34 @@
           al.hullGrp.rotation.y = al.hullYaw;
           al.root.position.addScaledVector(new THREE.Vector3(-Math.sin(al.hullYaw), 0, -Math.cos(al.hullYaw)), spd * dt);
           resolveObstacleCollision(al.root.position, 3.2);
+          al.root.position.y = terrainHeight(al.root.position.x, al.root.position.z);
           al.wheels.forEach(w => { w.rotation.x -= spd * dt * 2.0; });
           al.turretGrp.rotation.y = Math.atan2(-toT.x, -toT.z);
+          const elA = Math.atan2(tgt.root.position.y + 1.4 - al.root.position.y, Math.max(6, dist));
+          al.gunElev += (Math.max(-0.10, Math.min(0.16, elA)) - al.gunElev) * Math.min(1, dt * 4);
+          al.gunGrp.rotation.x = al.gunElev;
+          al.recoil = Math.max(0, al.recoil - 2.6 * dt);
+          al.gunGrp.position.z = -al.recoilDir * al.recoil;
+          al.antennas.forEach((a, ai) => { a.rotation.z = Math.sin(tSec * 5 + ai) * 0.06 * Math.min(1, spd / 6); });
           al.dustTimer -= dt;
           if (al.dustTimer <= 0) { al.dustTimer = 0.22; spawnParticle(al.root.position.clone().add(new THREE.Vector3(0,0.4,0)), new THREE.Vector3(0,1.0,0), 0x8a7e68, 0.5, 0.55, 1.5, -0.5, 0.32); }
 
           al.fireCd -= dt;
           if (al.fireCd <= 0 && dist < 175) {
             al.fireCd = 2.9 + Math.random()*2.3;
+            unitFire(al);
             const sh = new THREE.Mesh(new THREE.SphereGeometry(0.24,6,6), new THREE.MeshBasicMaterial({ color:0x38bdf8 }));
-            sh.position.copy(al.root.position).add(new THREE.Vector3(0,2.2,0)); scene.add(sh);
-            const d = new THREE.Vector3().subVectors(tgt.root.position.clone().add(new THREE.Vector3(0,1.3,0)), sh.position).normalize();
-            d.x += (Math.random()-0.5)*0.05;
-            projectiles.push({ mesh:sh, vel:d.multiplyScalar(96), life:3.0, fromAlly:true, byPlayer:false, dmg:36 });
+            const wpA = new THREE.Vector3(); al.muzzleTip.getWorldPosition(wpA);
+            sh.position.copy(wpA); scene.add(sh);
+            const d = new THREE.Vector3().subVectors(tgt.root.position.clone().add(new THREE.Vector3(0,1.35,0)), wpA).normalize();
+            d.x += (Math.random()-0.5)*0.05; d.y += (Math.random()-0.5)*0.02;
+            projectiles.push({ mesh:sh, vel:d.multiplyScalar(118), life:3.0, fromAlly:true, byPlayer:false, dmg:36 });
+            al.talkTimer -= 3;
+            if (al.talkTimer <= 0) {
+              al.talkTimer = 12 + Math.random()*10;
+              const cs = comms.allyCs(allies.indexOf(al));
+              comms.say(cs, Math.random() < 0.5 ? '발사! 관통을 노린다!' : '포탄 장전, 계속 사격!', { voice: false });
+            }
           }
         }
       });
@@ -1902,17 +2607,26 @@
         en.hullGrp.rotation.y = en.hullYaw + Math.PI;
         en.root.position.addScaledVector(new THREE.Vector3(Math.sin(en.hullYaw), 0, Math.cos(en.hullYaw)), spd * dt);
         resolveObstacleCollision(en.root.position, 3.2);
+        en.root.position.y = terrainHeight(en.root.position.x, en.root.position.z);
         en.wheels.forEach(w => { w.rotation.x += spd * dt * 2.0; });
         en.turretGrp.rotation.y = Math.atan2(toT.x, toT.z);
+        const elE = Math.atan2(near.position.y + 1.4 - en.root.position.y, Math.max(6, minD));
+        en.gunElev += (Math.max(-0.10, Math.min(0.16, -elE)) - en.gunElev) * Math.min(1, dt * 3.4);
+        en.gunGrp.rotation.x = en.gunElev;
+        en.recoil = Math.max(0, en.recoil - 2.4 * dt);
+        en.gunGrp.position.z = -en.recoilDir * en.recoil;
+        en.antennas.forEach((a, ai) => { a.rotation.z = Math.sin(tSec * 4 + ai) * 0.05; });
         en.dustTimer -= dt;
         if (en.dustTimer <= 0) { en.dustTimer = 0.26; spawnParticle(en.root.position.clone().add(new THREE.Vector3(0,0.4,0)), new THREE.Vector3(0,1.0,0), 0x8a7e68, 0.5, 0.55, 1.5, -0.5, 0.30); }
 
         en.fireCd -= dt;
         if (en.fireCd <= 0 && minD < 175) {
           en.fireCd = (en.isBoss?4.6:7.2) + Math.random()*3;
+          unitFire(en);
           const sh = new THREE.Mesh(new THREE.SphereGeometry(0.26,6,6), new THREE.MeshBasicMaterial({ color:0xff3b22 }));
-          sh.position.copy(en.root.position).add(new THREE.Vector3(0,2.2,0)); scene.add(sh);
-          const d = new THREE.Vector3().subVectors(near.position.clone().add(new THREE.Vector3(0,1.3,0)), sh.position).normalize();
+          const wpE = new THREE.Vector3(); en.muzzleTip.getWorldPosition(wpE);
+          sh.position.copy(wpE); scene.add(sh);
+          const d = new THREE.Vector3().subVectors(near.position.clone().add(new THREE.Vector3(0,1.3,0)), wpE).normalize();
           // Moving fast makes enemy shots harder to hit!
           const evadeSpread = (near === playerRoot && Math.abs(state.hullSpeed) > 10) ? 0.11 : 0.055;
           d.x += (Math.random()-0.5)*((near===playerRoot && state.smokeActive>0)?0.35:evadeSpread);
@@ -1986,6 +2700,11 @@
       document.getElementById('hud-def').textContent = state.intercepted;
       document.getElementById('hud-score').textContent = state.score.toLocaleString();
       document.getElementById('hud-freq').textContent = `${state.beamFreq.toFixed(1)} Hz`;
+      const hl = document.getElementById('hud-lock');
+      if (hl) {
+        if (state.lockedObj) { hl.style.display = 'block'; hl.innerHTML = `🎯 <b class="gold">${state.lockedObj.obj.name}</b> · HP <b class="red">${Math.round(state.lockedObj.obj.hp)}</b>`; }
+        else { hl.style.display = 'none'; }
+      }
       const ti = document.getElementById('target-info');
       ti.innerHTML = state.lockedObj
         ? `<strong class="gold">🎯 LOCK: ${state.lockedObj.obj.name}</strong><br>HP: <b class="red">${Math.round(state.lockedObj.obj.hp)}</b> | <kbd>Tab</kbd> 자동 스냅 · <kbd>Q</kbd> 기동전환`
@@ -2004,6 +2723,13 @@
     flyingTurrets.forEach(ft => { ft.vel.y -= 24*dt; ft.mesh.position.addScaledVector(ft.vel, dt); ft.mesh.rotation.x += ft.rotVel.x*dt; ft.mesh.rotation.y += ft.rotVel.y*dt; if (ft.mesh.position.y<0.65) { ft.mesh.position.y=0.65; ft.vel.y*=-0.35; ft.vel.x*=0.65; ft.vel.z*=0.65; } });
     for (let i = shockDomes.length-1; i >= 0; i--) { const sd=shockDomes[i]; sd.life-=dt; if (sd.life<=0) { scene.remove(sd.mesh); shockDomes.splice(i,1); } else { const p=1-sd.life/sd.maxLife; sd.mesh.scale.setScalar(1+p*sd.maxScale); sd.mesh.material.opacity=(1-p)*0.52; } }
     for (let i = particles.length-1; i >= 0; i--) { const pt=particles[i]; pt.life-=dt; if (pt.life<=0) { scene.remove(pt.mesh); particles.splice(i,1); } else { pt.vel.y+=pt.grav*dt; pt.mesh.position.addScaledVector(pt.vel, dt); if (pt.mesh.position.y<0.15 && pt.grav<0) { pt.mesh.position.y=0.15; pt.vel.y*=-0.3; } if (pt.grow) pt.mesh.scale.addScalar(pt.grow*dt); pt.mesh.material.opacity=Math.max(0,(pt.life/pt.maxLife)*0.88); } }
+
+    for (let i = muzzleFlashes.length-1; i >= 0; i--) {
+      const mf = muzzleFlashes[i]; mf.life -= dt;
+      if (mf.life <= 0) { scene.remove(mf.mesh); mf.mesh.material.dispose(); muzzleFlashes.splice(i,1); }
+      else { const k = mf.life / mf.maxLife; mf.mesh.scale.setScalar((1.4 - k) * 1.5 * mf.scale); mf.mesh.material.opacity = k * 0.95; }
+    }
+    if (state.running) comms.update(dt);
 
     drawFFT(tSec);
     renderMap(miniCtx, 210, 290);
