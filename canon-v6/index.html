@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>PROJECT CANON V6.2 — 지휘관 전략·공격 지시 (전차장·대대장·사단장) · 연구 4호</title>
+<title>PROJECT CANON V6.3 — 지휘관 전략·공격 지시 (전차장·대대장·사단장) · 연구 4호</title>
 <style>
   * { box-sizing: border-box; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
   html, body {
@@ -449,7 +449,7 @@
 <div id="hud">
   <!-- 1. Unit status -->
   <div id="hud-status" class="panel">
-    <div class="tag" id="hud-mode-tag">PROJECT CANON V6.2 · 🎖 대대장 · 3개 중대</div>
+    <div class="tag" id="hud-mode-tag">PROJECT CANON V6.3 · 🎖 대대장 · 3개 중대</div>
     <div class="row">
       <span>아군 <strong id="hud-allies" class="cyan">0</strong></span>
       <span>적전차 <strong id="hud-etanks" class="red">0</strong></span>
@@ -554,7 +554,7 @@
 
   <!-- 7. Keyboard hints -->
   <div id="hud-controls" class="panel controls">
-    <div class="tag" style="margin-bottom:3px;">V6.2 지휘관 프로 컨트롤 (계급·전술·공격 지시 + 기동 사격)</div>
+    <div class="tag" style="margin-bottom:3px;">V6.3 지휘관 프로 컨트롤 (계급·전술·공격 지시 + 기동 사격)</div>
     • <kbd>WASD</kbd> 직접 기동 · <kbd>Q</kbd> 자율 기동전투 · <kbd>E</kbd> 터보 · <kbd>Tab</kbd> 표적 락온<br>
     • <kbd>Z</kbd> 쐐기 · <kbd>X</kbd> 횡대 · <kbd>B</kbd> 측면 · <kbd>N</kbd> 집중 화력 · <kbd>H</kbd> 공격 개시<br>
     • <kbd>J</kbd> 집중 포격 · <kbd>K</kbd> 항공 지원(CAS) · <kbd>M</kbd> 지도(클릭=목표 지정) · <kbd>V</kbd> 시점<br>
@@ -582,8 +582,8 @@
 <div id="overlay" class="modal-bg">
   <div class="modal">
     <div id="gift-banner" class="gift-ribbon"></div>
-    <div class="tag">대장님 연구 4호 · V6.2 지휘관 전략·공격 지시 에디션</div>
-    <h1 style="margin:6px 0 8px;">👑 PROJECT CANON V6.2 : 대대장·사단장 지휘전</h1>
+    <div class="tag">대장님 연구 4호 · V6.3 지휘관 전략·공격 지시 에디션</div>
+    <h1 style="margin:6px 0 8px;">👑 PROJECT CANON V6.3 : 대대장·사단장 지휘전</h1>
     <p style="font-size:13px; color:#cbd5e1; line-height:1.55; margin:0 0 8px;">
       <strong>전차장 → 대대장 → 사단장</strong>으로 지휘 계급을 올려 <strong>3개 전차중대·포병대대·기계화 지원·항공 CAS</strong>를 지휘하십시오.
       HUD 지휘소에서 <strong>4가지 전술 태세(쐐기·횡대·측면·집중)</strong>를 바꾸고, <strong>지도/전장을 탭해 목표를 지정</strong>한 뒤 공격 개시·집중 포격·항공 지원을 내릴 수 있습니다.
@@ -614,7 +614,7 @@
     <p style="font-size:12px; color:#fbbf24; margin:0 0 4px;">🎖 아군 편성은 지휘 계급이 결정합니다 — 전차장(1개 소대) · 대대장(3개 중대+포병) · 사단장(전차대대+기계화+포병대대+CAS). 출격 후 HUD 지휘소에서 전환하십시오.</p>
     <p id="modal-result" style="display:none; font-size:15px; font-weight:800;"></p>
     <button id="btn-start" class="btn-start">🚜 기동전투 엔진 가동 &amp; 연구 4호 전면전 출격!</button>
-    <button class="btn-gift-open" onclick="window._openGiftModal()">🎁 친구·지인에게 V6.2 선물하기 (맞춤 HTML 1초 생성)</button>
+    <button class="btn-gift-open" onclick="window._openGiftModal()">🎁 친구·지인에게 V6.3 선물하기 (맞춤 HTML 1초 생성)</button>
   </div>
 </div>
 
@@ -636,14 +636,14 @@
 <div id="gift-modal" class="modal-bg" style="display:none; z-index:75;">
   <div class="modal" style="max-width:520px;">
     <div class="tag">GIFT PACKAGING ENGINE · 1-FILE STANDALONE</div>
-    <h2 style="margin:6px 0 8px;">🎁 V6.2 선물용 맞춤 게임 만들기</h2>
-    <p style="font-size:12.5px; color:#cbd5e1;">받는 분 이름과 메시지를 입력하시면 외부 파일 없이 V6.2 전체가 담긴 단일 HTML 파일이 생성됩니다.</p>
+    <h2 style="margin:6px 0 8px;">🎁 V6.3 선물용 맞춤 게임 만들기</h2>
+    <p style="font-size:12.5px; color:#cbd5e1;">받는 분 이름과 메시지를 입력하시면 외부 파일 없이 V6.3 전체가 담긴 단일 HTML 파일이 생성됩니다.</p>
     <label style="font-size:12px; color:#94a3b8;">보내는 사람</label>
     <input id="gift-from" class="inp" value="대장님">
     <label style="font-size:12px; color:#94a3b8;">받는 사람</label>
     <input id="gift-to" class="inp" placeholder="받는 분 성함 또는 애칭">
     <label style="font-size:12px; color:#94a3b8;">선물 메시지</label>
-    <input id="gift-msg" class="inp" value="직접 기획·업그레이드한 연구 4호 V6.2 지휘관 전략 전차 게임 선물합니다!">
+    <input id="gift-msg" class="inp" value="직접 기획·업그레이드한 연구 4호 V6.3 지휘관 전략 전차 게임 선물합니다!">
     <button class="btn-start" onclick="window._downloadGiftFile()">🎁 맞춤 선물 게임 파일 (.html) 1초 생성</button>
     <button class="hud-btn" style="width:100%; margin-top:8px; padding:9px;" onclick="document.getElementById('gift-modal').style.display='none'">닫기</button>
   </div>
@@ -691,7 +691,7 @@
     a.click();
     URL.revokeObjectURL(a.href);
     document.getElementById('gift-modal').style.display = 'none';
-    showBanner(`🎁 '${meta.to}'님 전용 V6.2 선물 게임 HTML 다운로드 완료!`, '#f472b6');
+    showBanner(`🎁 '${meta.to}'님 전용 V6.3 선물 게임 HTML 다운로드 완료!`, '#f472b6');
   };
 
   // ============================================================================
@@ -2534,7 +2534,7 @@
       if (key === 'battalion') setTimeout(() => comms.say('대대 포병지원반', '대대장 지휘 계통 접속. 155mm 화력 지원 대기.', { prio: true }), 2200);
       if (key === 'division') setTimeout(() => comms.say('사단 포병대대', '사단장 지휘 계통 접속. 포병대대·기계화·CAS 전력 배속 완료.', { prio: true }), 2200);
     } else {
-      document.getElementById('hud-mode-tag').textContent = `PROJECT CANON V6.2 · 🎖 ${R.label} 지휘`;
+      document.getElementById('hud-mode-tag').textContent = `PROJECT CANON V6.3 · 🎖 ${R.label} 지휘`;
     }
   };
 
@@ -2836,7 +2836,7 @@
     state.wavesLeft = R.waves;
     state.jetSpawnTimer = 5.5; state.droneSpawnTimer = 3.5;
     const echelon = R.companies === 1 ? '1개 소대' : `${R.companies}개 중대`;
-    document.getElementById('hud-mode-tag').textContent = `PROJECT CANON V6.2 · 🎖 ${R.label} · ${echelon}`;
+    document.getElementById('hud-mode-tag').textContent = `PROJECT CANON V6.3 · 🎖 ${R.label} · ${echelon}`;
     document.getElementById('hud-echelon').textContent = echelon + (R.ifv ? ' + 기계화' : '');
     updateDriveUI();
     updateCmdUI();
@@ -3208,7 +3208,7 @@
       tpsRigCache = { w: vw, h: vh, d, hh };
     }
     const rig = state.zoom ? { d: 6.6, h: 3.2 } : { d: tpsRigCache.d, h: tpsRigCache.hh };
-    return window.__rigOverride || rig;
+    return window.__rigOverride || rig;   // __rigOverride: 배치 검증용 읽기 전용 훅
   }
 
   function animate(now) {
