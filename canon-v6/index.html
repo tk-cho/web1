@@ -3131,7 +3131,7 @@
     }
     for (let z = Math.ceil(TAC_BASE.minZ / 50) * 50; z <= TAC_BASE.maxZ; z += 50) {
       const [, sy] = w2s(0, z);
-      if (sy < 0 || sy > state.tacH) continue;
+      if (sy < 0 || sy > state.tacH - 36) continue;
       ctx.beginPath(); ctx.moveTo(0, sy); ctx.lineTo(state.tacW, sy); ctx.stroke();
       ctx.fillText(`${z}`, 3, sy - 3);
     }
