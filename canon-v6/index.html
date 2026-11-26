@@ -3186,8 +3186,9 @@
         ctx.fillStyle = col; ctx.fill(); ctx.strokeStyle = 'rgba(4,10,18,0.85)'; ctx.lineWidth = 1; ctx.stroke();
       }
       ctx.restore();
-      if (state.tacZoom >= 1.25 || a.isSupport) {
+      if (a.isSupport || state.tacZoom >= 1.25 || state.tacW >= 700) {
         ctx.fillStyle = 'rgba(226,241,255,0.82)';
+        ctx.font = '700 9.5px Malgun Gothic, sans-serif';
         ctx.fillText(a.name, sx + 7, sy + 3);
       }
     });
