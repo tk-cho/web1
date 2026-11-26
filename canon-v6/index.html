@@ -640,6 +640,10 @@
   }
   @media (max-width: 1000px) and (max-height: 560px) and (orientation: landscape) {
     #btn-cam-tps, #btn-cam-fps, #btn-cam-top, #btn-cam-cmd, .hud-btn.gift-btn { display: none !important; }
+    #hud-status { width: 286px; padding: 3px 7px; }
+    #hud-status .row { font-size: 9px; gap: 5px; }
+    #hud-status .tag { font-size: 8px; }
+    #hud-status .bar-bg { width: 48px; }
     #hud-actions { left: 388px; top: calc(5px + env(safe-area-inset-top, 0px)); width: 366px; height: 32px; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 3px; }
     #hud-weapons { left: 388px; top: calc(40px + env(safe-area-inset-top, 0px)); width: 366px; height: 32px; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 3px; }
     #hud-actions .hud-btn, #hud-weapons .hud-btn { height: 32px; padding: 2px 0 1px; }
