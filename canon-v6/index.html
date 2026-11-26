@@ -335,6 +335,10 @@
   .tm-echel .ec .bar { flex: 1 1 auto; height: 5px; background: rgba(255,255,255,0.13); border-radius: 3px; overflow: hidden; }
   .tm-echel .ec .bar u { display: block; height: 100%; background: linear-gradient(90deg, #0ea5e9, #34d399); }
   .tm-echel .ec b { font-size: 9.5px; color: #e2f1ff; }
+  @media (max-width: 430px) {
+    /* 소형 폰: 지도 캔버스를 조금 줄여 사이드 패널(제대 지시·제대 현황)이 스크롤 없이 들어오게 */
+    .tm-side { max-height: 46% !important; }
+  }
   @media (max-width: 900px) {
     #big-map-overlay { padding: 5px; }
     .tm-head { flex-wrap: wrap; gap: 5px 8px; padding: 5px 8px; }
