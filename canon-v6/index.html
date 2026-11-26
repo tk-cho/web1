@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>PROJECT CANON V6.3 — 지휘관 전략·공격 지시 (전차장·대대장·사단장) · 연구 4호</title>
+<title>PROJECT CANON V6.4 — 차체·포탑 독립 조종 · 전술 지도 · 연구 4호</title>
 <style>
   * { box-sizing: border-box; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
   html, body {
@@ -237,15 +237,93 @@
   .controls { font-size: 11px; color: #94a3b8; line-height: 1.52; max-width: 395px; }
   .controls kbd { background: rgba(56,189,248,0.18); border: 1px solid rgba(56,189,248,0.5); color: #f0f9ff; padding: 1px 5px; border-radius: 3px; font-size: 10px; font-weight: 700; }
 
+  /* ======================= V6.4 TACTICAL MAP (전술 지도) ======================= */
   #big-map-overlay {
-    position: fixed; inset: 0; z-index: 45; display: none;
-    background: rgba(3, 8, 18, 0.82); backdrop-filter: blur(4px);
-    align-items: center; justify-content: center; flex-direction: column;
+    position: fixed; inset: 0; z-index: 46; display: none;
+    background: radial-gradient(circle at 50% 38%, rgba(6, 16, 30, 0.97), rgba(2, 6, 12, 0.995));
+    padding: 8px; box-sizing: border-box;
   }
-  #big-map-canvas {
-    width: 580px; height: 580px; max-width: 92vw; max-height: 74vh;
-    background: #040d1a; border: 2px solid #38bdf8; border-radius: 10px;
+  #big-map-overlay.open { display: flex; }
+  .tm-shell { display: flex; flex-direction: column; width: 100%; height: 100%; min-height: 0; gap: 6px; }
+  .tm-head {
+    display: flex; align-items: center; gap: 10px; flex-wrap: nowrap;
+    padding: 6px 11px; border: 1px solid rgba(56, 189, 248, 0.5); border-left: 3px solid #38bdf8;
+    background: rgba(8, 18, 32, 0.92); border-radius: 8px; flex: 0 0 auto;
   }
+  .tm-title { font-size: 15px; font-weight: 900; color: #e0f2fe; letter-spacing: 0.4px; white-space: nowrap; display: flex; align-items: center; gap: 7px; }
+  .tm-title .sub { font-size: 9.5px; color: #7dd3fc; font-weight: 800; letter-spacing: 1.4px; }
+  .tm-coord { margin-left: auto; font-family: Consolas, 'Courier New', monospace; font-size: 11px; color: #fbbf24; letter-spacing: 0.6px; white-space: nowrap; }
+  .tm-tools { display: flex; gap: 4px; flex: 0 0 auto; }
+  .tm-tools button {
+    background: rgba(12, 26, 44, 0.96); color: #dbeafe; border: 1px solid rgba(96, 178, 226, 0.5);
+    border-radius: 5px; padding: 4px 8px; font-size: 11px; font-weight: 800; cursor: pointer; font-family: inherit;
+  }
+  .tm-tools button:hover { background: rgba(24, 54, 92, 0.96); }
+  .tm-tools button.close { border-color: rgba(251, 113, 133, 0.6); color: #fecdd3; }
+  .tm-body { flex: 1 1 auto; min-height: 0; display: flex; gap: 8px; }
+  .tm-mapwrap {
+    position: relative; flex: 1 1 auto; min-width: 0; min-height: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: #050d18; border: 1px solid rgba(56, 189, 248, 0.45); border-radius: 8px; overflow: hidden;
+  }
+  #big-map-canvas { display: block; touch-action: none; cursor: crosshair; background: #050d18; }
+  .tm-hint { position: absolute; left: 9px; bottom: 6px; font-size: 10px; color: #7dd3fc; opacity: 0.72; pointer-events: none; letter-spacing: 0.2px; }
+  .tm-side { width: 252px; flex: 0 0 252px; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; min-height: 0; }
+  .tm-sec { border: 1px solid rgba(96, 178, 226, 0.34); background: rgba(8, 18, 30, 0.88); border-radius: 7px; padding: 6px 8px; }
+  .tm-sec-t { font-size: 9px; letter-spacing: 1.2px; color: #7dd3fc; font-weight: 800; margin-bottom: 4px; }
+  .tm-row { display: flex; gap: 4px; flex-wrap: wrap; }
+  .tm-row .cb { flex: 1 1 44%; padding: 5px 3px; font-size: 10.5px; }
+  .tm-legend { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 8px; font-size: 10px; color: #cbd5e1; line-height: 1.5; }
+  .tm-legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+  .tm-legend i.tri { width: 0; height: 0; border-radius: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 9px solid #22d3ee; background: none; }
+  .tm-status { font-size: 10.5px; color: #94a3b8; line-height: 1.55; }
+  .tm-status b { color: #fbbf24; }
+  .tm-echel { display: flex; flex-direction: column; gap: 3px; font-size: 10px; color: #cbd5e1; }
+  .tm-echel .ec { display: flex; align-items: center; gap: 6px; }
+  .tm-echel .ec span { width: 46px; flex: 0 0 auto; color: #bae6fd; font-weight: 800; }
+  .tm-echel .ec i { display: inline-block; width: 7px; height: 7px; border-radius: 2px; flex: 0 0 auto; }
+  .tm-echel .ec .bar { flex: 1 1 auto; height: 5px; background: rgba(255,255,255,0.13); border-radius: 3px; overflow: hidden; }
+  .tm-echel .ec .bar u { display: block; height: 100%; background: linear-gradient(90deg, #0ea5e9, #34d399); }
+  .tm-echel .ec b { font-size: 9.5px; color: #e2f1ff; }
+  @media (max-width: 900px) {
+    #big-map-overlay { padding: 5px; }
+    .tm-head { flex-wrap: wrap; gap: 5px 8px; padding: 5px 8px; }
+    .tm-title { font-size: 12.5px; gap: 5px; }
+    .tm-title .sub { display: none; }
+    .tm-coord { font-size: 9.5px; margin-left: 0; }
+    .tm-tools { margin-left: auto; }
+    .tm-tools button { padding: 3px 7px; font-size: 10px; }
+    .tm-body { flex-direction: column; }
+    .tm-side { width: auto; flex: 0 0 auto; max-height: 40%; display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+    .tm-sec { padding: 4px 6px; }
+    .tm-sec-t { font-size: 8.5px; margin-bottom: 3px; }
+    .tm-row .cb { font-size: 9px; padding: 4px 2px; flex: 1 1 46%; }
+    .tm-legend { font-size: 9px; grid-template-columns: 1fr 1fr; }
+    .tm-status { display: none; }
+    .tm-sec.legend-sec { display: none; }
+    .tm-hint { font-size: 9px; }
+  }
+  @media (max-width: 900px) and (max-height: 560px) {
+    .tm-side { width: 218px; flex: 0 0 218px; max-height: none; display: flex; flex-direction: column; gap: 5px; overflow-y: auto; }
+    .tm-sec.legend-sec { display: block; }
+    .tm-legend { grid-template-columns: 1fr; font-size: 8px; gap: 2px; }
+    .tm-row .cb { flex: 1 1 46%; font-size: 8.5px; padding: 3px 2px; }
+    .tm-sec-t { font-size: 8px; margin-bottom: 2px; }
+    .tm-sec { padding: 4px 5px; }
+    .tm-hint { font-size: 8.5px; }
+    .tm-body { flex-direction: row; }
+  }
+
+  /* ======================= V6.4 MILITARY SVG ICONS ======================= */
+  .ic { width: 14px; height: 14px; display: inline-block; vertical-align: -2px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .ic.lg { width: 18px; height: 18px; vertical-align: -3px; }
+  .ic.sm { width: 11.5px; height: 11.5px; vertical-align: -1px; }
+  .hud-btn .ic, .cb .ic { margin-right: 3px; opacity: 0.94; }
+  .hud-btn .ic:only-child, .cb .ic:only-child { margin-right: 0; }
+  .tag .ic { color: #7dd3fc; }
+  #cmd-stance-name .ic, #cmd-obj-info .ic, #compass-box .tag .ic { margin-right: 4px; }
+  #banner-msg .ic { width: 15px; height: 15px; margin-right: 5px; vertical-align: -3px; }
+  .rl-tx .ic { width: 10px; height: 10px; }
 
   /* ======================= TABLET / PHONE LAYOUT ======================= */
   @media (max-width: 900px) {
@@ -358,8 +436,8 @@
     #minimap-box { right: 6px; top: calc(6px + env(safe-area-inset-top, 0px)); padding: 3px; }
     #minimap-canvas { width: 52px; height: 52px; border-radius: 4px; }
     #minimap-box .tag { font-size: 6.5px; letter-spacing: 0; }
-    #hud-actions { left: 388px; width: 372px; top: calc(6px + env(safe-area-inset-top, 0px)); height: 26px; }
-    #hud-weapons { left: 388px; width: 372px; top: calc(36px + env(safe-area-inset-top, 0px)); height: 26px; display: flex; }
+    #hud-actions { left: 388px; width: 356px; top: calc(6px + env(safe-area-inset-top, 0px)); height: 26px; }
+    #hud-weapons { left: 388px; width: 356px; top: calc(36px + env(safe-area-inset-top, 0px)); height: 26px; display: flex; }
     #hud-weapons .hud-btn { min-width: 0; }
     #hud-actions .hud-btn, #hud-weapons .hud-btn { height: 25px; padding: 2px 2px; font-size: 11px; }
     #radio-box {
@@ -409,9 +487,76 @@
     }
     body.touch-ui #hud-fft { display: none; }
   }
+  /* ======================= V6.4 BEARING / AIM ZONE / STAB ======================= */
+  #compass-box {
+    grid-area: 4 / 3 / 5 / 4; justify-self: end; align-self: end;
+    display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 6px 8px 5px;
+  }
+  #compass-canvas { width: 96px; height: 96px; display: block; }
+  #compass-box .cmp-row { font-size: 9px; letter-spacing: 0.6px; color: #7dd3fc; font-weight: 800; white-space: nowrap; }
+  #compass-box .cmp-row b { color: #fbbf24; font-weight: 900; }
+  #hud-bearing { font-size: 10.5px; letter-spacing: 0.3px; color: #bae6fd; font-family: Consolas, 'Courier New', monospace; opacity: 0.9; white-space: nowrap; }
+  #hud-bearing b { color: #22d3ee; } #hud-bearing i { color: #fbbf24; font-style: normal; }
+  #aim-zone {
+    display: none; position: fixed; right: 0; top: 44%; width: 27px; height: 108px;
+    border: 1px dashed rgba(56, 189, 248, 0.42); border-right: none; border-radius: 9px 0 0 9px;
+    background: linear-gradient(270deg, rgba(14, 165, 233, 0.16), rgba(14, 165, 233, 0));
+    pointer-events: none; z-index: 6; align-items: center; justify-content: center;
+  }
+  #aim-zone span { writing-mode: vertical-rl; font-size: 8.5px; letter-spacing: 3px; color: #7dd3fc; opacity: 0.78; font-weight: 800; }
+  body.touch-ui #aim-zone.on { display: flex; }
+  .hud-btn.stab-on { background: rgba(34, 211, 238, 0.26); border-color: #22d3ee; color: #cffafe; }
+  @media (max-width: 900px) {
+    #compass-box { display: none !important; }
+    #hud-bearing, .row.bear { display: none !important; }
+    #aim-zone { top: 44%; height: 92px; width: 22px; }
+    #aim-zone span { font-size: 8px; letter-spacing: 2px; }
+  }
+  @media (max-width: 1000px) and (max-height: 560px) and (orientation: landscape) {
+    #aim-zone { top: 50%; height: 74px; width: 20px; }
+  }
 </style>
 </head>
 <body>
+<!-- ======================= V6.4 MILITARY ICON SPRITE ======================= -->
+<svg width="0" height="0" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true" focusable="false"><defs>
+  <symbol id="i-hull" viewBox="0 0 24 24"><path d="M2.5 13.5h19v4.2h-19z"/><path d="M5 17.7v2.1M9 17.7v2.1M15 17.7v2.1M19 17.7v2.1"/><path d="M4.5 13.5l2-4.2h11l2 4.2"/></symbol>
+  <symbol id="i-turret" viewBox="0 0 24 24"><path d="M7.2 12.6h9.6v5.1H7.2z"/><path d="M12 12.6V7.4"/><path d="M12 8.4h8.6"/><path d="M4.4 17.7v2.4M19.6 17.7v2.4"/></symbol>
+  <symbol id="i-tank" viewBox="0 0 24 24"><path d="M2.5 15h19v3.6h-19z"/><path d="M7.5 15v-4.2h7V15"/><path d="M14.5 12.2h7"/><path d="M5 18.6v1.9M9 18.6v1.9M15 18.6v1.9M19 18.6v1.9"/></symbol>
+  <symbol id="i-gun" viewBox="0 0 24 24"><path d="M12 2.6l3.6 5.4v13.4H8.4V8z"/><path d="M8.4 15.6h7.2M8.4 18.6h7.2"/></symbol>
+  <symbol id="i-missile" viewBox="0 0 24 24"><path d="M12 2.4c2.4 3 3.6 6.8 3.6 10.6H8.4C8.4 9.2 9.6 5.4 12 2.4z"/><path d="M8.4 13l-3.2 4v3.2M15.6 13l3.2 4v3.2"/><path d="M10.4 17.4h3.2v3.4h-3.2z"/></symbol>
+  <symbol id="i-mg" viewBox="0 0 24 24"><path d="M2.6 10.6h11.2v3.2H2.6z"/><path d="M13.8 11.4h7.6M13.8 13.4h4.4"/><path d="M6.4 13.8v4.2M9.8 13.8v4.2"/><circle cx="4.8" cy="12.2" r="0.9"/></symbol>
+  <symbol id="i-sonic" viewBox="0 0 24 24"><path d="M2.4 12h3.1l1.9-5.4 2.9 10.8 2.7-7.4 1.7 3.4h6.9"/><path d="M2.4 17.4h19.2" opacity=".45"/></symbol>
+  <symbol id="i-aim" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6.4"/><path d="M12 1.8v5.4M12 16.8v5.4M1.8 12h5.4M16.8 12h5.4"/><circle cx="12" cy="12" r="1.1"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><path d="M3.4 8.6V3.4h5.2M15.4 3.4h5.2v5.2M20.6 15.4v5.2h-5.2M8.6 20.6H3.4v-5.2"/><circle cx="12" cy="12" r="3.2"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 2.4l8 3.1v6.6c0 4.9-3.4 8.2-8 9.7-4.6-1.5-8-4.8-8-9.7V5.5z"/><path d="M12 7.4v7.2"/></symbol>
+  <symbol id="i-smoke" viewBox="0 0 24 24"><path d="M3.4 15.6c1.6-1.6 3.2-1.6 4.8 0s3.2 1.6 4.8 0 3.2-1.6 4.8 0 2.2 1.2 3 0.4"/><path d="M3.4 10.4c1.6-1.6 3.2-1.6 4.8 0s3.2 1.6 4.8 0 3.2-1.6 4.8 0 2.2 1.2 3 0.4"/><circle cx="17.6" cy="5.4" r="2.2"/></symbol>
+  <symbol id="i-cam-tps" viewBox="0 0 24 24"><path d="M2.6 7.6h11.2v8.8H2.6z"/><path d="M13.8 11l7.6-3.4v9l-7.6-3.4"/></symbol>
+  <symbol id="i-cam-fps" viewBox="0 0 24 24"><path d="M1.8 12s3.8-6.2 10.2-6.2S22.2 12 22.2 12s-3.8 6.2-10.2 6.2S1.8 12 1.8 12z"/><circle cx="12" cy="12" r="2.8"/></symbol>
+  <symbol id="i-cam-top" viewBox="0 0 24 24"><path d="M3.4 3.4h17.2v17.2H3.4z"/><path d="M3.4 12h17.2M12 3.4v17.2"/><circle cx="12" cy="12" r="1.6"/></symbol>
+  <symbol id="i-cam-cmd" viewBox="0 0 24 24"><path d="M2.4 11.8L21.6 3.4l-8.4 19.2-2.9-8.1z"/><path d="M10.3 14.5l4.4-4.5"/></symbol>
+  <symbol id="i-map" viewBox="0 0 24 24"><path d="M2.8 6.2l6.2-2.4 6 2.4 6-2.4v14l-6 2.4-6-2.4-6.2 2.4z"/><path d="M9 3.8v14M15 6.2v14"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.4"/><path d="M12 2.4v3.2M12 18.4v3.2M2.4 12h3.2M18.4 12h3.2M5.2 5.2l2.3 2.3M16.5 16.5l2.3 2.3M18.8 5.2l-2.3 2.3M7.5 16.5l-2.3 2.3"/></symbol>
+  <symbol id="i-gift" viewBox="0 0 24 24"><path d="M3.4 8.2h17.2v4.1H3.4zM4.6 12.3h14.8v8.3H4.6z"/><path d="M12 8.2v12.4"/><path d="M12 8.2C10.6 4.8 9.4 3.2 7.7 3.2 6.3 3.2 5.6 4.2 5.6 5.2c0 1.4 1.4 3 6.4 3zM12 8.2c1.4-3.4 2.6-5 4.3-5 1.4 0 2.1 1 2.1 2 0 1.4-1.4 3-6.4 3z"/></symbol>
+  <symbol id="i-charge" viewBox="0 0 24 24"><path d="M4 20L18.6 5.4"/><path d="M11 4.6h8v8"/><path d="M3.4 12.4l4.2 4.2"/></symbol>
+  <symbol id="i-wedge" viewBox="0 0 24 24"><path d="M12 3.2L21.4 20.4H2.6z"/><path d="M12 9.6v5.2"/></symbol>
+  <symbol id="i-line" viewBox="0 0 24 24"><path d="M2.6 6.6h18.8M2.6 17.4h18.8"/><path d="M7.4 9.6v4.8M16.6 9.6v4.8M12 9.6v4.8"/></symbol>
+  <symbol id="i-flank" viewBox="0 0 24 24"><path d="M3.4 12h9.4"/><path d="M12.8 12c0-4.2 3.4-7.6 7.8-7.6"/><path d="M12.8 12c0 4.2 3.4 7.6 7.8 7.6"/><path d="M17.4 2.2l3.4 2.2-2.6 3M17.4 21.8l3.4-2.2-2.6-3"/></symbol>
+  <symbol id="i-focus" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.6"/><circle cx="12" cy="12" r="4.6"/><circle cx="12" cy="12" r="1.3"/></symbol>
+  <symbol id="i-artillery" viewBox="0 0 24 24"><path d="M3 20.4h18"/><path d="M6.4 18.6l8.2-11.2 3.2 2.4-8.2 11.2z"/><path d="M15.6 4.2c1.4-1.4 3.4-1.4 4.8 0"/><circle cx="7.4" cy="20.4" r="1.8"/><circle cx="15.4" cy="20.4" r="1.8"/></symbol>
+  <symbol id="i-cas" viewBox="0 0 24 24"><path d="M2.2 12.6L21.8 3.6l-9 18.2-1.6-8z"/><path d="M11.2 13.8l4.8-4.8"/></symbol>
+  <symbol id="i-mark" viewBox="0 0 24 24"><path d="M6 21.4V3.4h12l-2.4 4.3L18 12H6"/><circle cx="6" cy="3.4" r="1.1"/></symbol>
+  <symbol id="i-attack" viewBox="0 0 24 24"><path d="M3.4 5.6l7.2 6.4-7.2 6.4"/><path d="M12.4 5.6l7.2 6.4-7.2 6.4"/></symbol>
+  <symbol id="i-rank" viewBox="0 0 24 24"><path d="M12 2.6l2.7 5.7 6.2 0.8-4.5 4.3 1.1 6.2-5.5-3-5.5 3 1.1-6.2L3.1 9.1l6.2-0.8z"/><path d="M6 21.4h12"/></symbol>
+  <symbol id="i-stab" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6.2"/><path d="M12 1.8v3.6M12 18.6v3.6M1.8 12h3.6M18.6 12h3.6"/><path d="M9.4 12.4l1.9 2 3.4-4"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 3.2l9.2 16.4H2.8z"/><path d="M12 8.6v5.2"/><circle cx="12" cy="17" r="0.9"/></symbol>
+  <symbol id="i-radar" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.8"/><circle cx="12" cy="12" r="4.8"/><path d="M12 12l7.2-5.4"/><circle cx="12" cy="12" r="1.1"/></symbol>
+  <symbol id="i-jet" viewBox="0 0 24 24"><path d="M12 2.2l2.2 6.4 7.6 3.4v2.2l-7.6-1v4.2l2.6 2v1.6L12 20.2l-4.8 0.8v-1.6l2.6-2v-4.2l-7.6 1v-2.2l7.6-3.4z"/></symbol>
+  <symbol id="i-drone" viewBox="0 0 24 24"><path d="M8.4 8.4h7.2v7.2H8.4z"/><path d="M8.4 8.4L4.4 4.4M15.6 8.4l4-4M8.4 15.6l-4 4M15.6 15.6l4 4"/><circle cx="3.4" cy="3.4" r="1.7"/><circle cx="20.6" cy="3.4" r="1.7"/><circle cx="3.4" cy="20.6" r="1.7"/><circle cx="20.6" cy="20.6" r="1.7"/></symbol>
+  <symbol id="i-objective" viewBox="0 0 24 24"><circle cx="12" cy="10" r="6.4"/><circle cx="12" cy="10" r="1.6"/><path d="M12 16.6V22"/><path d="M12 2.2v1.8M5.2 10H3.4M20.6 10h-1.8"/></symbol>
+  <symbol id="i-engine" viewBox="0 0 24 24"><path d="M2.6 12h3.8l2.6-5.2v10.4l2.6-5.2h4.2"/><path d="M17 9.4v5.2"/><path d="M19.6 6.6v10.8"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M1.8 12s3.8-6.2 10.2-6.2S22.2 12 22.2 12s-3.8 6.2-10.2 6.2S1.8 12 1.8 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+</defs></svg>
 <div id="canvas-wrap"></div>
 <div id="fps-vignette"></div>
 <div id="shield-vignette"></div>
@@ -420,6 +565,21 @@
 <!-- Center Reticle -->
 <div id="reticle-wrap">
   <svg viewBox="-125 -125 250 250" width="230" height="230">
+    <circle cx="0" cy="0" r="122" fill="none" stroke="rgba(56,189,248,0.18)" stroke-width="1"/>
+    <g stroke="rgba(125,211,252,0.55)" stroke-width="1.6">
+      <line x1="0" y1="-122" x2="0" y2="-114"/><line x1="0" y1="114" x2="0" y2="122"/>
+      <line x1="-122" y1="0" x2="-114" y2="0"/><line x1="114" y1="0" x2="122" y2="0"/>
+      <line x1="-86.3" y1="-86.3" x2="-80.6" y2="-80.6"/><line x1="86.3" y1="-86.3" x2="80.6" y2="-80.6"/>
+      <line x1="-86.3" y1="86.3" x2="-80.6" y2="80.6"/><line x1="86.3" y1="86.3" x2="80.6" y2="80.6"/>
+    </g>
+    <!-- 포탑 조준 방위 (화면 상단 = 포탑 정면) -->
+    <path d="M0 -124 l -5.5 9 h 11 z" fill="#fbbf24" opacity="0.95"/>
+    <!-- 차체 방위 노치: 포탑과의 차이(Δ)만큼 회전 -->
+    <g id="hull-notch">
+      <path d="M0 -137 l -8 10 h 16 z" fill="#22d3ee"/>
+      <line x1="0" y1="-137" x2="0" y2="-146" stroke="#22d3ee" stroke-width="1.6"/>
+    </g>
+    <text id="bearing-delta" x="0" y="-150" text-anchor="middle" fill="#22d3ee" font-size="10" font-weight="bold" font-family="Consolas, monospace">Δ000</text>
     <circle cx="0" cy="0" r="98" fill="none" stroke="rgba(56,189,248,0.3)" stroke-width="1.5" stroke-dasharray="10 6"/>
     <circle id="rhythm-ring" cx="0" cy="0" r="88" fill="none" stroke="#fbbf24" stroke-width="3.2" opacity="0"/>
     <circle id="lock-ring" cx="0" cy="0" r="32" fill="none" stroke="#22d3ee" stroke-width="2"/>
@@ -428,7 +588,7 @@
     <line x1="0" y1="-110" x2="0" y2="-40" stroke="#38bdf8" stroke-width="1.5"/>
     <line x1="0" y1="40" x2="0" y2="110" stroke="#38bdf8" stroke-width="1.5"/>
     <circle cx="0" cy="0" r="3.5" fill="#fbbf24"/>
-    <text x="-38" y="-42" fill="#34d399" font-size="9" font-weight="bold">STAB ON</text>
+    <text x="-38" y="-42" fill="#34d399" font-size="9" font-weight="bold">STAB</text>
     <circle id="beat-dot-1" cx="-22" cy="54" r="5" fill="rgba(255,255,255,0.16)" stroke="#38bdf8" stroke-width="1.5"/>
     <circle id="beat-dot-2" cx="0"   cy="54" r="5" fill="rgba(255,255,255,0.16)" stroke="#38bdf8" stroke-width="1.5"/>
     <circle id="beat-dot-3" cx="22"  cy="54" r="5" fill="rgba(255,255,255,0.16)" stroke="#38bdf8" stroke-width="1.5"/>
@@ -437,19 +597,74 @@
 <div id="beat-feedback"></div>
 <div id="banner-msg"></div>
 
-<!-- Enlarged Tactical Map -->
-<div id="big-map-overlay" onclick="window._toggleBigMap(false)">
-  <div style="margin-bottom:8px; font-size:14px; font-weight:800; color:#38bdf8; text-align:center;">
-    🗺️ 올도메인 통합 작전 지도 — <span style="color:#fbbf24;">지도를 클릭하면 목표 지점이 지정됩니다</span> · [M] 또는 바깥 클릭 닫기
+<!-- V6.4 Full Battlefield Tactical Map -->
+<div id="big-map-overlay">
+  <div class="tm-shell">
+    <div class="tm-head">
+      <div class="tm-title"><svg class="ic lg"><use href="#i-map"/></svg>전술 지도<span class="sub">TACTICAL MAP · 전장 전역</span></div>
+      <div class="tm-coord" id="tm-coord">GRID --- / ---</div>
+      <div class="tm-tools">
+        <button id="tm-zoom-in" title="확대">+</button>
+        <button id="tm-zoom-out" title="축소">−</button>
+        <button id="tm-fit" title="전장 전체">FIT</button>
+        <button id="tm-close" class="close" onclick="window._toggleBigMap(false)">닫기 [M]</button>
+      </div>
+    </div>
+    <div class="tm-body">
+      <div class="tm-mapwrap" id="tm-mapwrap">
+        <canvas id="big-map-canvas" width="820" height="760"></canvas>
+        <div class="tm-hint">지도 클릭 = 목표 지정 · 드래그 = 이동 · 휠/핀치 = 확대</div>
+      </div>
+      <aside class="tm-side">
+        <div class="tm-sec">
+          <div class="tm-sec-t">지휘 계급</div>
+          <div class="tm-row">
+            <button class="cb cb-rank" data-rank="tank" onclick="window._setRank('tank')"><svg class="ic sm"><use href="#i-rank"/></svg>전차장</button>
+            <button class="cb cb-rank active" data-rank="battalion" onclick="window._setRank('battalion')"><svg class="ic sm"><use href="#i-rank"/></svg>대대장</button>
+            <button class="cb cb-rank" data-rank="division" onclick="window._setRank('division')"><svg class="ic sm"><use href="#i-rank"/></svg>사단장</button>
+          </div>
+        </div>
+        <div class="tm-sec">
+          <div class="tm-sec-t">전술 태세</div>
+          <div class="tm-row">
+            <button class="cb cb-stance active" data-stance="wedge" onclick="window._setStance('wedge')"><svg class="ic sm"><use href="#i-wedge"/></svg>쐐기 돌파</button>
+            <button class="cb cb-stance" data-stance="line" onclick="window._setStance('line')"><svg class="ic sm"><use href="#i-line"/></svg>횡대 방어</button>
+            <button class="cb cb-stance" data-stance="flank" onclick="window._setStance('flank')"><svg class="ic sm"><use href="#i-flank"/></svg>측면 포위</button>
+            <button class="cb cb-stance" data-stance="focus" onclick="window._setStance('focus')"><svg class="ic sm"><use href="#i-focus"/></svg>집중 화력</button>
+          </div>
+        </div>
+        <div class="tm-sec">
+          <div class="tm-sec-t">공격 지시</div>
+          <div class="tm-row">
+            <button class="cb cb-atk js-attack" id="tm-btn-attack" onclick="window._orderAttack()"><svg class="ic sm"><use href="#i-attack"/></svg>공격 개시</button>
+            <button class="cb cb-atk js-arty" id="tm-btn-arty" onclick="window._callArtillery()"><svg class="ic sm"><use href="#i-artillery"/></svg>집중 포격</button>
+            <button class="cb cb-atk js-cas" id="tm-btn-cas" onclick="window._callCAS()"><svg class="ic sm"><use href="#i-cas"/></svg>항공 지원</button>
+            <button class="cb cb-atk js-mark" id="tm-btn-mark" onclick="window._toggleMarkMode()"><svg class="ic sm"><use href="#i-mark"/></svg>목표 지정</button>
+          </div>
+        </div>
+        <div class="tm-sec">
+          <div class="tm-sec-t">제대 현황</div>
+          <div class="tm-echel" id="tm-echelons"></div>
+        </div>
+        <div class="tm-sec legend-sec">
+          <div class="tm-sec-t">범례</div>
+          <div class="tm-legend">
+            <span><i class="tri"></i>아군 전차</span><span><i style="background:#fb7185"></i>적 전차</span>
+            <span><i style="background:#a78bfa"></i>IFV·기계화</span><span><i style="background:#fbbf24"></i>자주포·CAS</span>
+            <span><i style="background:#f43f5e;border-radius:50%"></i>지휘전차</span><span><i style="background:#fbbf24;border-radius:50%"></i>지정 목표</span>
+          </div>
+        </div>
+        <div class="tm-status" id="tm-status">전장 정보 수신 대기.</div>
+      </aside>
+    </div>
   </div>
-  <canvas id="big-map-canvas" width="580" height="580"></canvas>
 </div>
 
 <!-- HUD -->
 <div id="hud">
   <!-- 1. Unit status -->
   <div id="hud-status" class="panel">
-    <div class="tag" id="hud-mode-tag">PROJECT CANON V6.3 · 🎖 대대장 · 3개 중대</div>
+    <div class="tag" id="hud-mode-tag">PROJECT CANON V6.4 · 대대장 · 3개 중대</div>
     <div class="row">
       <span>아군 <strong id="hud-allies" class="cyan">0</strong></span>
       <span>적전차 <strong id="hud-etanks" class="red">0</strong></span>
@@ -468,59 +683,64 @@
       <strong id="hud-spd" class="cyan">0</strong>km/h
       <span id="hud-drive-mode" class="gold" style="font-size:11px;font-weight:800;">[자율기동전투]</span>
     </div>
+    <div class="row bear" style="margin-top:2px;">
+      <span id="hud-bearing">HULL <b>000</b>° · TURRET <i>000</i>° · Δ 000°</span>
+    </div>
     <div class="lock-row" id="hud-lock"></div>
   </div>
 
   <!-- 2. Command / camera buttons -->
   <div id="hud-actions">
-    <button id="btn-cam-tps" class="hud-btn active" onclick="window._setCameraMode('tps')">🎥 <span class="lbl">3인칭 [V]</span></button>
-    <button id="btn-cam-fps" class="hud-btn" onclick="window._setCameraMode('fps')">🎯 <span class="lbl">1인칭</span></button>
-    <button id="btn-cam-top" class="hud-btn" onclick="window._setCameraMode('top')">🛰️ <span class="lbl">탑뷰</span></button>
-    <button id="btn-cam-cmd" class="hud-btn" onclick="window._setCameraMode('cmd')">🛩️ <span class="lbl">지휘 부감</span></button>
-    <div id="cam-cycle-wrap"><button id="btn-cam-cycle" class="hud-btn" onclick="window._cycleCamera()">🎥</button></div>
-    <button id="btn-cruise" class="hud-btn cruise-on" onclick="window._toggleAutoDrive()">🚜 <span class="lbl">기동전투 ON [Q]</span></button>
-    <button id="btn-auto-def" class="hud-btn auto-on" onclick="window._toggleAutoDef()">🤖 <span class="lbl">자동방어 ON [T]</span></button>
-    <button class="hud-btn" onclick="window._orderAllies()">📣 <span class="lbl">아군돌격 [G]</span></button>
-    <button class="hud-btn" onclick="window._toggleBigMap()">🗺️ <span class="lbl">지도 [M]</span></button>
-    <button class="hud-btn" onclick="window._openSettings()">⚙️ <span class="lbl">설정</span></button>
-    <button class="hud-btn gift-btn" onclick="window._openGiftModal()">🎁 선물</button>
+    <button id="btn-cam-tps" class="hud-btn active" onclick="window._setCameraMode('tps')"><svg class="ic"><use href="#i-cam-tps"/></svg><span class="lbl">3인칭 [V]</span></button>
+    <button id="btn-cam-fps" class="hud-btn" onclick="window._setCameraMode('fps')"><svg class="ic"><use href="#i-cam-fps"/></svg><span class="lbl">1인칭</span></button>
+    <button id="btn-cam-top" class="hud-btn" onclick="window._setCameraMode('top')"><svg class="ic"><use href="#i-cam-top"/></svg><span class="lbl">탑뷰</span></button>
+    <button id="btn-cam-cmd" class="hud-btn" onclick="window._setCameraMode('cmd')"><svg class="ic"><use href="#i-cam-cmd"/></svg><span class="lbl">지휘 부감</span></button>
+    <div id="cam-cycle-wrap"><button id="btn-cam-cycle" class="hud-btn" onclick="window._cycleCamera()"><svg class="ic"><use href="#i-cam-tps"/></svg></button></div>
+    <button id="btn-cruise" class="hud-btn cruise-on" onclick="window._toggleAutoDrive()"><svg class="ic"><use href="#i-engine"/></svg><span class="lbl">자율기동 ON [P]</span></button>
+    <button id="btn-auto-def" class="hud-btn auto-on" onclick="window._toggleAutoDef()"><svg class="ic"><use href="#i-shield"/></svg><span class="lbl">자동방어 ON [T]</span></button>
+    <button class="hud-btn" onclick="window._orderAllies()"><svg class="ic"><use href="#i-charge"/></svg><span class="lbl">아군돌격 [G]</span></button>
+    <button class="hud-btn" onclick="window._toggleBigMap()"><svg class="ic"><use href="#i-map"/></svg><span class="lbl">전술맵 [M]</span></button>
+    <button class="hud-btn" onclick="window._openSettings()"><svg class="ic"><use href="#i-settings"/></svg><span class="lbl">설정</span></button>
+    <button class="hud-btn gift-btn" onclick="window._openGiftModal()"><svg class="ic"><use href="#i-gift"/></svg><span class="lbl">선물</span></button>
   </div>
 
   <!-- 3. Weapons / skills -->
   <div id="hud-weapons">
-    <button id="btn-wpn-sonic" class="hud-btn active" onclick="window._setWeapon('sonic')">⚡ <span class="lbl">1. 공진포</span></button>
-    <button id="btn-wpn-he" class="hud-btn" onclick="window._setWeapon('he')">🔥 <span class="lbl">2. 120mm</span></button>
-    <button id="btn-wpn-msl" class="hud-btn" onclick="window._setWeapon('missile')">🚀 <span class="lbl">3. 유도탄</span></button>
-    <button class="hud-btn" onclick="window._snapTarget()">🎯 <span class="lbl">자동조준 [Tab]</span></button>
-    <button class="hud-btn" onclick="window._triggerShield(false)">🛡️ <span class="lbl">방어막 [F]</span></button>
-    <button class="hud-btn" onclick="window._triggerSmoke()">💨 <span class="lbl">연막수리 [C]</span></button>
+    <button id="btn-wpn-sonic" class="hud-btn active" onclick="window._setWeapon('sonic')"><svg class="ic"><use href="#i-sonic"/></svg><span class="lbl">1. SONIC 공진포</span></button>
+    <button id="btn-wpn-he" class="hud-btn" onclick="window._setWeapon('he')"><svg class="ic"><use href="#i-gun"/></svg><span class="lbl">2. 120mm 철갑탄</span></button>
+    <button id="btn-wpn-msl" class="hud-btn" onclick="window._setWeapon('missile')"><svg class="ic"><use href="#i-missile"/></svg><span class="lbl">3. ATGM 유도탄</span></button>
+    <button id="btn-wpn-mg" class="hud-btn" onclick="window._setWeapon('mg')"><svg class="ic"><use href="#i-mg"/></svg><span class="lbl">4. 30mm 기관포</span></button>
+    <button id="btn-snap" class="hud-btn" onclick="window._snapTarget()"><svg class="ic"><use href="#i-lock"/></svg><span class="lbl">자동조준 [Tab]</span></button>
+    <button id="btn-shield" class="hud-btn" onclick="window._triggerShield(false)"><svg class="ic"><use href="#i-shield"/></svg><span class="lbl">방어막 [C]</span></button>
+    <button id="btn-smoke" class="hud-btn" onclick="window._triggerSmoke()"><svg class="ic"><use href="#i-smoke"/></svg><span class="lbl">연막수리 [L]</span></button>
+    <button id="btn-stab" class="hud-btn stab-on" onclick="window._toggleStab()"><svg class="ic"><use href="#i-stab"/></svg><span class="lbl">안정화 ON [U]</span></button>
   </div>
 
   <!-- 3-b. Commander tactical bar: rank / stance / attack orders -->
   <div id="cmd-bar" class="panel">
     <div class="cmd-head">
-      <span class="cmd-title">🎖️ <b id="cmd-rank-name">대대장</b> 지휘소</span>
-      <span class="cmd-stance" id="cmd-stance-name">⚔️ 쐐기 돌파</span>
-      <span class="cmd-obj" id="cmd-obj-info">📍 목표 미지정</span>
+      <span class="cmd-title"><svg class="ic"><use href="#i-rank"/></svg> <b id="cmd-rank-name">대대장</b> 지휘소</span>
+      <span class="cmd-stance" id="cmd-stance-name"><svg class="ic sm"><use href="#i-wedge"/></svg> 쐐기 돌파</span>
+      <span class="cmd-obj" id="cmd-obj-info"><svg class="ic sm"><use href="#i-objective"/></svg> 목표 미지정</span>
       <button class="cmd-fold" id="cmd-fold-btn" onclick="window._toggleCmdBar()">▾</button>
     </div>
     <div class="cmd-body">
       <div class="cmd-row" id="cmd-ranks">
-        <button class="cb cb-rank" data-rank="tank" onclick="window._setRank('tank')">🎖 전차장</button>
-        <button class="cb cb-rank active" data-rank="battalion" onclick="window._setRank('battalion')">🎖 대대장</button>
-        <button class="cb cb-rank" data-rank="division" onclick="window._setRank('division')">🎖 사단장</button>
+        <button class="cb cb-rank" data-rank="tank" onclick="window._setRank('tank')"><svg class="ic sm"><use href="#i-rank"/></svg>전차장</button>
+        <button class="cb cb-rank active" data-rank="battalion" onclick="window._setRank('battalion')"><svg class="ic sm"><use href="#i-rank"/></svg>대대장</button>
+        <button class="cb cb-rank" data-rank="division" onclick="window._setRank('division')"><svg class="ic sm"><use href="#i-rank"/></svg>사단장</button>
       </div>
       <div class="cmd-row" id="cmd-stances">
-        <button class="cb cb-stance active" data-stance="wedge" onclick="window._setStance('wedge')">⚔️ 쐐기 돌파</button>
-        <button class="cb cb-stance" data-stance="line" onclick="window._setStance('line')">🛡️ 횡대 방어</button>
-        <button class="cb cb-stance" data-stance="flank" onclick="window._setStance('flank')">🔄 측면 포위</button>
-        <button class="cb cb-stance" data-stance="focus" onclick="window._setStance('focus')">🎯 집중 화력</button>
+        <button class="cb cb-stance active" data-stance="wedge" onclick="window._setStance('wedge')"><svg class="ic sm"><use href="#i-wedge"/></svg>쐐기 돌파</button>
+        <button class="cb cb-stance" data-stance="line" onclick="window._setStance('line')"><svg class="ic sm"><use href="#i-line"/></svg>횡대 방어</button>
+        <button class="cb cb-stance" data-stance="flank" onclick="window._setStance('flank')"><svg class="ic sm"><use href="#i-flank"/></svg>측면 포위</button>
+        <button class="cb cb-stance" data-stance="focus" onclick="window._setStance('focus')"><svg class="ic sm"><use href="#i-focus"/></svg>집중 화력</button>
       </div>
       <div class="cmd-row" id="cmd-attacks">
-        <button class="cb cb-atk" id="btn-attack" onclick="window._orderAttack()">⚡ 공격 개시</button>
-        <button class="cb cb-atk" id="btn-arty" onclick="window._callArtillery()">💥 집중 포격</button>
-        <button class="cb cb-atk" id="btn-cas" onclick="window._callCAS()">✈️ 항공 지원</button>
-        <button class="cb cb-atk" id="btn-mark" onclick="window._toggleMarkMode()">📍 목표 지정</button>
+        <button class="cb cb-atk js-attack" id="btn-attack" onclick="window._orderAttack()"><svg class="ic sm"><use href="#i-attack"/></svg>공격 개시</button>
+        <button class="cb cb-atk js-arty" id="btn-arty" onclick="window._callArtillery()"><svg class="ic sm"><use href="#i-artillery"/></svg>집중 포격</button>
+        <button class="cb cb-atk js-cas" id="btn-cas" onclick="window._callCAS()"><svg class="ic sm"><use href="#i-cas"/></svg>항공 지원</button>
+        <button class="cb cb-atk js-mark" id="btn-mark" onclick="window._toggleMarkMode()"><svg class="ic sm"><use href="#i-mark"/></svg>목표 지정</button>
       </div>
     </div>
   </div>
@@ -548,27 +768,34 @@
     <canvas id="fft-canvas" width="245" height="64"></canvas>
     <div class="row" style="margin-top:4px;">
       <span>발진: <strong id="hud-freq" class="gold">135.0 Hz</strong></span>
-      <span>무장: <strong id="hud-wpn" class="orange">공진 레일포</strong></span>
+      <span>무장: <strong id="hud-wpn" class="orange">SONIC 공진포</strong></span>
     </div>
   </div>
 
   <!-- 7. Keyboard hints -->
   <div id="hud-controls" class="panel controls">
-    <div class="tag" style="margin-bottom:3px;">V6.3 지휘관 프로 컨트롤 (계급·전술·공격 지시 + 기동 사격)</div>
-    • <kbd>WASD</kbd> 직접 기동 · <kbd>Q</kbd> 자율 기동전투 · <kbd>E</kbd> 터보 · <kbd>Tab</kbd> 표적 락온<br>
+    <div class="tag" style="margin-bottom:3px;">V6.4 조종 — 차체·포탑 분리 제어 · 전술 지도 · 계급·태세 지시</div>
+    • <b>차체</b> <kbd>W/A/S/D</kbd>·<kbd>↑←↓→</kbd> 주행·선회 · <kbd>Y</kbd> 터보 · <kbd>P</kbd> 자율기동<br>
+    • <b>포탑</b> 마우스 이동(락온 후) 또는 드래그 · <kbd>Q</kbd><kbd>E</kbd> 선회 · <kbd>R</kbd><kbd>F</kbd> 고저 · <kbd>U</kbd> 안정화 · <kbd>Tab</kbd> 락온<br>
     • <kbd>Z</kbd> 쐐기 · <kbd>X</kbd> 횡대 · <kbd>B</kbd> 측면 · <kbd>N</kbd> 집중 화력 · <kbd>H</kbd> 공격 개시<br>
-    • <kbd>J</kbd> 집중 포격 · <kbd>K</kbd> 항공 지원(CAS) · <kbd>M</kbd> 지도(클릭=목표 지정) · <kbd>V</kbd> 시점<br>
-    • <kbd>1·2·3</kbd> 무장 · <kbd>F</kbd> 방어막 · <kbd>C</kbd> 연막수리 · 지휘 부감에서 전장 탭 = 목표 지시<br>
-    • 지휘 버튼은 마우스 조준 락 중 <kbd>ESC</kbd>로 해제 후 누르거나 단축키 사용 (<kbd>Z·X·B·N</kbd> 진형, <kbd>H</kbd> 공격, <kbd>J</kbd> 포격, <kbd>K</kbd> CAS)
+    • <kbd>J</kbd> 집중 포격 · <kbd>K</kbd> 항공 지원(CAS) · <kbd>M</kbd> 전술 지도 · <kbd>V</kbd> 시점<br>
+    • <kbd>1·2·3·4</kbd> 무장 · <kbd>C</kbd> 방어막 · <kbd>L</kbd> 연막수리 · 지휘 부감/전술 지도에서 탭 = 목표 지시
   </div>
 
   <!-- 8. Radar -->
   <div id="minimap-box" class="panel" onclick="window._toggleBigMap(true)">
     <div class="tag" style="display:flex; justify-content:space-between; margin-bottom:3px; gap:8px;">
-      <span>ALL-DOMAIN RADAR</span>
-      <span class="gold">[M]</span>
+      <span><svg class="ic sm"><use href="#i-radar"/></svg> RADAR</span>
+      <span class="gold" style="display:flex; align-items:center; gap:3px;"><svg class="ic sm"><use href="#i-map"/></svg>MAP</span>
     </div>
     <canvas id="minimap-canvas" width="210" height="210"></canvas>
+  </div>
+
+  <!-- 8-b. Hull / turret bearing compass (desktop) -->
+  <div id="compass-box" class="panel">
+    <div class="tag" style="margin-bottom:2px;">HULL / TURRET</div>
+    <canvas id="compass-canvas" width="192" height="192"></canvas>
+    <div class="cmp-row" id="compass-readout">Δ <b>000</b>°</div>
   </div>
 
   <!-- 9. Virtual joystick + fire (touch devices / small screens) -->
@@ -578,43 +805,46 @@
   </div>
 </div>
 
+<!-- V6.4 포탑 조준 존 힌트 (우측 화면 드래그) -->
+<div id="aim-zone"><span>포탑 조준</span></div>
+
 <!-- Start / Scale Select Modal -->
 <div id="overlay" class="modal-bg">
   <div class="modal">
     <div id="gift-banner" class="gift-ribbon"></div>
-    <div class="tag">대장님 연구 4호 · V6.3 지휘관 전략·공격 지시 에디션</div>
-    <h1 style="margin:6px 0 8px;">👑 PROJECT CANON V6.3 : 대대장·사단장 지휘전</h1>
+    <div class="tag">대장님 연구 4호 · V6.4 차체·포탑 분리 조종 + 전술 지도 에디션</div>
+    <h1 style="margin:6px 0 8px;">PROJECT CANON V6.4 : 독립 포탑 조종 &amp; 전장 전술 지도</h1>
     <p style="font-size:13px; color:#cbd5e1; line-height:1.55; margin:0 0 8px;">
-      <strong>전차장 → 대대장 → 사단장</strong>으로 지휘 계급을 올려 <strong>3개 전차중대·포병대대·기계화 지원·항공 CAS</strong>를 지휘하십시오.
-      HUD 지휘소에서 <strong>4가지 전술 태세(쐐기·횡대·측면·집중)</strong>를 바꾸고, <strong>지도/전장을 탭해 목표를 지정</strong>한 뒤 공격 개시·집중 포격·항공 지원을 내릴 수 있습니다.
-      <strong>지휘 부감 시점</strong>에서 전장 전체를 내려다보며 지시하십시오.
+      이제 <strong>차체와 포탑을 각각 따로 조종</strong>합니다. <strong>WASD·방향키(좌측 조이스틱)</strong>로 차체를 몰고,
+      <strong>마우스·Q/E·R/F(우측 조준 존 드래그)</strong>로 포탑을 독립 선회·조준하십시오. 2축 자이로 안정화로 차체가 돌아도 조준이 흔들리지 않습니다.
+      <strong>전술 지도(M)</strong>에서 전장 전체의 지형·도로·제대·시야 원추를 확인하고, 지도를 눌러 목표를 지정한 뒤 공격 개시·집중 포격·항공 지원을 내리십시오.
     </p>
     <div class="badge-strip">
-      <span class="v6-badge">🎖 지휘 계급 전환 (전차장·대대장·사단장)</span>
-      <span class="v6-badge">⚔️ 4가지 전술 태세 실제 진형 변화</span>
-      <span class="v6-badge">📍 지도·전장 탭 목표 지정</span>
-      <span class="v6-badge">💥 집중 포격 · ✈️ 항공 근접지원</span>
-      <span class="v6-badge">🛩️ 지휘 부감 시점</span>
-      <span class="v6-badge">🎯 2축 포탑 자이로 안정화 사격</span>
+      <span class="v6-badge"><svg class="ic sm"><use href="#i-hull"/></svg> 차체 주행·선회 독립 제어</span>
+      <span class="v6-badge"><svg class="ic sm"><use href="#i-turret"/></svg> 포탑 독립 선회·고저 조준</span>
+      <span class="v6-badge"><svg class="ic sm"><use href="#i-stab"/></svg> 2축 안정화 ON/OFF</span>
+      <span class="v6-badge"><svg class="ic sm"><use href="#i-map"/></svg> 전장 전역 전술 지도</span>
+      <span class="v6-badge"><svg class="ic sm"><use href="#i-artillery"/></svg> 지도 상 포격·CAS 지시</span>
+      <span class="v6-badge"><svg class="ic sm"><use href="#i-aim"/></svg> 밀리터리 SVG 관제 UI</span>
     </div>
     <div class="scale-grid">
       <div class="scale-card" id="sc-platoon" onclick="window._selectScale('platoon')">
-        <div class="scale-title">⚔️ 소대 규모 접촉전</div>
+        <div class="scale-title"><svg class="ic"><use href="#i-wedge"/></svg> 소대 규모 접촉전</div>
         <div class="scale-desc">• 적 <b>5~18대</b> (지휘 계급에 따라)<br>• Su-34 1편대 + 쿼드드론<br>• 가벼운 기동전투 입문</div>
       </div>
       <div class="scale-card selected" id="sc-company" onclick="window._selectScale('company')">
-        <div class="scale-title">🔥 중대 규모 전면전 (추천)</div>
-        <div class="scale-desc">• 적 <b>11~18대</b> + 증원<br>• Su-34 2편대 + 자폭드론<br>• 박진감 넘치는 기동 협동전!</div>
+        <div class="scale-title"><svg class="ic"><use href="#i-attack"/></svg> 중대 규모 전면전 (추천)</div>
+        <div class="scale-desc">• 적 <b>11~18대</b> + 증원<br>• Su-34 2편대 + 자폭드론<br>• 박진감 넘치는 기동 협동전</div>
       </div>
       <div class="scale-card" id="sc-division" onclick="window._selectScale('division')">
-        <div class="scale-title">👑 사단 규모 총력전</div>
-        <div class="scale-desc">• 적 <b>20대</b> + 증원 웨이브<br>• Su-34 4편대 대공습<br>• 대규모 기갑 기동 대서사!</div>
+        <div class="scale-title"><svg class="ic"><use href="#i-rank"/></svg> 사단 규모 총력전</div>
+        <div class="scale-desc">• 적 <b>20대</b> + 증원 웨이브<br>• Su-34 4편대 대공습<br>• 대규모 기갑 기동 대서사</div>
       </div>
     </div>
-    <p style="font-size:12px; color:#fbbf24; margin:0 0 4px;">🎖 아군 편성은 지휘 계급이 결정합니다 — 전차장(1개 소대) · 대대장(3개 중대+포병) · 사단장(전차대대+기계화+포병대대+CAS). 출격 후 HUD 지휘소에서 전환하십시오.</p>
+    <p style="font-size:12px; color:#fbbf24; margin:0 0 4px;">아군 편성은 지휘 계급이 결정합니다 — 전차장(1개 소대) · 대대장(3개 중대+포병) · 사단장(전차대대+기계화+포병대대+CAS). 출격 후 HUD 지휘소에서 전환하십시오.</p>
     <p id="modal-result" style="display:none; font-size:15px; font-weight:800;"></p>
-    <button id="btn-start" class="btn-start">🚜 기동전투 엔진 가동 &amp; 연구 4호 전면전 출격!</button>
-    <button class="btn-gift-open" onclick="window._openGiftModal()">🎁 친구·지인에게 V6.3 선물하기 (맞춤 HTML 1초 생성)</button>
+    <button id="btn-start" class="btn-start"><svg class="ic lg"><use href="#i-engine"/></svg> 기동전투 엔진 가동 · 연구 4호 전면전 출격</button>
+    <button class="btn-gift-open" onclick="window._openGiftModal()"><svg class="ic"><use href="#i-gift"/></svg> V6.4 선물용 HTML 생성</button>
   </div>
 </div>
 
@@ -622,13 +852,13 @@
 <div id="settings-modal" class="modal-bg" style="display:none; z-index:70;">
   <div class="modal" style="max-width:460px;">
     <div class="tag">AUDIO &amp; CONTROL SETTINGS</div>
-    <h2 style="margin:6px 0 12px;">⚙️ 사운드 · 무전 · 조작 설정</h2>
-    <div class="slider-row"><span>🎼 오케스트라 BGM 음량</span><input id="sl-bgm" type="range" min="0" max="100" value="55"></div>
-    <div class="slider-row"><span>💥 장엄 효과음 &amp; 무전 음량</span><input id="sl-sfx" type="range" min="0" max="100" value="80"></div>
-    <div class="slider-row"><span>🎙️ 한국어 무선 음성(TTS)</span><input id="chk-voice" type="checkbox" checked></div>
-    <div class="slider-row"><span>🎯 마우스 조준 감도</span><input id="sl-sens" type="range" min="5" max="35" value="18"></div>
-    <div class="slider-row"><span>📱 화면 터치 조이스틱 표시</span><input id="chk-touch" type="checkbox"></div>
-    <button class="btn-start" onclick="window._closeSettings()">✅ 설정 저장 및 전투 복귀</button>
+    <h2 style="margin:6px 0 12px;"><svg class="ic lg"><use href="#i-settings"/></svg> 사운드 · 무전 · 조작 설정</h2>
+    <div class="slider-row"><span>오케스트라 BGM 음량</span><input id="sl-bgm" type="range" min="0" max="100" value="55"></div>
+    <div class="slider-row"><span>효과음 · 무전 음량</span><input id="sl-sfx" type="range" min="0" max="100" value="80"></div>
+    <div class="slider-row"><span>한국어 무선 음성(TTS)</span><input id="chk-voice" type="checkbox" checked></div>
+    <div class="slider-row"><span>마우스 포탑 조준 감도</span><input id="sl-sens" type="range" min="5" max="35" value="18"></div>
+    <div class="slider-row"><span>화면 터치 조이스틱 표시</span><input id="chk-touch" type="checkbox"></div>
+    <button class="btn-start" onclick="window._closeSettings()"><svg class="ic"><use href="#i-stab"/></svg> 설정 저장 및 전투 복귀</button>
   </div>
 </div>
 
@@ -636,15 +866,15 @@
 <div id="gift-modal" class="modal-bg" style="display:none; z-index:75;">
   <div class="modal" style="max-width:520px;">
     <div class="tag">GIFT PACKAGING ENGINE · 1-FILE STANDALONE</div>
-    <h2 style="margin:6px 0 8px;">🎁 V6.3 선물용 맞춤 게임 만들기</h2>
-    <p style="font-size:12.5px; color:#cbd5e1;">받는 분 이름과 메시지를 입력하시면 외부 파일 없이 V6.3 전체가 담긴 단일 HTML 파일이 생성됩니다.</p>
+    <h2 style="margin:6px 0 8px;"><svg class="ic lg"><use href="#i-gift"/></svg> V6.4 선물용 맞춤 게임 만들기</h2>
+    <p style="font-size:12.5px; color:#cbd5e1;">받는 분 이름과 메시지를 입력하시면 외부 파일 없이 V6.4 전체가 담긴 단일 HTML 파일이 생성됩니다.</p>
     <label style="font-size:12px; color:#94a3b8;">보내는 사람</label>
     <input id="gift-from" class="inp" value="대장님">
     <label style="font-size:12px; color:#94a3b8;">받는 사람</label>
     <input id="gift-to" class="inp" placeholder="받는 분 성함 또는 애칭">
     <label style="font-size:12px; color:#94a3b8;">선물 메시지</label>
-    <input id="gift-msg" class="inp" value="직접 기획·업그레이드한 연구 4호 V6.3 지휘관 전략 전차 게임 선물합니다!">
-    <button class="btn-start" onclick="window._downloadGiftFile()">🎁 맞춤 선물 게임 파일 (.html) 1초 생성</button>
+    <input id="gift-msg" class="inp" value="직접 기획·업그레이드한 연구 4호 V6.4 차체·포탑 독립 조종 전차 게임 선물합니다.">
+    <button class="btn-start" onclick="window._downloadGiftFile()"><svg class="ic"><use href="#i-gift"/></svg> 맞춤 선물 게임 파일 (.html) 생성</button>
     <button class="hud-btn" style="width:100%; margin-top:8px; padding:9px;" onclick="document.getElementById('gift-modal').style.display='none'">닫기</button>
   </div>
 </div>
@@ -665,7 +895,7 @@
     if (gFrom || gTo || gMsg) {
       const b = document.getElementById('gift-banner');
       b.style.display = 'block';
-      b.innerHTML = `🎁 <b>특별 선물 에디션</b> ${gTo ? `— <b>To. ${gTo}</b>` : ''} ${gFrom ? `(From. <b>${gFrom}</b>)` : ''}<br>${gMsg}`;
+      b.innerHTML = `${ICO('gift')} <b>특별 선물 에디션</b> ${gTo ? `— <b>To. ${gTo}</b>` : ''} ${gFrom ? `(From. <b>${gFrom}</b>)` : ''}<br>${gMsg}`;
     }
   } catch (_) {}
 
@@ -687,11 +917,11 @@
     const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `★_선물게임_PROJECT_CANON_V6_To_${meta.to.replace(/[^가-힣a-zA-Z0-9]/g,'_')}.html`;
+    a.download = `선물게임_PROJECT_CANON_V6_To_${meta.to.replace(/[^가-힣a-zA-Z0-9]/g,'_')}.html`;
     a.click();
     URL.revokeObjectURL(a.href);
     document.getElementById('gift-modal').style.display = 'none';
-    showBanner(`🎁 '${meta.to}'님 전용 V6.3 선물 게임 HTML 다운로드 완료!`, '#f472b6');
+    showBanner(`'${meta.to}'님 전용 V6.4 선물 게임 HTML 다운로드 완료`, '#f472b6', 'gift');
   };
 
   // ============================================================================
@@ -1830,8 +2060,8 @@
     if (!log) return;
     const row = document.createElement('div');
     row.className = 'rl' + (prio ? ' prio' : '');
-    const cs = document.createElement('span'); cs.className = 'rl-cs'; cs.textContent = sender;
-    const tx = document.createElement('span'); tx.className = 'rl-tx'; tx.textContent = text;
+    const cs = document.createElement('span'); cs.className = 'rl-cs'; cs.textContent = clean(sender);
+    const tx = document.createElement('span'); tx.className = 'rl-tx'; tx.textContent = clean(text);
     row.appendChild(cs); row.appendChild(tx);
     log.appendChild(row);
     while (log.children.length > 6) log.removeChild(log.firstChild);
@@ -2335,9 +2565,9 @@
   // 7. STATE & PRO CONTROLS (MOBILE WARFARE AUTO-MANEUVER + MANUAL WASD)
   // ============================================================================
   const SCALES = {
-    platoon:  { label: '⚔️ 소대 기동전',    allies: 2,  enemies: 5,  jets: 1, droneInt: 7.5, jetInt: 18 },
-    company:  { label: '🔥 중대 기동 전면전', allies: 5,  enemies: 11, jets: 2, droneInt: 4.5, jetInt: 13 },
-    division: { label: '👑 사단 규모 총력전', allies: 10, enemies: 20, jets: 4, droneInt: 2.6, jetInt: 9.5 },
+    platoon:  { label: '소대 기동전',    allies: 2,  enemies: 5,  jets: 1, droneInt: 7.5, jetInt: 18 },
+    company:  { label: '중대 기동 전면전', allies: 5,  enemies: 11, jets: 2, droneInt: 4.5, jetInt: 13 },
+    division: { label: '사단 규모 총력전', allies: 10, enemies: 20, jets: 4, droneInt: 2.6, jetInt: 9.5 },
   };
 
   // ---------------------------------------------------------------------------
@@ -2362,11 +2592,15 @@
     },
   };
   const STANCES = {
-    wedge: { key: 'wedge', label: '쐐기 돌파', icon: '⚔️', dist: 54, spacing: 15, range: 138, cd: 3.0, speed: 9.6, prio: 'nearest' },
-    line:  { key: 'line',  label: '횡대 방어', icon: '🛡️', dist: 78, spacing: 17, range: 158, cd: 3.6, speed: 5.4, prio: 'lead' },
-    flank: { key: 'flank', label: '측면 포위', icon: '🔄', dist: 42, spacing: 22, range: 126, cd: 3.2, speed: 10.8, prio: 'heavy' },
-    focus: { key: 'focus', label: '집중 화력', icon: '🎯', dist: 104, spacing: 11, range: 176, cd: 2.4, speed: 3.8, prio: 'marked' },
+    wedge: { key: 'wedge', label: '쐐기 돌파', icon: 'wedge', dist: 54, spacing: 15, range: 138, cd: 3.0, speed: 9.6, prio: 'nearest' },
+    line:  { key: 'line',  label: '횡대 방어', icon: 'line', dist: 78, spacing: 17, range: 158, cd: 3.6, speed: 5.4, prio: 'lead' },
+    flank: { key: 'flank', label: '측면 포위', icon: 'flank', dist: 42, spacing: 22, range: 126, cd: 3.2, speed: 10.8, prio: 'heavy' },
+    focus: { key: 'focus', label: '집중 화력', icon: 'focus', dist: 104, spacing: 11, range: 176, cd: 2.4, speed: 3.8, prio: 'marked' },
   };
+  // V6.4 밀리터리 SVG 아이콘 헬퍼 (이모지 대체) — <defs> 스프라이트를 참조한다.
+  const ICO = (name, cls = 'ic') => `<svg class="${cls}"><use href="#i-${name}"/></svg>`;
+  const deg = (r) => Math.round(((r * 180 / Math.PI) % 360 + 360) % 360);
+  const fmtDeg = (d) => String(d).padStart(3, '0');
   const state = {
     running: false, scaleKey: 'company',
     score: 0, kills: 0, intercepted: 0, hp: 100,
@@ -2378,6 +2612,8 @@
     cmdFolded: false, cmdUiTimer: 0,
     hullYaw: 0, hullSpeed: 0, hullPitch: 0, hullRoll: 0,
     turretYaw: 0, gunPitch: 0,
+    stab: true, turretTraverse: 0, lastHullYaw: 0, mgCd: 0, boost: false,
+    tacZoom: 1, tacPanX: 0, tacPanZ: 0, tacBase: null, tacW: 0, tacH: 0, tacHover: null,
     cruiseOrbitDir: 1, cruiseSwitchTimer: 7.0, dustTimer: 0,
     mouseSens: 0.0018, dragging: false, lastMouseX: 0, lastMouseY: 0,
     zoom: false, beamFreq: 135.0,
@@ -2393,36 +2629,43 @@
     state.camMode = m;
     ['tps','fps','top','cmd'].forEach(k => { const b = document.getElementById(`btn-cam-${k}`); if (b) b.classList.toggle('active', m===k); });
     const cyc = document.getElementById('btn-cam-cycle');
-    if (cyc) cyc.textContent = { tps:'🎥', fps:'🎯', top:'🛰️', cmd:'🛩️' }[m] || '🎥';
+    if (cyc) cyc.innerHTML = ICO({ tps: 'cam-tps', fps: 'cam-fps', top: 'cam-top', cmd: 'cam-cmd' }[m] || 'cam-tps');
     document.getElementById('fps-vignette').style.opacity = m==='fps'?'1':'0';
     document.body.classList.toggle('cmd-view', m==='cmd');
     if (m === 'cmd' && document.pointerLockElement) document.exitPointerLock();
   };
   window._setWeapon = (w) => {
     state.weapon = w;
-    document.getElementById('btn-wpn-sonic').classList.toggle('active', w==='sonic');
-    document.getElementById('btn-wpn-he').classList.toggle('active', w==='he');
-    document.getElementById('btn-wpn-msl').classList.toggle('active', w==='missile');
-    document.getElementById('hud-wpn').textContent = { sonic:'공진 레일포', he:'120mm 고폭탄', missile:'유도미사일' }[w];
-    pGlow.color.setHex(w==='sonic'?0x22d3ee:(w==='he'?0xf97316:0xc084fc));
+    ['sonic','he','missile','mg'].forEach(k => { const b = document.getElementById(`btn-wpn-${k === 'missile' ? 'msl' : k}`); if (b) b.classList.toggle('active', w === k); });
+    document.getElementById('hud-wpn').textContent = { sonic: 'SONIC 공진포', he: '120mm 철갑탄', missile: 'ATGM 유도탄', mg: '30mm 기관포' }[w];
+    pGlow.color.setHex(w==='sonic'?0x22d3ee:(w==='he'?0xf97316:(w==='mg'?0xa3e635:0xc084fc)));
   };
   function updateDriveUI() {
     const b = document.getElementById('btn-cruise');
-    b.innerHTML = `🚜 <span class="lbl">기동전투 ${state.autoDrive ? 'ON' : 'OFF'} [Q]</span>`;
+    b.innerHTML = `${ICO('engine')}<span class="lbl">자율기동 ${state.autoDrive ? 'ON' : 'OFF'} [P]</span>`;
     b.classList.toggle('cruise-on', state.autoDrive);
     const shortUi = document.body.classList.contains('touch-ui') && window.innerWidth <= 900;
-    document.getElementById('hud-drive-mode').textContent = shortUi ? (state.autoDrive ? '[자율]' : '[수동]') : (state.autoDrive ? '[자율기동전투]' : '[수동조종]');
+    document.getElementById('hud-drive-mode').textContent = shortUi ? (state.autoDrive ? '[자율]' : '[수동]') : (state.autoDrive ? '[자율기동]' : '[수동조종]');
   }
   window._toggleAutoDrive = () => {
     state.autoDrive = !state.autoDrive;
     updateDriveUI();
-    comms.say('조종수', state.autoDrive ? '자율 전술 기동전투 개시! 적 포탄을 회피하며 측면 돌파합니다!' : '수동 조종 전환 완료. 직접 기동하십시오!', { voice: false });
-    showBanner(state.autoDrive ? '🚜 연구 4호 자율 기동전투 ON (달리면서 교전!)' : '🎮 수동 주행 모드 (WASD 직접 기동)', '#fbbf24');
+    comms.say('조종수', state.autoDrive ? '자율 전술 기동전투 개시! 적 포탄을 회피하며 측면 돌파합니다!' : '수동 조종 전환 완료. 차체 직접 기동하십시오!', { voice: false });
+    showBanner(state.autoDrive ? '연구 4호 자율 기동전투 ON (달리면서 교전)' : '수동 주행 모드 (WASD 차체 직접 기동)', '#fbbf24', 'engine');
+  };
+  window._toggleStab = () => {
+    state.stab = !state.stab;
+    const b = document.getElementById('btn-stab');
+    if (b) { b.classList.toggle('stab-on', state.stab); b.innerHTML = `${ICO('stab')}<span class="lbl">안정화 ${state.stab ? 'ON' : 'OFF'} [U]</span>`; }
+    const es = document.getElementById('echo-status');
+    if (es) es.textContent = state.stab ? '2-AXIS STAB · DIRECT' : 'STAB OFF · HULL SLAVED';
+    showBanner(state.stab ? '2축 포탑 안정화 ON — 차체가 회전해도 조준 방위 유지' : '안정화 OFF — 포탑이 차체와 함께 회전합니다', state.stab ? '#34d399' : '#fb7185', 'stab');
+    comms.say('포수', state.stab ? '자이로 안정화 복귀. 주행 중 조준 유지!' : '안정화 해제. 포탑 차체 종속!', { voice: false });
   };
   window._toggleAutoDef = () => {
     state.autoDefense = !state.autoDefense;
     const b = document.getElementById('btn-auto-def');
-    b.innerHTML = `🤖 <span class="lbl">자동방어 ${state.autoDefense?'ON':'OFF'} [T]</span>`; b.classList.toggle('auto-on', state.autoDefense);
+    b.innerHTML = `${ICO('shield')}<span class="lbl">자동방어 ${state.autoDefense?'ON':'OFF'} [T]</span>`; b.classList.toggle('auto-on', state.autoDefense);
     comms.say('CIWS', state.autoDefense ? '자동 요격 방어망 가동 완료. 드론과 폭탄을 추적합니다.' : '자동 방어 해제. 수동 사격 모드로 전환합니다.', { voice: false });
   };
   window._orderAllies = () => {
@@ -2433,7 +2676,7 @@
       setTimeout(() => comms.say(comms.randomAllyCs(), '돌격! 측면으로 붙는다!', { voice: false }), 1600);
       if (Math.random() < 0.6) setTimeout(() => callFireMission(), 9000);
     }
-    showBanner(state.allyCharge ? '📣 전 부대 기동 총돌격 명령 하달!!' : '🛡️ 전 부대 전술 방어 기동 전환', '#38bdf8');
+    showBanner(state.allyCharge ? '전 부대 기동 총돌격 명령 하달' : '전 부대 전술 방어 기동 전환', '#38bdf8', 'charge');
   };
   window._snapTarget = () => {
     if (!state.running) return;
@@ -2447,14 +2690,14 @@
     state.turretYaw = Math.atan2(-v.x, -v.z);
     state.gunPitch = Math.max(-0.18, Math.min(0.65, Math.atan2(v.y, Math.hypot(v.x, v.z))));
     if (best.baseFreq) state.beamFreq = Math.round(best.baseFreq * 10) / 10;
-    showBeat(`🎯 자이로 사통장치 락온: ${best.name}`, 'gold');
+    showBeat(`자이로 사통장치 락온: ${best.name}`, 'gold');
   };
   window._triggerShield = (auto = false) => {
     if (!state.running || state.shieldCd > 0) return;
     audio.init(); audio.playShield(false);
     state.shieldActive = 3.8; state.shieldCd = 8.0;
     document.getElementById('shield-vignette').style.opacity = '1';
-    if (auto) showBeat('🤖 자동 방어막 긴급 전개!', 'cyan');
+    if (auto) showBeat('자동 방어막 긴급 전개', 'cyan');
   };
   window._triggerSmoke = () => {
     if (!state.running || state.smokeCd > 0) return;
@@ -2464,7 +2707,19 @@
     for (let i = 0; i < 16; i++) { const a=(i/16)*Math.PI*2; spawnParticle(playerRoot.position.clone().add(new THREE.Vector3(Math.cos(a)*5.5, 1.5, Math.sin(a)*5.5)), new THREE.Vector3(Math.cos(a)*3, 1.8, Math.sin(a)*3), 0x94a3b8, 2.2, 3.8, 1.8, 0.2, 0.65); }
     comms.say('정비반', '전술 연막 살포, 나노봇 장갑 복구 완료. 내구도 25% 회복!', { voice: false });
   };
-  window._toggleBigMap = (f) => { state.bigMapOpen = typeof f==='boolean' ? f : !state.bigMapOpen; document.getElementById('big-map-overlay').style.display = state.bigMapOpen?'flex':'none'; if (state.bigMapOpen && document.pointerLockElement) document.exitPointerLock(); };
+  window._toggleBigMap = (f) => {
+    state.bigMapOpen = typeof f === 'boolean' ? f : !state.bigMapOpen;
+    const ov = document.getElementById('big-map-overlay');
+    ov.classList.toggle('open', state.bigMapOpen);
+    ov.style.display = state.bigMapOpen ? 'flex' : 'none';
+    if (state.bigMapOpen && document.pointerLockElement) document.exitPointerLock();
+    if (state.bigMapOpen) {
+      tacResize(); resetTacView(); tacDrawBase();
+      requestAnimationFrame(() => { tacResize(); });
+      const tc = document.getElementById('tm-coord');
+      if (tc) tc.textContent = `GRID X ${Math.round(playerRoot.position.x)} / Z ${Math.round(playerRoot.position.z)}`;
+    }
+  };
 
   // ============================================================================
   // 7-b. COMMAND ECHELON · TACTICAL STANCE · ATTACK ORDERS
@@ -2490,7 +2745,7 @@
     objMarker.visible = true;
     state.markMode = false;
     updateCmdUI();
-    showBanner(`📍 목표 지점 지정 (${Math.round(x)}, ${Math.round(z)})${label ? ' · ' + label : ''} — 공격 개시 / 집중 포격`, '#fbbf24');
+    showBanner(`목표 지점 지정 (${Math.round(x)}, ${Math.round(z)})${label ? ' · ' + label : ''} — 공격 개시 / 집중 포격`, '#fbbf24', 'objective');
     if (state.running) comms.say('본부', '목표 좌표 접수. 각 제대, 좌표 확인 후 공격 준비.', { voice: false });
   }
   function clearObjective() {
@@ -2518,7 +2773,7 @@
     if (state.markMode) {
       if (document.pointerLockElement) document.exitPointerLock();
       if (state.camMode !== 'cmd') window._setCameraMode('cmd');
-      showBanner('📍 지도 또는 전장을 탭해 목표를 지정하십시오', '#fbbf24');
+      showBanner('지도 또는 전장을 탭해 목표를 지정하십시오', '#fbbf24', 'mark');
     }
   };
 
@@ -2527,14 +2782,14 @@
     state.rank = key;
     const R = RANKS[key];
     updateCmdUI();
-    showBanner(`🎖️ 지휘 계급 전환 — ${R.label} · ${R.desc}`, '#fbbf24');
+    showBanner(`지휘 계급 전환 — ${R.label} · ${R.desc}`, '#fbbf24', 'rank');
     if (state.running) {
       buildForces(true);
       setTimeout(() => comms.say('본부', `${R.label} 취임 확인. 예하 제대 편성 및 지휘망 재구성 완료!`, { prio: true }), 700);
       if (key === 'battalion') setTimeout(() => comms.say('대대 포병지원반', '대대장 지휘 계통 접속. 155mm 화력 지원 대기.', { prio: true }), 2200);
       if (key === 'division') setTimeout(() => comms.say('사단 포병대대', '사단장 지휘 계통 접속. 포병대대·기계화·CAS 전력 배속 완료.', { prio: true }), 2200);
     } else {
-      document.getElementById('hud-mode-tag').textContent = `PROJECT CANON V6.3 · 🎖 ${R.label} 지휘`;
+      document.getElementById('hud-mode-tag').textContent = `PROJECT CANON V6.4 · ${R.label} 지휘`;
     }
   };
 
@@ -2543,7 +2798,7 @@
     state.stance = key;
     const S = STANCES[key];
     updateCmdUI();
-    showBanner(`${S.icon} 전술 태세 — ${S.label}`, '#38bdf8');
+    showBanner(`전술 태세 — ${S.label}`, '#38bdf8', S.icon);
     if (!state.running) return;
     const line = {
       wedge: '전 부대, 쐐기 진형으로 적 종심 돌파! 선두 차량 돌격 개시!',
@@ -2572,7 +2827,7 @@
     state.allyCharge = true;
     state.markMode = false;
     updateCmdUI();
-    showBanner('⚡ 공격 개시 — 제대 전개, 지정 목표로 진격!', '#fb923c');
+    showBanner('공격 개시 — 제대 전개, 지정 목표로 진격', '#fb923c', 'attack');
     comms.say('본부', '전 부대, 공격 개시! 지정 목표를 향해 돌파하라!', { prio: true });
     const cs = companyLabels();
     const calls = [
@@ -2587,15 +2842,15 @@
     if (!state.running) return;
     const R = RANKS[state.rank];
     if (state.rank === 'tank') {
-      showBanner('💥 집중 포격은 대대장 이상 지휘 계급에서 요청할 수 있습니다.', '#fb7185');
+      showBanner('집중 포격은 대대장 이상 지휘 계급에서 요청할 수 있습니다.', '#fb7185', 'warn');
       comms.say('본부', '포병 지원 요청 권한 없음. 대대장 이상 지휘관 승인 필요!', { prio: true });
       return;
     }
-    if (state.artyCd > 0.05) { showBeat(`💥 포병 재장전 ${Math.ceil(state.artyCd)}초`, 'orange'); return; }
+    if (state.artyCd > 0.05) { showBeat(`포병 재장전 ${Math.ceil(state.artyCd)}초`, 'orange'); return; }
     state.artyCd = R.artyCd;
     const target = currentTargetPoint();
     const shooter = state.rank === 'division' ? '사단 포병대대' : '대대 포병지원반';
-    showBanner(`💥 ${shooter} 집중 포격 개시 — ${R.artyShots}발!`, '#fbbf24');
+    showBanner(`${shooter} 집중 포격 개시 — ${R.artyShots}발`, '#fbbf24', 'artillery');
     comms.say('본부', `${shooter}, 목표 좌표 송신. 집중 포격 실시!`, { prio: true });
     setTimeout(() => comms.say(shooter, `${R.artyShots}발 장전 — 사격 개시!`, { prio: true }), 850);
     for (let i = 0; i < R.artyShots; i++) setTimeout(() => fireArtilleryRound(target, R.artySpread), 1300 + i * 620);
@@ -2606,15 +2861,15 @@
     if (!state.running) return;
     const R = RANKS[state.rank];
     if (!R.cas) {
-      showBanner('✈️ 항공 근접지원(CAS)은 사단장 전용 전력입니다.', '#fb7185');
+      showBanner('항공 근접지원(CAS)은 사단장 전용 전력입니다.', '#fb7185', 'warn');
       comms.say('항공지원', 'CAS 소티 요청 권한 없음. 사단장 승인 필요!', { prio: true });
       return;
     }
-    if (state.casCd > 0.05) { showBeat(`✈️ CAS 재출격 ${Math.ceil(state.casCd)}초`, 'orange'); return; }
+    if (state.casCd > 0.05) { showBeat(`CAS 재출격 ${Math.ceil(state.casCd)}초`, 'orange'); return; }
     state.casCd = R.casCd;
     const target = currentTargetPoint();
     launchCAS(target);
-    showBanner('✈️ CAS 편대 출격 — 목표 상공 폭격 진입!', '#38bdf8');
+    showBanner('CAS 편대 출격 — 목표 상공 폭격 진입', '#38bdf8', 'cas');
     comms.say('항공지원', 'CAS 편대, 목표 상공 진입. 폭장 투하 준비!', { prio: true });
     setTimeout(() => comms.say('항공지원', '폭장 투하! 목표 초토화!', { prio: true }), 2600);
     setTimeout(() => comms.say('본부', '항공 지원 확인. 지상 제대, 폭격 후 돌격하라!', { prio: true }), 4400);
@@ -2623,38 +2878,518 @@
 
   function tickCmdUI() {
     const R = RANKS[state.rank];
-    const arty = document.getElementById('btn-arty');
-    const cas = document.getElementById('btn-cas');
-    const ab = document.getElementById('btn-attack');
-    if (!arty || !cas) return;
-    if (state.rank === 'tank') {
-      arty.textContent = '💥 포격(대대장↑)'; arty.classList.add('locked'); arty.disabled = false;
-    } else {
-      arty.classList.remove('locked');
-      arty.disabled = state.artyCd > 0.05;
-      arty.textContent = state.artyCd > 0.05 ? `💥 포격 ${Math.ceil(state.artyCd)}s` : '💥 집중 포격';
-    }
-    if (!R.cas) { cas.textContent = '✈️ CAS(사단장)'; cas.classList.add('locked'); cas.disabled = false; }
-    else {
-      cas.classList.remove('locked');
-      cas.disabled = state.casCd > 0.05;
-      cas.textContent = state.casCd > 0.05 ? `✈️ CAS ${Math.ceil(state.casCd)}s` : '✈️ 항공 지원';
-    }
-    if (ab) ab.classList.toggle('active', state.attackOrder && state.attackTimer > 0);
+    const artyLocked = state.rank === 'tank';
+    document.querySelectorAll('.js-arty').forEach(el => {
+      if (artyLocked) { el.innerHTML = `${ICO('artillery','ic sm')}포격(대대장↑)`; el.classList.add('locked'); el.disabled = false; }
+      else {
+        el.classList.remove('locked');
+        el.disabled = state.artyCd > 0.05;
+        el.innerHTML = `${ICO('artillery','ic sm')}${state.artyCd > 0.05 ? `포격 ${Math.ceil(state.artyCd)}s` : '집중 포격'}`;
+      }
+    });
+    document.querySelectorAll('.js-cas').forEach(el => {
+      if (!R.cas) { el.innerHTML = `${ICO('cas','ic sm')}CAS(사단장)`; el.classList.add('locked'); el.disabled = false; }
+      else {
+        el.classList.remove('locked');
+        el.disabled = state.casCd > 0.05;
+        el.innerHTML = `${ICO('cas','ic sm')}${state.casCd > 0.05 ? `CAS ${Math.ceil(state.casCd)}s` : '항공 지원'}`;
+      }
+    });
+    document.querySelectorAll('.js-attack').forEach(el => el.classList.toggle('active', state.attackOrder && state.attackTimer > 0));
     const oi = document.getElementById('cmd-obj-info');
-    if (oi) oi.textContent = state.objective ? `📍 목표 ${Math.round(state.objective.x)} / ${Math.round(state.objective.z)}` : '📍 목표 미지정';
+    if (oi) oi.innerHTML = state.objective
+      ? `${ICO('objective','ic sm')}목표 ${Math.round(state.objective.x)} / ${Math.round(state.objective.z)}`
+      : `${ICO('objective','ic sm')}목표 미지정`;
+    // 전술 지도 사이드 상태
+    const ts = document.getElementById('tm-status');
+    if (ts) {
+      const aN = allies.filter(a => a.state === 'active').length + 1;
+      const eN = enemies.filter(e => e.state === 'active').length;
+      ts.innerHTML = `제대 <b>${R.label}</b> · 아군 <b>${aN}</b>대 / 적 <b>${eN}</b>대<br>`
+        + `태세 <b>${STANCES[state.stance].label}</b> · 목표 <b>${state.objective ? `${Math.round(state.objective.x)} / ${Math.round(state.objective.z)}` : '미지정'}</b><br>`
+        + `포격 <b>${state.artyCd > 0.05 ? state.artyCd.toFixed(0) + 's' : '준비'}</b> · CAS <b>${R.cas ? (state.casCd > 0.05 ? state.casCd.toFixed(0) + 's' : '준비') : '권한없음'}</b>`;
+    }
+    const ec = document.getElementById('tm-echelons');
+    if (ec) {
+      const compCols = ['#60a5fa', '#34d399', '#fbbf24'];
+      let html = '';
+      for (let c = 1; c <= R.companies; c++) {
+        const all = allies.filter(a => (a.company || 1) === c);
+        const alive = all.filter(a => a.state === 'active');
+        const pct = alive.length ? Math.round(alive.reduce((s2, a) => s2 + a.hp, 0) / alive.reduce((s2, a) => s2 + (a.maxHp || 100), 0) * 100) : 0;
+        html += `<div class="ec"><i style="background:${compCols[c - 1] || '#60a5fa'}"></i><span>${c}중대</span><div class="bar"><u style="width:${pct}%"></u></div><b>${alive.length}/${all.length}</b></div>`;
+      }
+      const sup = allies.filter(a => a.isSupport);
+      if (sup.length) {
+        const alive = sup.filter(a => a.state === 'active');
+        html += `<div class="ec"><i style="background:#a78bfa"></i><span>기계화</span><div class="bar"><u style="width:${Math.round(alive.length / sup.length * 100)}%"></u></div><b>${alive.length}/${sup.length}</b></div>`;
+      }
+      if (artyPieces.length) html += `<div class="ec"><i style="background:#fbbf24"></i><span>자주포</span><div class="bar"><u style="width:100%"></u></div><b>${artyPieces.length}문</b></div>`;
+      ec.innerHTML = html;
+    }
   }
   function updateCmdUI() {
     const R = RANKS[state.rank];
     document.getElementById('cmd-rank-name').textContent = R.label;
-    document.getElementById('cmd-stance-name').textContent = `${STANCES[state.stance].icon} ${STANCES[state.stance].label}`;
+    const S = STANCES[state.stance];
+    document.getElementById('cmd-stance-name').innerHTML = `${ICO(S.icon, 'ic sm')}${S.label}`;
     document.querySelectorAll('.cb-rank').forEach(b => b.classList.toggle('active', b.dataset.rank === state.rank));
     document.querySelectorAll('.cb-stance').forEach(b => b.classList.toggle('active', b.dataset.stance === state.stance));
-    const markB = document.getElementById('btn-mark');
-    markB.classList.toggle('active', state.markMode);
-    markB.textContent = state.markMode ? '📍 전장 탭…' : '📍 목표 지정';
+    document.querySelectorAll('.js-mark').forEach(b => {
+      b.classList.toggle('active', state.markMode);
+      b.innerHTML = `${ICO('mark','ic sm')}${state.markMode ? '전장 탭…' : '목표 지정'}`;
+    });
     tickCmdUI();
   }
+
+  // ============================================================================
+  // V6.4 FULL BATTLEFIELD TACTICAL MAP — 지형·등고선·도로·제대·시야원추·명령
+  // ============================================================================
+  const tacCv = document.getElementById('big-map-canvas');
+  const tacCtx = tacCv.getContext('2d');
+  const TAC = { minX: -190, maxX: 190, minZ: -180, maxZ: 170 };            // 작전구역
+  const TAC_SPAN_X = TAC.maxX - TAC.minX, TAC_SPAN_Z = TAC.maxZ - TAC.minZ;
+  const TAC_BASE = { minX: -340, maxX: 340, minZ: -285, maxZ: 275 };       // 지도에 수록하는 주변 지형
+  const TAC_BASE_X = TAC_BASE.maxX - TAC_BASE.minX, TAC_BASE_Z = TAC_BASE.maxZ - TAC_BASE.minZ;
+
+  function tacResize() {
+    const wrap = document.getElementById('tm-mapwrap');
+    if (!wrap) return;
+    const r = wrap.getBoundingClientRect();
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const w = Math.max(240, Math.floor((r.width || window.innerWidth) - 2));
+    const h = Math.max(200, Math.floor((r.height || window.innerHeight * 0.6) - 2));
+    if (state.tacW === w && state.tacH === h) return;
+    state.tacW = w; state.tacH = h;
+    tacCv.width = Math.floor(w * dpr); tacCv.height = Math.floor(h * dpr);
+    tacCv.style.width = w + 'px'; tacCv.style.height = h + 'px';
+  }
+  function resetTacView() { state.tacZoom = 1; state.tacPanX = 0; state.tacPanZ = 0; }
+  function tacSpan() {
+    // 화면비에 맞춰 보이는 세계 범위를 정해 항상 캔버스를 꽉 채운다(작전구역은 항상 포함).
+    const aspect = state.tacW / Math.max(1, state.tacH);
+    const secAspect = TAC_SPAN_X / TAC_SPAN_Z;
+    let spanX, spanZ;
+    if (aspect >= secAspect) { spanZ = TAC_SPAN_Z; spanX = spanZ * aspect; }
+    else { spanX = TAC_SPAN_X; spanZ = spanX / aspect; }
+    spanX = Math.min(spanX, TAC_BASE_X - 8); spanZ = Math.min(spanZ, TAC_BASE_Z - 8);
+    return { spanX: spanX / state.tacZoom, spanZ: spanZ / state.tacZoom };
+  }
+  function tacScale() {
+    const sp = tacSpan();
+    return Math.min(state.tacW / sp.spanX, state.tacH / sp.spanZ);
+  }
+  function tacCenter() {
+    const sp = tacSpan();
+    const zc = (TAC.minZ + TAC.maxZ) / 2 - 5;
+    const limX = Math.max(0, (TAC_BASE_X - sp.spanX) / 2);
+    const limZ = Math.max(0, (TAC_BASE_Z - sp.spanZ) / 2);
+    return {
+      x: Math.max(-limX, Math.min(limX, state.tacPanX)),
+      z: zc + Math.max(-limZ, Math.min(limZ, state.tacPanZ)),
+    };
+  }
+  function w2s(x, z) {
+    const sc = tacScale(), c = tacCenter();
+    return [state.tacW / 2 + (x - c.x) * sc, state.tacH / 2 + (z - c.z) * sc];
+  }
+  function s2w(sx, sy) {
+    const sc = tacScale(), c = tacCenter();
+    return [c.x + (sx - state.tacW / 2) / sc, c.z + (sy - state.tacH / 2) / sc];
+  }
+
+  // 지형 기저(Base): 음영기복 + 등고선 + 도로 + 구조물을 오프스크린에 1회 렌더
+  function tacDrawBase() {
+    const W = 816, H = 672;
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const c = cv.getContext('2d');
+    const img = c.createImageData(W, H);
+    const px = img.data;
+    const hs = new Float32Array(W * H);
+    for (let j = 0; j < H; j++) {
+      const z = TAC_BASE.minZ + (j / (H - 1)) * TAC_BASE_Z;
+      for (let i = 0; i < W; i++) {
+        const x = TAC_BASE.minX + (i / (W - 1)) * TAC_BASE_X;
+        hs[j * W + i] = terrainHeight(x, z);
+      }
+    }
+    for (let j = 0; j < H; j++) {
+      for (let i = 0; i < W; i++) {
+        const k = j * W + i;
+        const h = hs[k];
+        const hx = hs[j * W + Math.min(W - 1, i + 1)] - hs[j * W + Math.max(0, i - 1)];
+        const hz = hs[Math.min(H - 1, j + 1) * W + i] - hs[Math.max(0, j - 1) * W + i];
+        const shade = Math.max(-1, Math.min(1, (hx * -0.7 + hz * -0.7) * 1.5));
+        const t = Math.max(0, Math.min(1, (h + 3.4) / 6.8));
+        let r = 34 + t * 62, g = 46 + t * 54, b = 36 + t * 26;
+        const s = 1 + shade * 0.26;
+        r *= s; g *= s; b *= s;
+        // 등고선: 0.75m 간격 경계
+        const band = Math.floor(h / 0.75), bx = Math.floor(hs[j * W + Math.max(0, i - 1)] / 0.75), bz = Math.floor(hs[Math.max(0, j - 1) * W + i] / 0.75);
+        if (band !== bx || band !== bz) { r *= 0.62; g *= 0.66; b *= 0.62; }
+        px[k * 4] = Math.max(0, Math.min(255, r));
+        px[k * 4 + 1] = Math.max(0, Math.min(255, g));
+        px[k * 4 + 2] = Math.max(0, Math.min(255, b));
+        px[k * 4 + 3] = 255;
+      }
+    }
+    c.putImageData(img, 0, 0);
+    // 도로망 (본 전장과 동일한 위치 · 지도에서는 작전구역 안쪽까지만 표기)
+    const mx = (x) => ((x - TAC_BASE.minX) / TAC_BASE_X) * W;
+    const mz = (z) => ((z - TAC_BASE.minZ) / TAC_BASE_Z) * H;
+    const drawRoad = (x0, z0, x1, z1, width) => {
+      c.save();
+      c.strokeStyle = 'rgba(26,26,24,0.85)'; c.lineWidth = width + 2.4; c.lineCap = 'butt';
+      c.beginPath(); c.moveTo(mx(x0), mz(z0)); c.lineTo(mx(x1), mz(z1)); c.stroke();
+      c.strokeStyle = '#6d6b60'; c.lineWidth = width;
+      c.beginPath(); c.moveTo(mx(x0), mz(z0)); c.lineTo(mx(x1), mz(z1)); c.stroke();
+      c.strokeStyle = 'rgba(216,189,119,0.55)'; c.lineWidth = 1; c.setLineDash([5, 7]);
+      c.beginPath(); c.moveTo(mx(x0), mz(z0)); c.lineTo(mx(x1), mz(z1)); c.stroke();
+      c.setLineDash([]); c.restore();
+    };
+    drawRoad(0, TAC.minZ, 0, TAC.maxZ, 6);
+    drawRoad(TAC.minX, -15, TAC.maxX, -15, 5);
+    // 구조물 / 장애물
+    obstacles.forEach(ob => {
+      const ud = ob.userData || {};
+      const cx = mx(ob.position.x), cz = mz(ob.position.z);
+      const w = Math.max(2, (ud.w || 3) * (W / TAC_BASE_X)), d = Math.max(2, (ud.d || 3) * (H / TAC_BASE_Z));
+      c.save(); c.translate(cx, cz); c.rotate(ob.rotation.y || 0);
+      c.fillStyle = ud.isReflector ? 'rgba(56,189,248,0.5)' : 'rgba(120,116,104,0.75)';
+      c.strokeStyle = ud.isReflector ? 'rgba(56,189,248,0.9)' : 'rgba(160,156,144,0.7)';
+      c.lineWidth = 1; c.fillRect(-w / 2, -d / 2, w, d); c.strokeRect(-w / 2, -d / 2, w, d);
+      c.restore();
+    });
+    state.tacBase = cv;
+    state.tacBaseW = W; state.tacBaseH = H;
+  }
+
+  function tacFovCone(ctx, sx, sy, yaw, half, lenPx, fill, stroke) {
+    // 화면 좌표: 월드 +x → 오른쪽, +z → 아래. forward(yaw) = (-sin yaw, -cos yaw)
+    const L = lenPx;
+    ctx.save();
+    ctx.beginPath(); ctx.moveTo(sx, sy);
+    ctx.arc(sx, sy, L,
+      Math.atan2(-Math.cos(yaw - half), -Math.sin(yaw - half)),
+      Math.atan2(-Math.cos(yaw + half), -Math.sin(yaw + half)), true);
+    ctx.closePath();
+    ctx.fillStyle = fill; ctx.fill();
+    if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1.2; ctx.stroke(); }
+    ctx.restore();
+  }
+
+  function renderTacMap() {
+    if (!state.bigMapOpen) return;
+    if (state.tacW === 0) tacResize();
+    const ctx = tacCtx;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, state.tacW, state.tacH);
+    ctx.fillStyle = '#0a1420'; ctx.fillRect(0, 0, state.tacW, state.tacH);
+    if (!state.tacBase) tacDrawBase();
+    const sc = tacScale();
+    // 기저 지형 이미지: 주변 지형까지 매핑해 캔버스를 꽉 채운다
+    const [bx0, bz0] = w2s(TAC_BASE.minX, TAC_BASE.minZ);
+    const bw = TAC_BASE_X * sc, bh = TAC_BASE_Z * sc;
+    ctx.imageSmoothingEnabled = true;
+    ctx.globalAlpha = 0.98;
+    ctx.drawImage(state.tacBase, bx0, bz0, bw, bh);
+    ctx.globalAlpha = 1;
+    // 작전구역 밖은 어둡게 + 사선 해치로 비작전 지역임을 표시
+    const [sx0, sz0] = w2s(TAC.minX, TAC.minZ);
+    const [sx1, sz1] = w2s(TAC.maxX, TAC.maxZ);
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, state.tacW, state.tacH);
+    ctx.rect(sx0, sz0, sx1 - sx0, sz1 - sz0);
+    ctx.clip('evenodd');
+    ctx.fillStyle = 'rgba(5, 12, 20, 0.42)'; ctx.fillRect(0, 0, state.tacW, state.tacH);
+    ctx.strokeStyle = 'rgba(56,189,248,0.07)'; ctx.lineWidth = 1;
+    for (let x = -state.tacH; x < state.tacW; x += 14) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + state.tacH, state.tacH); ctx.stroke(); }
+    ctx.restore();
+    // 작전구역 경계
+    ctx.save();
+    ctx.strokeStyle = 'rgba(251,191,36,0.5)'; ctx.lineWidth = 1.4; ctx.setLineDash([9, 6]);
+    ctx.strokeRect(sx0, sz0, sx1 - sx0, sz1 - sz0);
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(251,191,36,0.72)'; ctx.font = '800 9px Consolas, monospace'; ctx.textAlign = 'left';
+    const lb = '작전구역 SECTOR';
+    const lw = ctx.measureText(lb).width;
+    ctx.fillStyle = 'rgba(6,14,24,0.8)'; ctx.fillRect(sx0 + 4, sz0 + 4, lw + 8, 13);
+    ctx.fillStyle = 'rgba(251,191,36,0.85)';
+    ctx.fillText(lb, sx0 + 8, sz0 + 14);
+    ctx.restore();
+    // 격자 (50m)
+    ctx.save();
+    ctx.strokeStyle = 'rgba(125,211,252,0.16)'; ctx.lineWidth = 1; ctx.font = '9px Consolas, monospace';
+    ctx.fillStyle = 'rgba(125,211,252,0.55)'; ctx.textAlign = 'left';
+    for (let x = Math.ceil(TAC_BASE.minX / 50) * 50; x <= TAC_BASE.maxX; x += 50) {
+      const [sx] = w2s(x, 0);
+      if (sx < 0 || sx > state.tacW) continue;
+      ctx.beginPath(); ctx.moveTo(sx, 0); ctx.lineTo(sx, state.tacH); ctx.stroke();
+      ctx.fillText(`${x}`, sx + 2, 12);
+    }
+    for (let z = Math.ceil(TAC_BASE.minZ / 50) * 50; z <= TAC_BASE.maxZ; z += 50) {
+      const [, sy] = w2s(0, z);
+      if (sy < 0 || sy > state.tacH) continue;
+      ctx.beginPath(); ctx.moveTo(0, sy); ctx.lineTo(state.tacW, sy); ctx.stroke();
+      ctx.fillText(`${z}`, 3, sy - 3);
+    }
+    ctx.restore();
+    // 지도 시트 프레임 · 표제판
+    ctx.save();
+    ctx.strokeStyle = 'rgba(56,189,248,0.35)'; ctx.lineWidth = 1;
+    ctx.strokeRect(5.5, 5.5, state.tacW - 11, state.tacH - 11);
+    const tw = Math.min(430, state.tacW - 90);
+    if (state.tacH >= 372) {
+      ctx.fillStyle = 'rgba(6,14,24,0.94)'; ctx.fillRect(12, state.tacH - 32, tw, 24);
+      ctx.strokeStyle = 'rgba(56,189,248,0.32)'; ctx.strokeRect(12, state.tacH - 32, tw, 24);
+      ctx.fillStyle = '#7dd3fc'; ctx.font = '800 9.5px Consolas, monospace'; ctx.textAlign = 'left';
+      ctx.fillText('PROJECT CANON V6.4 · 작전구역 380×350m · GRID 50m · 등고 0.75m', 19, state.tacH - 16);
+    }
+    ctx.restore();
+    // 아군 포병 사거리 / CAS 범위
+    const compCols = ['#60a5fa', '#34d399', '#fbbf24'];
+    if (state.objective) {
+      const [ox, oy] = w2s(state.objective.x, state.objective.z);
+      const R = RANKS[state.rank];
+      if (state.rank !== 'tank') {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(251,191,36,0.35)'; ctx.lineWidth = 1.4; ctx.setLineDash([6, 6]);
+        ctx.beginPath(); ctx.arc(ox, oy, R.artySpread * 3.2 * sc, 0, Math.PI * 2); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = 'rgba(251,191,36,0.6)'; ctx.font = '9px Consolas, monospace';
+        ctx.fillText('ARTY', ox + R.artySpread * 3.2 * sc * 0.7, oy - 4);
+        ctx.restore();
+      }
+      if (R.cas) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(56,189,248,0.28)'; ctx.lineWidth = 1.2; ctx.setLineDash([3, 7]);
+        ctx.beginPath(); ctx.arc(ox, oy, 46 * sc, 0, Math.PI * 2); ctx.stroke();
+        ctx.setLineDash([]); ctx.restore();
+      }
+    }
+    // 아군 제대 (제대별 마커 + 이름)
+    ctx.save();
+    ctx.font = '700 9.5px Malgun Gothic, sans-serif'; ctx.textAlign = 'left';
+    allies.forEach(a => {
+      if (a.state !== 'active') return;
+      const [sx, sy] = w2s(a.root.position.x, a.root.position.z);
+      const col = a.isSupport ? '#a78bfa' : (compCols[(a.company || 1) - 1] || '#60a5fa');
+      ctx.save(); ctx.translate(sx, sy);
+      if (a.isSupport) {
+        ctx.fillStyle = col; ctx.fillRect(-4, -4, 8, 8);
+        ctx.strokeStyle = 'rgba(0,0,0,0.6)'; ctx.lineWidth = 1; ctx.strokeRect(-4, -4, 8, 8);
+      } else {
+        ctx.rotate(-a.hullYaw);
+        ctx.beginPath(); ctx.moveTo(0, -7); ctx.lineTo(-5.4, 5); ctx.lineTo(5.4, 5); ctx.closePath();
+        ctx.fillStyle = col; ctx.fill(); ctx.strokeStyle = 'rgba(4,10,18,0.85)'; ctx.lineWidth = 1; ctx.stroke();
+      }
+      ctx.restore();
+      if (state.tacZoom >= 1.25 || a.isSupport) {
+        ctx.fillStyle = 'rgba(226,241,255,0.82)';
+        ctx.fillText(a.name, sx + 7, sy + 3);
+      }
+    });
+    ctx.restore();
+    // 적 전차 / 지휘전차
+    enemies.forEach(e => {
+      const [sx, sy] = w2s(e.root.position.x, e.root.position.z);
+      const dead = e.state !== 'active';
+      ctx.save(); ctx.translate(sx, sy);
+      ctx.beginPath();
+      if (e.isBoss) { ctx.moveTo(0, -8); ctx.lineTo(6.5, 0); ctx.lineTo(0, 8); ctx.lineTo(-6.5, 0); }
+      else { ctx.arc(0, 0, dead ? 2.6 : 4.6, 0, Math.PI * 2); }
+      ctx.closePath();
+      ctx.fillStyle = dead ? 'rgba(71,85,105,0.55)' : (e.isBoss ? '#f43f5e' : (e.state === 'captured' ? '#34d399' : '#fb7185'));
+      ctx.fill();
+      if (e.isBoss && !dead) { ctx.strokeStyle = 'rgba(254,205,211,0.9)'; ctx.lineWidth = 1.2; ctx.stroke(); }
+      ctx.restore();
+      if (e.isBoss && !dead) {
+        ctx.fillStyle = '#fecdd3'; ctx.font = '700 9.5px Malgun Gothic, sans-serif';
+        ctx.fillText('적 지휘전차', sx + 9, sy - 2);
+      }
+    });
+    // 항공기 / 드론
+    aircrafts.forEach(j => {
+      if (j.state !== 'active') return;
+      const [sx, sy] = w2s(j.root.position.x, j.root.position.z);
+      ctx.save(); ctx.translate(sx, sy); ctx.rotate(-(j.root.rotation ? j.root.rotation.y : 0));
+      ctx.fillStyle = '#fbbf24';
+      ctx.beginPath(); ctx.moveTo(0, -8); ctx.lineTo(-6, 6); ctx.lineTo(0, 3); ctx.lineTo(6, 6); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    });
+    drones.forEach(d => {
+      if (d.state !== 'active') return;
+      const [sx, sy] = w2s(d.root.position.x, d.root.position.z);
+      ctx.fillStyle = '#fb923c'; ctx.fillRect(sx - 2.4, sy - 2.4, 4.8, 4.8);
+    });
+    // 아군 자주포 제대
+    if (typeof artyPieces !== 'undefined') {
+      artyPieces.forEach((p, i) => {
+        const [sx, sy] = w2s(p.root.position.x, p.root.position.z);
+        ctx.save(); ctx.translate(sx, sy);
+        ctx.fillStyle = '#fbbf24'; ctx.strokeStyle = 'rgba(4,10,18,0.85)'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(0, -6.5); ctx.lineTo(-5.5, 3); ctx.lineTo(0, 1); ctx.lineTo(5.5, 3); ctx.closePath();
+        ctx.fill(); ctx.stroke(); ctx.restore();
+        if (state.tacZoom >= 1.25) { ctx.fillStyle = 'rgba(253,230,138,0.8)'; ctx.font = '700 9px Malgun Gothic, sans-serif'; ctx.fillText(`자주포 ${i + 1}호차`, sx + 7, sy + 3); }
+      });
+    }
+    // 플레이어: 시야 원추(포탑) + 차체 방위
+    {
+      const pp = playerRoot.position;
+      const [sx, sy] = w2s(pp.x, pp.z);
+      tacFovCone(ctx, sx, sy, state.turretYaw, 0.34, 150 * sc, 'rgba(34,211,238,0.16)', 'rgba(34,211,238,0.55)');
+      ctx.save(); ctx.translate(sx, sy); ctx.rotate(-state.hullYaw);
+      ctx.beginPath(); ctx.moveTo(0, -9); ctx.lineTo(-6.5, 7); ctx.lineTo(6.5, 7); ctx.closePath();
+      ctx.fillStyle = '#22d3ee'; ctx.fill(); ctx.strokeStyle = '#04262e'; ctx.lineWidth = 1.2; ctx.stroke();
+      ctx.restore();
+      ctx.save(); ctx.translate(sx, sy); ctx.rotate(-state.turretYaw);
+      ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(0, -3); ctx.lineTo(0, -26); ctx.stroke();
+      ctx.restore();
+      ctx.fillStyle = '#a5f3fc'; ctx.font = '800 9.5px Malgun Gothic, sans-serif';
+      ctx.fillText('지휘전차', sx + 9, sy + 12);
+      // 시야 원추 호각 표기
+    }
+    // 목표 마커 + 지목 표적
+    if (state.objective) {
+      const [ox, oy] = w2s(state.objective.x, state.objective.z);
+      const pulse = 1 + Math.sin(performance.now() / 260) * 0.16;
+      ctx.save();
+      ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(ox, oy, 10 * pulse, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(ox - 16, oy); ctx.lineTo(ox - 6, oy); ctx.moveTo(ox + 6, oy); ctx.lineTo(ox + 16, oy);
+      ctx.moveTo(ox, oy - 16); ctx.lineTo(ox, oy - 6); ctx.moveTo(ox, oy + 6); ctx.lineTo(ox, oy + 16);
+      ctx.stroke();
+      ctx.fillStyle = '#fde68a'; ctx.font = '800 9px Consolas, monospace';
+      ctx.fillText(`${Math.round(state.objective.x)} / ${Math.round(state.objective.z)}`, ox + 13, oy + 14);
+      const [pxs, pys] = w2s(playerRoot.position.x, playerRoot.position.z);
+      ctx.setLineDash([5, 6]); ctx.strokeStyle = 'rgba(251,191,36,0.6)'; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(pxs, pys); ctx.lineTo(ox, oy); ctx.stroke(); ctx.setLineDash([]);
+      ctx.restore();
+    }
+    if (state.markedUnit && state.markedUnit.state === 'active') {
+      const [mx2, my2] = w2s(state.markedUnit.root.position.x, state.markedUnit.root.position.z);
+      ctx.strokeStyle = '#f43f5e'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(mx2, my2, 13, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(mx2 - 18, my2); ctx.lineTo(mx2 + 18, my2); ctx.moveTo(mx2, my2 - 18); ctx.lineTo(mx2, my2 + 18); ctx.stroke();
+    }
+    // 투하 경고
+    bombs.forEach(b => {
+      if (!b.active) return;
+      const [bx, by] = w2s(b.warnRing.position.x, b.warnRing.position.z);
+      ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.arc(bx, by, Math.max(5, 13 * sc), 0, Math.PI * 2); ctx.stroke();
+    });
+    // 북쪽 + 축척
+    ctx.save();
+    ctx.strokeStyle = 'rgba(226,241,255,0.85)'; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.moveTo(state.tacW - 26, 18); ctx.lineTo(state.tacW - 26, 44); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(state.tacW - 26, 18); ctx.lineTo(state.tacW - 30, 25); ctx.lineTo(state.tacW - 22, 25); ctx.closePath();
+    ctx.fillStyle = 'rgba(226,241,255,0.9)'; ctx.fill();
+    ctx.font = '800 10px Consolas, monospace'; ctx.fillText('N', state.tacW - 31, 12);
+    const barM = 100 * sc;
+    ctx.strokeStyle = 'rgba(226,241,255,0.8)'; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.moveTo(state.tacW - 26 - barM, state.tacH - 22); ctx.lineTo(state.tacW - 26, state.tacH - 22); ctx.stroke();
+    ctx.fillStyle = 'rgba(226,241,255,0.8)'; ctx.font = '9px Consolas, monospace';
+    ctx.fillText('100m', state.tacW - 26 - barM, state.tacH - 27);
+    ctx.restore();
+    // 커서 좌표 크로스헤어
+    if (state.tacHover) {
+      const [hx, hy] = w2s(state.tacHover.x, state.tacHover.z);
+      ctx.strokeStyle = 'rgba(253,230,138,0.7)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(hx - 7, hy); ctx.lineTo(hx + 7, hy); ctx.moveTo(hx, hy - 7); ctx.lineTo(hx, hy + 7); ctx.stroke();
+    }
+  }
+
+  // ---- 전술 지도 상호작용 ----
+  (function tacInteract() {
+    let dragging = false, moved = 0, lastX = 0, lastY = 0, pinch = 0;
+    const pointers = new Map();
+    const local = (e) => { const r = tacCv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+    tacCv.addEventListener('pointerdown', (e) => {
+      pointers.set(e.pointerId, local(e));
+      try { tacCv.setPointerCapture(e.pointerId); } catch (_) {}
+      if (pointers.size === 1) { dragging = true; moved = 0; lastX = e.clientX; lastY = e.clientY; }
+      else if (pointers.size === 2) {
+        const [a, b] = [...pointers.values()];
+        pinch = Math.hypot(a[0] - b[0], a[1] - b[1]);
+      }
+    });
+    tacCv.addEventListener('pointermove', (e) => {
+      const [lx, ly] = local(e);
+      if (pointers.has(e.pointerId)) {
+        const prev = pointers.get(e.pointerId);
+        pointers.set(e.pointerId, [lx, ly]);
+        if (pointers.size === 2) {
+          const [a, b] = [...pointers.values()];
+          const d = Math.hypot(a[0] - b[0], a[1] - b[1]);
+          if (pinch > 0) { state.tacZoom = Math.max(1, Math.min(6, state.tacZoom * (d / pinch))); }
+          pinch = d; return;
+        }
+        if (dragging) {
+          const dx = lx - prev[0], dy = ly - prev[1];
+          moved += Math.abs(dx) + Math.abs(dy);
+          if (moved > 5) {
+            const sc = tacScale();
+            state.tacPanX -= dx / sc; state.tacPanZ -= dy / sc;
+          }
+        }
+      }
+      const [wx, wz] = s2w(lx, ly);
+      state.tacHover = { x: wx, z: wz };
+      const t = document.getElementById('tm-coord');
+      if (t) t.textContent = `GRID X ${Math.round(wx)} / Z ${Math.round(wz)}`;
+    });
+    const end = (e) => {
+      const had = pointers.has(e.pointerId);
+      pointers.delete(e.pointerId);
+      if (pointers.size < 2) pinch = 0;
+      if (!had) return;
+      if (dragging && moved <= 5) {
+        const [lx, ly] = local(e);
+        const [wx, wz] = s2w(lx, ly);
+        tacPick(wx, wz);
+      }
+      if (pointers.size === 0) dragging = false;
+    };
+    tacCv.addEventListener('pointerup', end);
+    tacCv.addEventListener('pointercancel', (e) => { pointers.delete(e.pointerId); dragging = false; pinch = 0; });
+    tacCv.addEventListener('pointerleave', () => { state.tacHover = null; });
+    tacCv.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const before = s2w(...local(e));
+      state.tacZoom = Math.max(1, Math.min(6, state.tacZoom * (e.deltaY < 0 ? 1.15 : 0.87)));
+      const after = s2w(...local(e));
+      state.tacPanX += before[0] - after[0]; state.tacPanZ += before[1] - after[1];
+    }, { passive: false });
+    document.getElementById('tm-zoom-in').onclick = () => { state.tacZoom = Math.min(6, state.tacZoom * 1.3); };
+    document.getElementById('tm-zoom-out').onclick = () => { state.tacZoom = Math.max(1, state.tacZoom / 1.3); };
+    document.getElementById('tm-fit').onclick = () => resetTacView();
+    // 지도 빈 영역(맵 캔버스 외곽) 클릭으로 닫히지 않도록: 오버레이 자체는 닫기 버튼/ESC/M 전용
+    document.getElementById('big-map-overlay').addEventListener('pointerdown', (e) => { if (e.target.id === 'big-map-overlay') window._toggleBigMap(false); });
+    window.addEventListener('resize', () => { if (state.bigMapOpen) { tacResize(); } });
+  })();
+
+  function tacPick(wx, wz) {
+    wx = Math.max(TAC.minX, Math.min(TAC.maxX, wx));
+    wz = Math.max(TAC.minZ, Math.min(TAC.maxZ, wz));
+    let nearest = null, nd = 9;
+    enemies.forEach(e => { if (e.state !== 'active') return; const d = Math.hypot(e.root.position.x - wx, e.root.position.z - wz); if (d < nd) { nd = d; nearest = e; } });
+    if (nearest) {
+      state.markedUnit = nearest;
+      setObjective(nearest.root.position.x, nearest.root.position.z, nearest.name);
+      comms.say('본부', `표적 지목 — ${nearest.name}. 해당 차량 집중 공격!`, { prio: true });
+    } else {
+      state.markedUnit = null;
+      setObjective(wx, wz);
+    }
+  }
+  window._tacPick = tacPick;
+  window._tacReset = resetTacView;
+  window.__tacW2S = (x, z) => w2s(x, z);
 
   function screenToObjective(clientX, clientY) {
     const rect = renderer.domElement.getBoundingClientRect();
@@ -2679,16 +3414,6 @@
   window._pickObjectiveAt = screenToObjective;
   window._setObjective = setObjective;
 
-  document.getElementById('big-map-canvas').addEventListener('click', (e) => {
-    e.stopPropagation();
-    const cv = e.currentTarget, r = cv.getBoundingClientRect();
-    const mx = ((e.clientX - r.left) / r.width) * 580, my = ((e.clientY - r.top) / r.height) * 580;
-    const sc = 580 / 420;
-    const wx = playerRoot.position.x + (mx - 290) / sc;
-    const wz = playerRoot.position.z + (my - 290) / sc;
-    state.markedUnit = null;
-    setObjective(wx, wz);
-  });
   window._openSettings = () => { if (document.pointerLockElement) document.exitPointerLock(); document.getElementById('settings-modal').style.display = 'flex'; };
   window._closeSettings = () => {
     audio.setVolumes(document.getElementById('sl-bgm').value/100, document.getElementById('sl-sfx').value/100, document.getElementById('chk-voice').checked);
@@ -2701,7 +3426,7 @@
     const order = ['tps', 'fps', 'top', 'cmd'];
     window._setCameraMode(order[(order.indexOf(state.camMode) + 1) % order.length]);
   };
-  window._tKey = (code, down) => { state.keys[code] = !!down; if (down && ['KeyW','KeyA','KeyS','KeyD'].includes(code) && state.autoDrive) { state.autoDrive = false; updateDriveUI(); } };
+  window._tKey = (code, down) => { state.keys[code] = !!down; if (down && ['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(code) && state.autoDrive) { state.autoDrive = false; updateDriveUI(); } };
   window._fireNow = () => firePlayerWeapon();
 
   // ---------------------------------------------------------------------------
@@ -2790,13 +3515,18 @@
   }
 
   let bannerT = null;
-  function showBanner(text, col = '#fbbf24') {
-    const el = document.getElementById('banner-msg'); el.textContent = text; el.style.borderColor = col; el.style.opacity = '1';
+  const EMOJI_RE = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{23E9}-\u{23FA}\u{2049}\u{203C}]/gu;
+  function clean(s) { return String(s).replace(EMOJI_RE, '').replace(/\s{2,}/g, ' ').trim(); }
+  function showBanner(text, col = '#fbbf24', icon = null) {
+    const el = document.getElementById('banner-msg');
+    el.innerHTML = (icon ? ICO(icon) : '') + clean(text);
+    el.style.borderColor = col; el.style.opacity = '1';
     clearTimeout(bannerT); bannerT = setTimeout(() => { el.style.opacity = '0'; }, 2400);
   }
   function showBeat(text, cls = 'gold') {
-    const el = document.getElementById('beat-feedback'); el.innerHTML = `<span class="${cls}">${text}</span>`;
-    setTimeout(() => { if (el.textContent === text) el.innerHTML = ''; }, 950);
+    const el = document.getElementById('beat-feedback'); const t = clean(text);
+    el.innerHTML = `<span class="${cls}">${t}</span>`;
+    setTimeout(() => { if (el.textContent === t) el.innerHTML = ''; }, 950);
   }
 
   function clearBattlefield() {
@@ -2830,13 +3560,13 @@
     const eCount = Math.max(cfg.enemies, R.minEnemy);
     const rpms = [1200, 1350, 1440, 1500, 1620, 1740];
     for (let i = 0; i < eCount; i++) {
-      createTankUnit(false, { name: i === 0 ? '👑 적 T-90M 지휘전차' : `적 T-90M #${i + 1}`, x: ((i % 6) - 2.5) * 36 + (Math.random() - 0.5) * 14, z: -64 - Math.floor(i / 6) * 34, rpm: rpms[i % 6], isBoss: i === 0 });
+      createTankUnit(false, { name: i === 0 ? '적 T-90M 지휘전차' : `적 T-90M #${i + 1}`, x: ((i % 6) - 2.5) * 36 + (Math.random() - 0.5) * 14, z: -64 - Math.floor(i / 6) * 34, rpm: rpms[i % 6], isBoss: i === 0 });
     }
     state.enemyTotal = eCount;
     state.wavesLeft = R.waves;
     state.jetSpawnTimer = 5.5; state.droneSpawnTimer = 3.5;
     const echelon = R.companies === 1 ? '1개 소대' : `${R.companies}개 중대`;
-    document.getElementById('hud-mode-tag').textContent = `PROJECT CANON V6.3 · 🎖 ${R.label} · ${echelon}`;
+    document.getElementById('hud-mode-tag').textContent = `PROJECT CANON V6.4 · ${R.label} · ${echelon}`;
     document.getElementById('hud-echelon').textContent = echelon + (R.ifv ? ' + 기계화' : '');
     updateDriveUI();
     updateCmdUI();
@@ -2855,7 +3585,7 @@
     for (let i = 0; i < n; i++) {
       createTankUnit(false, { name: `적 T-90M 증원 #${i + 1}`, x: ((i % 6) - 2.5) * 34 + (Math.random() - 0.5) * 10, z: -132 - Math.random() * 16, rpm: rpms[i % 4] });
     }
-    showBanner(`⚠️ 적 증원 웨이브 투입! (잔여 ${state.wavesLeft}회)`, '#fb7185');
+    showBanner(`적 증원 웨이브 투입 (잔여 ${state.wavesLeft}회)`, '#fb7185', 'warn');
     state.waveCd = 9;
     comms.say('항공정찰', `경고! 적 증원 전차 ${n}대 북측에서 접근 중!`, { prio: true });
     setTimeout(() => comms.say('본부', '전 부대, 증원 대비! 좌우 측방 경계 유지!', { prio: true }), 1900);
@@ -2939,8 +3669,8 @@
     state.attackOrder = false;
     document.body.classList.remove('cmd-view');
     const res = document.getElementById('modal-result'); res.style.display = 'block'; res.style.color = win ? '#34d399' : '#fb7185';
-    res.textContent = win ? `🏆 ${SCALES[state.scaleKey].label} 완전 승리!! 격파·나포 ${state.kills} · 자동요격 ${state.intercepted} · 점수 ${state.score.toLocaleString()} PT` : `⚠️ 지휘전차 전투불능! 격파 ${state.kills} · 점수 ${state.score.toLocaleString()} PT`;
-    document.getElementById('btn-start').textContent = '🔄 다시 기동전투 출격!';
+    res.textContent = win ? `${SCALES[state.scaleKey].label} 완전 승리 — 격파·나포 ${state.kills} · 자동요격 ${state.intercepted} · 점수 ${state.score.toLocaleString()} PT` : `지휘전차 전투불능 — 격파 ${state.kills} · 점수 ${state.score.toLocaleString()} PT`;
+    document.getElementById('btn-start').innerHTML = `${ICO('engine', 'ic lg')} 다시 기동전투 출격`;
     document.getElementById('overlay').style.display = 'flex';
     comms.say('본부', win ? '전 전선 기동 제압 완료! 대장님의 지휘로 대승을 거두었습니다!' : '지휘전차 긴급 철수! 재정비 후 반격하십시오!', { prio: true });
   }
@@ -2949,11 +3679,26 @@
     if (!state.running || state.bigMapOpen || state.camMode === 'cmd') return;
     audio.init();
     const { origin, dir, pts, locked } = getAim();
+    if (state.weapon === 'mg') {
+      if (state.mgCd > 0) return;
+      state.mgCd = 0.125;
+      const end = pts[1];
+      spawnLaser(origin, end, 0xa3e635);
+      spawnMuzzleFlash(origin, dir, 0.45);
+      state.recoil = 0.08; state.screenShake = Math.max(state.screenShake, 0.05);
+      audio.playCIWS();
+      if (locked) {
+        if (locked.type === 'tank') damageTank(locked.obj, 6, 5, true);
+        else if (locked.type === 'drone') destroyDrone(locked.obj, false);
+        else if (locked.type === 'jet') { locked.obj.hp -= 4; if (locked.obj.hp <= 0) destroyJet(locked.obj, true); }
+      }
+      return;
+    }
     if (state.weapon === 'missile') {
       if (state.missileCd > 0) return;
       state.missileCd = 2.6;
       const tgt = locked ? locked.obj : (aircrafts.find(a=>a.state==='active') || drones.find(d=>d.state==='active') || enemies.find(e=>e.state==='active'));
-      showBeat('🚀 기동 지대지/지대공 유도미사일 3연발!!', 'gold');
+    showBeat('기동 지대지/지대공 유도미사일 3연발', 'gold');
       for (let m = 0; m < 3; m++) {
         setTimeout(() => {
           if (!state.running) return;
@@ -2979,10 +3724,10 @@
     }
     state.recoil = 0.32; state.hullPitch += 0.022;
     let perf = false;
-    if (state.beatStep === 0) { state.beatStep = 1; state.beatTimer = state.beatDuration; state.comboMult = 1.0; perf = true; showBeat('⚡ 기동 공진 1/3!', 'cyan'); }
+    if (state.beatStep === 0) { state.beatStep = 1; state.beatTimer = state.beatDuration; state.comboMult = 1.0; perf = true; showBeat('기동 공진 1/3', 'cyan'); }
     else {
       perf = Math.abs(state.beatTimer) <= state.perfectWin; state.beatStep++;
-      if (perf) { state.comboMult += (state.beatStep === 3 ? 2.0 : 1.0); showBeat(state.beatStep === 3 ? '👑 PERFECT x4.0!!' : '✨ BEAT 2/3!', 'gold'); }
+      if (perf) { state.comboMult += (state.beatStep === 3 ? 2.0 : 1.0); showBeat(state.beatStep === 3 ? 'PERFECT x4.0' : 'BEAT 2/3', 'gold'); }
       if (state.beatStep >= 3) { state.beatStep = 0; state.beatTimer = 0; } else state.beatTimer = state.beatDuration;
     }
     audio.playSonic(state.beamFreq, state.beatStep===0?3:state.beatStep, perf);
@@ -3006,7 +3751,9 @@
     document.getElementById('overlay').style.display = 'none';
     state.hp = 100; state.score = 0; state.kills = 0; state.intercepted = 0;
     playerRoot.position.set(0, 0, 82); state.hullYaw = 0; state.hullSpeed = 0; state.turretYaw = 0; state.gunPitch = 0;
-    state.hullPitch = 0; state.hullRoll = 0;
+    state.hullPitch = 0; state.hullRoll = 0; state.lastHullYaw = 0; state.turretTraverse = 0;
+    document.getElementById('aim-zone').classList.add('on');
+    updateBearingHUD();
     state.shieldCd = 0; state.shieldActive = 0; state.smokeCd = 0; state.smokeActive = 0;
     state.autoDrive = true;
     state.running = true;
@@ -3041,47 +3788,70 @@
   window.addEventListener('contextmenu', e => e.preventDefault());
   window.addEventListener('wheel', (e) => { if (state.running) state.beamFreq = Math.max(85, Math.min(215, state.beamFreq + (e.deltaY < 0 ? 1.5 : -1.5))); });
 
-  let tLastX = 0, tLastY = 0, tStartX = 0, tStartY = 0;
-  renderer.domElement.addEventListener('touchstart', (e) => {
-    if (e.touches[0]) {
-      tLastX = tStartX = e.touches[0].clientX; tLastY = tStartY = e.touches[0].clientY;
+  // ---------------------------------------------------------------------------
+  // V6.4 터치 조작: 좌측 조이스틱=차체 / 우측 화면 드래그=포탑 독립 조준 (멀티터치)
+  // ---------------------------------------------------------------------------
+  const aimPtr = { id: null, lastX: 0, lastY: 0, startX: 0, startY: 0, moved: 0 };
+  renderer.domElement.addEventListener('pointerdown', (e) => {
+    if (!state.running || state.bigMapOpen) return;
+    if (e.pointerType === 'mouse') return;   // 마우스는 mousedown/mousemove 조준 경로 사용
+    if (aimPtr.id !== null) return;
+    aimPtr.id = e.pointerId; aimPtr.lastX = aimPtr.startX = e.clientX; aimPtr.lastY = aimPtr.startY = e.clientY; aimPtr.moved = 0;
+    try { renderer.domElement.setPointerCapture(e.pointerId); } catch (_) {}
+  });
+  renderer.domElement.addEventListener('pointermove', (e) => {
+    if (!state.running || state.bigMapOpen) return;
+    if (e.pointerId !== aimPtr.id) return;
+    if (state.camMode === 'cmd' || state.markMode) {
+      aimPtr.moved += Math.abs(e.clientX - aimPtr.lastX) + Math.abs(e.clientY - aimPtr.lastY);
+      aimPtr.lastX = e.clientX; aimPtr.lastY = e.clientY;
+      return;
     }
-  }, { passive: true });
-  renderer.domElement.addEventListener('touchmove', (e) => {
-    if (!state.running || !e.touches[0]) return;
-    if (state.camMode === 'cmd' || state.markMode) return;
-    const dx = e.touches[0].clientX - tLastX, dy = e.touches[0].clientY - tLastY;
-    state.turretYaw -= dx * 0.005; state.gunPitch = Math.max(-0.18, Math.min(0.65, state.gunPitch - dy * 0.004));
+    const dx = e.clientX - aimPtr.lastX, dy = e.clientY - aimPtr.lastY;
+    if (e.pointerType === 'touch') {
+      state.turretYaw = wrapAngle(state.turretYaw - dx * 0.0055);
+      state.gunPitch = Math.max(-0.18, Math.min(0.65, state.gunPitch - dy * 0.0042));
+    }
+    aimPtr.moved += Math.abs(dx) + Math.abs(dy);
+    aimPtr.lastX = e.clientX; aimPtr.lastY = e.clientY;
     state.lastAimInput = performance.now();
-    tLastX = e.touches[0].clientX; tLastY = e.touches[0].clientY;
-  }, { passive: true });
-  renderer.domElement.addEventListener('touchend', (e) => {
-    if (!state.running) return;
-    if (state.camMode !== 'cmd' && !state.markMode) return;
-    const t = (e.changedTouches && e.changedTouches[0]) || null;
-    if (!t) return;
-    if (Math.hypot(t.clientX - tStartX, t.clientY - tStartY) < 22) screenToObjective(t.clientX, t.clientY);
-  }, { passive: true });
+  });
+  function aimPointerEnd(e) {
+    if (e.pointerId !== aimPtr.id) return;
+    const tap = Math.hypot(e.clientX - aimPtr.startX, e.clientY - aimPtr.startY) < 16 && aimPtr.moved < 18;
+    aimPtr.id = null;
+    if (!state.running || !tap) return;
+    if (state.camMode === 'cmd' || state.markMode) screenToObjective(e.clientX, e.clientY);
+  }
+  renderer.domElement.addEventListener('pointerup', aimPointerEnd);
+  renderer.domElement.addEventListener('pointercancel', (e) => { if (e.pointerId === aimPtr.id) aimPtr.id = null; });
 
   window.addEventListener('keydown', (e) => {
     state.keys[e.code] = true;
     if (!state.running) return;
-    if (['KeyW','KeyA','KeyS','KeyD'].includes(e.code) && state.autoDrive) {
+    const hullKeys = ['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'];
+    if (hullKeys.includes(e.code) && state.autoDrive) {
       state.autoDrive = false; updateDriveUI();
+      comms.say('본부', '지휘전차 수동 조종 전환. 조종수, 차체 직접 기동!', { voice: false });
     }
-    if (e.code === 'KeyQ') window._toggleAutoDrive();
-    if (e.code === 'Space') { e.preventDefault(); firePlayerWeapon(); }
-    if (e.code === 'Tab') { e.preventDefault(); window._snapTarget(); }
-    if (e.code === 'KeyV') window._setCameraMode(state.camMode==='tps'?'fps':(state.camMode==='fps'?'top':'tps'));
+    if (e.code === 'Space' || e.code === 'Tab' || e.code.startsWith('Arrow')) e.preventDefault();
+    if (e.repeat) return;
+    if (e.code === 'Space') firePlayerWeapon();
+    if (e.code === 'Tab') window._snapTarget();
+    if (e.code === 'KeyV') window._setCameraMode(state.camMode==='tps'?'fps':(state.camMode==='fps'?'top':(state.camMode==='top'?'cmd':'tps')));
     if (e.code === 'KeyM') window._toggleBigMap();
+    if (e.code === 'Escape' && state.bigMapOpen) window._toggleBigMap(false);
     if (e.code === 'KeyT') window._toggleAutoDef();
+    if (e.code === 'KeyP') window._toggleAutoDrive();
+    if (e.code === 'KeyU') window._toggleStab();
     if (e.code === 'KeyG') window._orderAllies();
     if (e.code === 'Digit1') window._setWeapon('sonic');
     if (e.code === 'Digit2') window._setWeapon('he');
     if (e.code === 'Digit3') window._setWeapon('missile');
-    if (e.code === 'KeyF') window._triggerShield(false);
-    if (e.code === 'KeyC') window._triggerSmoke();
-    if (e.code === 'Digit4' || e.code === 'KeyH') window._orderAttack();
+    if (e.code === 'Digit4') window._setWeapon('mg');
+    if (e.code === 'KeyC') window._triggerShield(false);
+    if (e.code === 'KeyL') window._triggerSmoke();
+    if (e.code === 'KeyH') window._orderAttack();
     if (e.code === 'KeyZ') window._setStance('wedge');
     if (e.code === 'KeyX') window._setStance('line');
     if (e.code === 'KeyB') window._setStance('flank');
@@ -3089,7 +3859,6 @@
     if (e.code === 'KeyJ') window._callArtillery();
     if (e.code === 'KeyK') window._callCAS();
     if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') state.zoom = true;
-    if (e.code === 'KeyR') window._snapTarget();
   });
   window.addEventListener('keyup', (e) => { state.keys[e.code] = false; if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') state.zoom = false; });
   window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
@@ -3099,7 +3868,7 @@
   // ============================================================================
   const fftCtx = document.getElementById('fft-canvas').getContext('2d');
   const miniCtx = document.getElementById('minimap-canvas').getContext('2d');
-  const bigCtx = document.getElementById('big-map-canvas').getContext('2d');
+  // V6.4: 전장 지도는 전용 렌더러(renderTacMap) 사용 — 타일드 캔버스를 쓰지 않는다.
 
   function drawFFT(tSec) {
     const w = 245, h = 64; fftCtx.clearRect(0, 0, w, h);
@@ -3114,18 +3883,38 @@
   }
   function renderMap(ctx, size, span) {
     ctx.clearRect(0, 0, size, size);
-    ctx.fillStyle = 'rgba(24, 36, 26, 0.88)'; ctx.fillRect(0, 0, size, size);
-    const cx = size/2, cy = size/2, sc = size/span;
-    ctx.fillStyle = 'rgba(86, 88, 84, 0.55)';
-    ctx.fillRect(cx + (0 - 6.5 - playerRoot.position.x) * sc, 0, 13 * sc, size);
-    ctx.fillRect(0, cy + (-20.5 - playerRoot.position.z) * sc, size, 11 * sc);
-    ctx.strokeStyle = 'rgba(56,189,248,0.14)'; ctx.lineWidth = 1;
-    for (let g = size/8; g < size; g += size/8) { ctx.beginPath(); ctx.moveTo(g,0); ctx.lineTo(g,size); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0,g); ctx.lineTo(size,g); ctx.stroke(); }
-    const px = playerRoot.position.x, pz = playerRoot.position.z;
-    const toM = (wx, wz) => [cx + (wx - px)*sc, cy + (wz - pz)*sc];
-    obstacles.forEach(ob => { const [ox,oy]=toM(ob.position.x,ob.position.z); ctx.save(); ctx.translate(ox,oy); ctx.rotate(-ob.rotation.y); ctx.fillStyle=ob.userData.isReflector?'#38bdf8':'#64748b'; ctx.fillRect(-(ob.userData.w*sc)/2,-(ob.userData.d*sc)/2,ob.userData.w*sc,ob.userData.d*sc); ctx.restore(); });
-    bombs.forEach(b => { if (!b.active) return; const [bx,by]=toM(b.warnRing.position.x,b.warnRing.position.z); ctx.strokeStyle='#ef4444'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(bx,by,7*sc,0,Math.PI*2); ctx.stroke(); });
-    // 지휘 목표 마커 (지도 탭으로 지정한 지점)
+    ctx.fillStyle = 'rgba(10, 20, 16, 0.92)'; ctx.fillRect(0, 0, size, size);
+    const cx = size / 2, cy = size / 2, sc = size / span;
+    // 지형 음영(간이): 등고 기복을 저해상도로 흘리기
+    const px0 = playerRoot.position.x, pz0 = playerRoot.position.z;
+    const step = size / 14;
+    for (let gx = 0; gx < size; gx += step) {
+      for (let gy = 0; gy < size; gy += step) {
+        const wx = px0 + (gx - cx) / sc, wz = pz0 + (gy - cy) / sc;
+        const h = terrainHeight(wx, wz);
+        ctx.fillStyle = `rgba(${120 + h * 14},${150 + h * 12},${110 + h * 8},${0.10 + Math.min(0.16, Math.abs(h) * 0.03)})`;
+        ctx.fillRect(gx, gy, step + 0.6, step + 0.6);
+      }
+    }
+    // 도로망
+    ctx.fillStyle = 'rgba(150, 146, 132, 0.55)';
+    ctx.fillRect(cx + (0 - 6.5 - px0) * sc, 0, 13 * sc, size);
+    ctx.fillRect(0, cy + (-15.5 - pz0) * sc, size, 11 * sc);
+    // 거리 고리 (50m / 100m)
+    ctx.strokeStyle = 'rgba(56,189,248,0.16)'; ctx.lineWidth = 1;
+    [50, 100, 140].forEach(r => { ctx.beginPath(); ctx.arc(cx, cy, r * sc, 0, Math.PI * 2); ctx.stroke(); });
+    ctx.strokeStyle = 'rgba(56,189,248,0.10)';
+    for (let g = size / 8; g < size; g += size / 8) { ctx.beginPath(); ctx.moveTo(g,0); ctx.lineTo(g,size); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0,g); ctx.lineTo(size,g); ctx.stroke(); }
+    const toM = (wx, wz) => [cx + (wx - px0) * sc, cy + (wz - pz0) * sc];
+    obstacles.forEach(ob => { const [ox,oy]=toM(ob.position.x,ob.position.z); ctx.save(); ctx.translate(ox,oy); ctx.rotate(-(ob.rotation.y||0)); ctx.fillStyle=ob.userData.isReflector?'#38bdf8':'#64748b'; ctx.fillRect(-(ob.userData.w*sc)/2,-(ob.userData.d*sc)/2,ob.userData.w*sc,ob.userData.d*sc); ctx.restore(); });
+    bombs.forEach(b => { if (!b.active) return; const [bx,by]=toM(b.warnRing.position.x,b.warnRing.position.z); ctx.strokeStyle='#ef4444'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(bx,by,10*sc,0,Math.PI*2); ctx.stroke(); });
+    // 포격 사거리 표시
+    if (state.objective && state.rank !== 'tank') {
+      const [ox, oy] = toM(state.objective.x, state.objective.z);
+      ctx.strokeStyle = 'rgba(251,191,36,0.28)'; ctx.lineWidth = 1; ctx.setLineDash([3, 4]);
+      ctx.beginPath(); ctx.arc(ox, oy, RANKS[state.rank].artySpread * 3.2 * sc, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+    }
+    // 지휘 목표 마커
     if (state.objective) {
       const [ox, oy2] = toM(state.objective.x, state.objective.z);
       const pulse = 1 + Math.sin(performance.now() / 260) * 0.18;
@@ -3134,7 +3923,7 @@
       ctx.beginPath(); ctx.arc(ox, oy2, 9 * pulse, 0, Math.PI * 2); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(ox - 14, oy2); ctx.lineTo(ox - 5, oy2); ctx.moveTo(ox + 5, oy2); ctx.lineTo(ox + 14, oy2);
       ctx.moveTo(ox, oy2 - 14); ctx.lineTo(ox, oy2 - 5); ctx.moveTo(ox, oy2 + 5); ctx.lineTo(ox, oy2 + 14); ctx.stroke();
-      ctx.setLineDash([4, 4]); ctx.strokeStyle = 'rgba(251,191,36,0.55)'; ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]); ctx.strokeStyle = 'rgba(251,191,36,0.5)'; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(ox, oy2); ctx.stroke(); ctx.setLineDash([]);
       ctx.restore();
     }
@@ -3148,15 +3937,83 @@
     allies.forEach(a => {
       if (a.state !== 'active') return;
       const [ax, ay] = toM(a.root.position.x, a.root.position.z);
-      ctx.fillStyle = a.isSupport ? '#a7f3d0' : (compCols[(a.company || 1) - 1] || '#60a5fa');
+      ctx.fillStyle = a.isSupport ? '#a78bfa' : (compCols[(a.company || 1) - 1] || '#60a5fa');
       if (a.isSupport) { ctx.fillRect(ax - 3, ay - 3, 6, 6); }
       else { ctx.beginPath(); ctx.arc(ax, ay, size > 300 ? 6 : 4, 0, Math.PI * 2); ctx.fill(); }
     });
-    enemies.forEach(e => { const [ex,ey]=toM(e.root.position.x,e.root.position.z); ctx.fillStyle=e.state==='captured'?'#34d399':(e.state==='destroyed'?'#475569':'#fb7185'); ctx.beginPath(); ctx.arc(ex,ey,(e.isBoss?6.5:4.5)*(size>300?1.35:1),0,Math.PI*2); ctx.fill(); });
+    enemies.forEach(e => { const [ex,ey]=toM(e.root.position.x,e.root.position.z); if (e.isBoss && e.state==='active') { ctx.save(); ctx.translate(ex,ey); ctx.rotate(Math.PI/4); ctx.fillStyle='#f43f5e'; ctx.fillRect(-4.5,-4.5,9,9); ctx.restore(); return; } ctx.fillStyle=e.state==='captured'?'#34d399':(e.state==='destroyed'?'#475569':'#fb7185'); ctx.beginPath(); ctx.arc(ex,ey,(size>300?6:4.5),0,Math.PI*2); ctx.fill(); });
     aircrafts.forEach(j => { if (j.state!=='active') return; const [jx,jy]=toM(j.root.position.x,j.root.position.z); ctx.fillStyle='#fbbf24'; ctx.beginPath(); ctx.moveTo(jx,jy-7); ctx.lineTo(jx-6,jy+6); ctx.lineTo(jx+6,jy+6); ctx.closePath(); ctx.fill(); });
     drones.forEach(d => { if (d.state!=='active') return; const [dx,dy]=toM(d.root.position.x,d.root.position.z); ctx.fillStyle='#fb923c'; ctx.beginPath(); ctx.arc(dx,dy,3.2,0,Math.PI*2); ctx.fill(); });
-    ctx.strokeStyle='rgba(251,191,36,0.75)'; ctx.lineWidth=1.6; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx-Math.sin(state.turretYaw)*size*0.42, cy-Math.cos(state.turretYaw)*size*0.42); ctx.stroke();
-    ctx.save(); ctx.translate(cx,cy); ctx.rotate(-state.hullYaw); ctx.fillStyle='#22d3ee'; ctx.beginPath(); ctx.moveTo(0,-8); ctx.lineTo(-6,7); ctx.lineTo(6,7); ctx.closePath(); ctx.fill(); ctx.restore();
+    // 플레이어: 포탑 시야 원추 + 차체 방위 + 포탑 방위선
+    tacFovCone(ctx, cx, cy, state.turretYaw, 0.36, 150 * sc, 'rgba(34,211,238,0.13)', 'rgba(34,211,238,0.5)');
+    ctx.strokeStyle = 'rgba(251,191,36,0.85)'; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx - Math.sin(state.turretYaw) * size * 0.44, cy - Math.cos(state.turretYaw) * size * 0.44); ctx.stroke();
+    ctx.save(); ctx.translate(cx, cy); ctx.rotate(-state.hullYaw);
+    ctx.fillStyle = '#22d3ee';
+    ctx.beginPath(); ctx.moveTo(0, -8); ctx.lineTo(-6, 7); ctx.lineTo(6, 7); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = 'rgba(4,26,34,0.9)'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.restore();
+    // 차체↔포탑 차이 호
+    const relH = -state.hullYaw, relT = -state.turretYaw;
+    if (Math.abs(wrapAngle(state.turretYaw - state.hullYaw)) > 0.02) {
+      ctx.strokeStyle = 'rgba(251,191,36,0.55)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(cx, cy, 13, relH - Math.PI / 2, relT - Math.PI / 2, true); ctx.stroke();
+    }
+  }
+
+  // ============================================================================
+  // V6.4 차체/포탑 방위 HUD (나침반 + 리티클 노치 + 수치)
+  // ============================================================================
+  const compassCtx = (() => { const el = document.getElementById('compass-canvas'); return el ? el.getContext('2d') : null; })();
+  const hullNotchEl = document.getElementById('hull-notch');
+  const bearingDeltaEl = document.getElementById('bearing-delta');
+  const bearingHudEl = document.getElementById('hud-bearing');
+  const compassReadoutEl = document.getElementById('compass-readout');
+  function drawCompass() {
+    if (!compassCtx || window.innerWidth <= 900) return;
+    const S = 192, c = S / 2, R = 78, ctx = compassCtx;
+    ctx.clearRect(0, 0, S, S);
+    ctx.save(); ctx.translate(c, c);
+    ctx.strokeStyle = 'rgba(56,189,248,0.32)'; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.arc(0, 0, R + 7, 0, Math.PI * 2); ctx.stroke();
+    for (let i = 0; i < 36; i++) {
+      const a = i * 10 * Math.PI / 180, major = i % 9 === 0;
+      const r0 = R + 7, r1 = R + (major ? -1 : 2);
+      ctx.strokeStyle = major ? 'rgba(186,230,253,0.9)' : 'rgba(125,211,252,0.4)';
+      ctx.lineWidth = major ? 2 : 1;
+      ctx.beginPath(); ctx.moveTo(Math.sin(a) * r0, -Math.cos(a) * r0); ctx.lineTo(Math.sin(a) * r1, -Math.cos(a) * r1); ctx.stroke();
+    }
+    ctx.fillStyle = 'rgba(226,241,255,0.85)'; ctx.font = '800 11px Consolas, monospace'; ctx.textAlign = 'center';
+    ctx.fillText('N', 0, -R + 18);
+    // 차체-포탑 차이 호
+    const dh = wrapAngle(state.turretYaw - state.hullYaw);
+    if (Math.abs(dh) > 0.02) {
+      ctx.strokeStyle = 'rgba(251,191,36,0.55)'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(0, 0, R - 16, -Math.PI / 2 - state.hullYaw, -Math.PI / 2 - state.turretYaw, dh > 0); ctx.stroke();
+    }
+    // 차체 (청록 삼각)
+    ctx.save(); ctx.rotate(-state.hullYaw);
+    ctx.fillStyle = '#22d3ee'; ctx.strokeStyle = 'rgba(2,26,34,0.9)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, -R + 6); ctx.lineTo(-9, -R + 24); ctx.lineTo(9, -R + 24); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.restore();
+    // 포탑 (금색 지침)
+    ctx.save(); ctx.rotate(-state.turretYaw);
+    ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 2.4;
+    ctx.beginPath(); ctx.moveTo(0, 6); ctx.lineTo(0, -R + 12); ctx.stroke();
+    ctx.fillStyle = '#fbbf24';
+    ctx.beginPath(); ctx.moveTo(0, -R + 4); ctx.lineTo(-5, -R + 15); ctx.lineTo(5, -R + 15); ctx.closePath(); ctx.fill();
+    ctx.restore();
+    ctx.fillStyle = 'rgba(226,241,255,0.5)'; ctx.beginPath(); ctx.arc(0, 0, 2.4, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+  function updateBearingHUD() {
+    const hd = deg(state.hullYaw), td = deg(state.turretYaw);
+    const delta = deg(Math.abs(wrapAngle(state.turretYaw - state.hullYaw)));
+    if (hullNotchEl) hullNotchEl.setAttribute('transform', `rotate(${(-wrapAngle(state.hullYaw - state.turretYaw) * 180 / Math.PI).toFixed(1)})`);
+    if (bearingDeltaEl) bearingDeltaEl.textContent = `Δ${fmtDeg(delta)}`;
+    if (bearingHudEl) bearingHudEl.innerHTML = `HULL <b>${fmtDeg(hd)}</b>° · TURRET <i>${fmtDeg(td)}</i>° · Δ ${fmtDeg(delta)}°`;
+    if (compassReadoutEl) compassReadoutEl.innerHTML = `Δ <b>${fmtDeg(delta)}</b>°`;
+    drawCompass();
   }
 
   // ---------------------------------------------------------------------------
@@ -3232,12 +4089,13 @@
       const cfg = SCALES[state.scaleKey];
       const aliveE = enemies.filter(e=>e.state==='active'), aliveA = allies.filter(a=>a.state==='active');
 
-      // --- 1. Player Movement: Autonomous Mobile Combat OR Manual WASD ---
-      let accel = (state.keys['KeyW'] ? 1 : 0) - (state.keys['KeyS'] ? 1 : 0) - state.moveY;
-      let turn  = (state.keys['KeyA'] ? 1 : 0) - (state.keys['KeyD'] ? 1 : 0) - state.moveX;
+      // --- 1. 차체(HULL) 기동: WASD·방향키·좌측 조이스틱 (포탑과 완전 분리) ---
+      const K = state.keys;
+      let accel = ((K['KeyW'] || K['ArrowUp']) ? 1 : 0) - ((K['KeyS'] || K['ArrowDown']) ? 1 : 0) - state.moveY;
+      let turn  = ((K['KeyA'] || K['ArrowLeft']) ? 1 : 0) - ((K['KeyD'] || K['ArrowRight']) ? 1 : 0) - state.moveX;
       accel = Math.max(-1, Math.min(1.25, accel));
       turn  = Math.max(-1, Math.min(1, turn));
-      const boost = state.keys['KeyE'] ? 1.55 : 1.0;
+      const boost = (state.keys['KeyY'] || state.boost) ? 1.55 : 1.0;
 
       if (state.autoDrive) {
         // Tactical Flanking Orbit & Bomb Evasion AI for Research #4!
@@ -3319,10 +4177,12 @@
       document.getElementById('hud-spd').textContent = Math.round(Math.abs(state.hullSpeed) * 3.1);
       audio.setEngineSpeed(Math.abs(state.hullSpeed));
 
-      if (state.keys['ArrowLeft']) state.turretYaw += 1.5 * dt;
-      if (state.keys['ArrowRight']) state.turretYaw -= 1.5 * dt;
-      if (state.keys['ArrowUp']) state.gunPitch = Math.min(0.65, state.gunPitch + 0.85 * dt);
-      if (state.keys['ArrowDown']) state.gunPitch = Math.max(-0.18, state.gunPitch - 0.85 * dt);
+      // --- 포탑(TURRET) 독립 선회: Q/E 선회 · R/F 고저 (월드 방위각 유지) ---
+      if (state.keys['KeyQ']) state.turretYaw += 1.45 * dt;
+      if (state.keys['KeyE']) state.turretYaw -= 1.45 * dt;
+      if (state.keys['KeyR']) state.gunPitch = Math.min(0.65, state.gunPitch + 0.85 * dt);
+      if (state.keys['KeyF']) state.gunPitch = Math.max(-0.18, state.gunPitch - 0.85 * dt);
+      if (state.keys['KeyQ'] || state.keys['KeyE'] || state.keys['KeyR'] || state.keys['KeyF']) state.lastAimInput = performance.now();
 
       // Touch aim assist: gently track the nearest threat when the gunner is idle
       if (state.autoAim && document.body.classList.contains('touch-ui') && aliveE.length) {
@@ -3343,12 +4203,20 @@
         }
       }
       // 2-Axis Gyro Stabilized Turret & Gun (차체가 회전/흔들려도 포탑 조준 고정!)
-      playerTurret.rotation.y = state.turretYaw - state.hullYaw;
-      gunPivot.rotation.x = state.gunPitch - state.hullPitch * 0.85;
+      // V6.4: 안정화 OFF면 포탑이 차체와 함께 돌아간다(차체 종속), ON이면 월드 방위각 고정.
+      const dHull = wrapAngle(state.hullYaw - state.lastHullYaw);
+      if (!state.stab && Math.abs(dHull) > 1e-5) state.turretYaw = wrapAngle(state.turretYaw + dHull);
+      state.lastHullYaw = state.hullYaw;
+      state.turretYaw = wrapAngle(state.turretYaw);
+      state.turretTraverse = wrapAngle(state.turretYaw - state.hullYaw);
+      playerTurret.rotation.y = state.turretTraverse;
+      gunPivot.rotation.x = state.gunPitch - (state.stab ? state.hullPitch * 0.85 : 0);
+      updateBearingHUD();
 
       state.recoil = Math.max(0, state.recoil - 2.8 * dt);
       barrelGrp.position.z = state.recoil;
       state.heCd = Math.max(0, state.heCd - dt); state.missileCd = Math.max(0, state.missileCd - dt);
+      state.mgCd = Math.max(0, state.mgCd - dt);
       state.shieldCd = Math.max(0, state.shieldCd - dt); state.smokeCd = Math.max(0, state.smokeCd - dt);
       state.smokeActive = Math.max(0, state.smokeActive - dt); state.ciwsCd = Math.max(0, state.ciwsCd - dt);
       state.screenShake = Math.max(0, state.screenShake - 1.8 * dt);
@@ -3430,7 +4298,7 @@
         for (const dr of drones) {
           if (dr.state === 'active' && dr.root.position.distanceTo(co) < 62) {
             spawnLaser(co, dr.root.position, 0x34d399); audio.playCIWS(); destroyDrone(dr, true);
-            showBeat('🤖 CIWS 자폭드론 자동 요격! (+350)', 'green'); state.ciwsCd = 0.5; hitT = true; break;
+            showBeat('CIWS 자폭드론 자동 요격 (+350)', 'green'); state.ciwsCd = 0.5; hitT = true; break;
           }
         }
         if (!hitT) {
@@ -3438,7 +4306,7 @@
             if (b.active && b.mesh.position.distanceTo(co) < 56) {
               spawnLaser(co, b.mesh.position, 0x22d3ee); audio.playCIWS(); b.active = false; scene.remove(b.mesh); scene.remove(b.warnRing);
               spawnExplosion(b.mesh.position.clone(), false); state.intercepted++; state.score += 300;
-              showBeat('🤖 CIWS 공습폭탄 공중 폭파! (+300)', 'cyan'); state.ciwsCd = 0.45; hitT = true; break;
+              showBeat('CIWS 공습폭탄 공중 폭파 (+300)', 'cyan'); state.ciwsCd = 0.45; hitT = true; break;
             }
           }
         }
@@ -3671,13 +4539,13 @@
       document.getElementById('hud-freq').textContent = `${state.beamFreq.toFixed(1)} Hz`;
       const hl = document.getElementById('hud-lock');
       if (hl) {
-        if (state.lockedObj) { hl.style.display = 'block'; hl.innerHTML = `🎯 <b class="gold">${state.lockedObj.obj.name}</b> · HP <b class="red">${Math.round(state.lockedObj.obj.hp)}</b>`; }
+        if (state.lockedObj) { hl.style.display = 'block'; hl.innerHTML = `${ICO('aim', 'ic sm')}<b class="gold">${state.lockedObj.obj.name}</b> · HP <b class="red">${Math.round(state.lockedObj.obj.hp)}</b>`; }
         else { hl.style.display = 'none'; }
       }
       const ti = document.getElementById('target-info');
       ti.innerHTML = state.lockedObj
-        ? `<strong class="gold">🎯 LOCK: ${state.lockedObj.obj.name}</strong><br>HP: <b class="red">${Math.round(state.lockedObj.obj.hp)}</b> | <kbd>Tab</kbd> 자동 스냅 · <kbd>Q</kbd> 기동전환`
-        : `아군 <b>${aliveA.length+1}대</b> (${state.autoDrive?'자율 기동전투 중':'수동 기동 중'}) | <kbd>Tab</kbd> 자동조준 · <kbd>Q</kbd> 기동모드`;
+        ? `<strong class="gold">${ICO('aim', 'ic sm')} LOCK: ${state.lockedObj.obj.name}</strong><br>HP: <b class="red">${Math.round(state.lockedObj.obj.hp)}</b> | <kbd>Tab</kbd> 자동 스냅 · <kbd>U</kbd> 안정화`
+        : `아군 <b>${aliveA.length+1}대</b> (${state.autoDrive?'자율 기동 중':'수동 기동 중'}) | <kbd>Tab</kbd> 자동조준 · <kbd>Q</kbd><kbd>E</kbd> 포탑 · <kbd>R</kbd><kbd>F</kbd> 고저`;
     }
 
     for (let i = laserBeams.length-1; i >= 0; i--) { laserBeams[i].life -= dt; if (laserBeams[i].life<=0) { scene.remove(laserBeams[i].line); laserBeams.splice(i,1); } }
@@ -3702,7 +4570,7 @@
 
     drawFFT(tSec);
     renderMap(miniCtx, 210, 290);
-    if (state.bigMapOpen) renderMap(bigCtx, 580, 420);
+    if (state.bigMapOpen) renderTacMap();
     renderer.render(scene, camera);
   }
   // 읽기 전용 검증 훅 (테스트/디버깅용 — 게임 상태를 바꾸지 않음)
@@ -3743,6 +4611,47 @@
     comms: { queue: comms.queue.length, timer: +comms.timer.toFixed(2), voiceGap: +comms.voiceGap.toFixed(2), said: comms.said.size },
     radio: [].slice.call(document.querySelectorAll('#radio-log .rl')).map(r => r.textContent)
   });
+  // V6.4 읽기 전용 검증 훅: 차체·포탑 독립성, 안정화, 전술 지도, 이모지 잔존
+  window.__v64 = () => {
+    const aimQ = new THREE.Quaternion().setFromEuler(new THREE.Euler(state.gunPitch, state.turretYaw, 0, 'YXZ'));
+    const aimD = new THREE.Vector3(0, 0, -1).applyQuaternion(aimQ).normalize();
+    const loc = new THREE.Vector3(0, 0, -1).applyQuaternion(playerTurret.getWorldQuaternion(new THREE.Quaternion())).normalize();
+    return {
+      running: state.running, rank: state.rank, stance: state.stance, weapon: state.weapon,
+      hullYaw: +state.hullYaw.toFixed(4), hullDeg: deg(state.hullYaw),
+      turretYaw: +state.turretYaw.toFixed(4), turretDeg: deg(state.turretYaw),
+      turretLocalYaw: +playerTurret.rotation.y.toFixed(4), turretLocalDeg: deg(playerTurret.rotation.y),
+      deltaDeg: deg(Math.abs(wrapAngle(state.turretYaw - state.hullYaw))),
+      stab: state.stab, gunPitch: +state.gunPitch.toFixed(4),
+      hullSpeed: +state.hullSpeed.toFixed(3), autoDrive: state.autoDrive,
+      aimWorld: [+aimD.x.toFixed(4), +aimD.y.toFixed(4), +aimD.z.toFixed(4)],
+      turretWorldDir: [+loc.x.toFixed(4), +loc.y.toFixed(4), +loc.z.toFixed(4)],
+      bigMapOpen: state.bigMapOpen, tacZoom: state.tacZoom,
+      objective: state.objective, marked: state.markedUnit ? state.markedUnit.name : null,
+      allies: allies.filter(a => a.state === 'active').length,
+      enemies: enemies.filter(e => e.state === 'active').length,
+      enemyPos: enemies.filter(e => e.state === 'active').slice(0, 8).map(e => ({ name: e.name, x: +e.root.position.x.toFixed(1), z: +e.root.position.z.toFixed(1), boss: !!e.isBoss })),
+      hud: {
+        bearing: (document.getElementById('hud-bearing') || {}).textContent || '',
+        drive: (document.getElementById('hud-drive-mode') || {}).textContent || '',
+        stance: (document.getElementById('cmd-stance-name') || {}).textContent || '',
+        obj: (document.getElementById('cmd-obj-info') || {}).textContent || ''
+      },
+      emojiCount: (document.body.innerText.match(EMOJI_RE) || []).length,
+      iconCount: document.querySelectorAll('svg.ic use').length
+    };
+  };
+  window.__emojiScan = () => {
+    const hits = [];
+    const walk = (el) => {
+      for (const n of el.childNodes) {
+        if (n.nodeType === 3) { const m = n.textContent.match(EMOJI_RE); if (m) hits.push({ text: n.textContent.trim().slice(0, 60), emoji: m.join('') }); }
+        else if (n.nodeType === 1) walk(n);
+      }
+    };
+    walk(document.body);
+    return hits;
+  };
 
   animate(performance.now());
 })();
