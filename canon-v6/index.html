@@ -308,9 +308,9 @@
     .tm-sec.legend-sec { display: block; }
     .tm-legend { grid-template-columns: 1fr; font-size: 8px; gap: 2px; }
     .tm-row .cb { flex: 1 1 46%; font-size: 8.5px; padding: 3px 2px; }
-    .tm-sec-t { font-size: 8px; margin-bottom: 2px; }
     .tm-sec { padding: 4px 5px; }
-    .tm-hint { font-size: 8.5px; }
+    .tm-hint { display: none; }
+    .tm-title .sub { display: inline; font-size: 8.5px; letter-spacing: 0.2px; }
     .tm-body { flex-direction: row; }
   }
 
@@ -601,7 +601,7 @@
 <div id="big-map-overlay">
   <div class="tm-shell">
     <div class="tm-head">
-      <div class="tm-title"><svg class="ic lg"><use href="#i-map"/></svg>전술 지도<span class="sub">TACTICAL MAP · 전장 전역</span></div>
+      <div class="tm-title"><svg class="ic lg"><use href="#i-map"/></svg>전술 지도<span class="sub">클릭 = 목표 지정 · 드래그 이동 · 휠/핀치 확대</span></div>
       <div class="tm-coord" id="tm-coord">GRID --- / ---</div>
       <div class="tm-tools">
         <button id="tm-zoom-in" title="확대">+</button>
@@ -613,7 +613,6 @@
     <div class="tm-body">
       <div class="tm-mapwrap" id="tm-mapwrap">
         <canvas id="big-map-canvas" width="820" height="760"></canvas>
-        <div class="tm-hint">지도 클릭 = 목표 지정 · 드래그 = 이동 · 휠/핀치 = 확대</div>
       </div>
       <aside class="tm-side">
         <div class="tm-sec">
