@@ -2735,12 +2735,15 @@
   const _fxCol = new THREE.Color();
 
   function emitSmoke(x, y, z, vx, vy, vz, hex, s0, s1, life, a0, grav, drag, fade) {
+    // 카메라 바로 앞(5m 이내)에서 생기는 입자는 화면을 크게 가리므로 버린다
+    if (Math.abs(x - camera.position.x) < 5 && Math.abs(y - camera.position.y) < 5 && Math.abs(z - camera.position.z) < 5) return;
     _fxCol.setHex(hex);
     smokeFX.spawn({ x, y, z, vx, vy, vz, r: _fxCol.r, g: _fxCol.g, b: _fxCol.b,
       s0, s1, life, maxLife: life, a0: a0 === undefined ? 0.5 : a0,
       grav: grav === undefined ? -0.6 : grav, drag: drag === undefined ? 1.4 : drag, fade: fade === undefined ? 1.5 : fade });
   }
   function emitSpark(x, y, z, vx, vy, vz, hex, s0, s1, life, a0, grav, drag) {
+    if (Math.abs(x - camera.position.x) < 4 && Math.abs(y - camera.position.y) < 4 && Math.abs(z - camera.position.z) < 4) return;
     _fxCol.setHex(hex);
     sparkFX.spawn({ x, y, z, vx, vy, vz, r: _fxCol.r, g: _fxCol.g, b: _fxCol.b,
       s0, s1, life, maxLife: life, a0: a0 === undefined ? 0.9 : a0,
@@ -3253,7 +3256,7 @@
     artyPieces.forEach(p => scene.remove(p.root)); artyPieces.length = 0;
     for (let i = 0; i < n; i++) {
       const root = new THREE.Group();
-      const x = (i - (n - 1) / 2) * 13, z = 112 + (i % 2) * 9;
+      const x = (i - (n - 1) / 2) * 16, z = 168 + (i % 2) * 11;
       root.position.set(x, terrainHeight(x, z), z);
       const mat = armorMaterial(armAlly);
       const hull = new THREE.Mesh(boxG(3.5, 1.15, 6.6), mat);
