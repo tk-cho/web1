@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>PROJECT CANON V6.4 — 차체·포탑 독립 조종 · 전술 지도 · 연구 4호</title>
+<title>PROJECT CANON V7.0 — PBR 전장 · 파티클 이펙트 · 관제 HUD · 연구 4호</title>
 <style>
   * { box-sizing: border-box; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
   html, body {
@@ -515,6 +515,140 @@
   @media (max-width: 1000px) and (max-height: 560px) and (orientation: landscape) {
     #aim-zone { top: 50%; height: 74px; width: 20px; }
   }
+
+  /* ============================================================================
+     V7.0 — 관제기 스타일 다크 글래스 HUD · 모바일 컨트롤 리디자인
+     ============================================================================ */
+  #hud-frame { position: fixed; inset: 0; pointer-events: none; z-index: 6; }
+  #hud-frame .c { position: absolute; width: 30px; height: 30px; }
+  #hud-frame .c.tl { left: 8px; top: 8px; border-left: 1.5px solid rgba(140,215,245,0.42); border-top: 1.5px solid rgba(140,215,245,0.42); }
+  #hud-frame .c.tr { right: 8px; top: 8px; border-right: 1.5px solid rgba(140,215,245,0.42); border-top: 1.5px solid rgba(140,215,245,0.42); }
+  #hud-frame .c.bl { left: 8px; bottom: 8px; border-left: 1.5px solid rgba(140,215,245,0.42); border-bottom: 1.5px solid rgba(140,215,245,0.42); }
+  #hud-frame .c.br { right: 8px; bottom: 8px; border-right: 1.5px solid rgba(140,215,245,0.42); border-bottom: 1.5px solid rgba(140,215,245,0.42); }
+  #hud-frame .c::after { content: ''; position: absolute; width: 5px; height: 5px; background: rgba(251,191,36,0.5); }
+  #hud-frame .c.tl::after { left: 4px; top: 4px; }
+  #hud-frame .c.tr::after { right: 4px; top: 4px; }
+  #hud-frame .c.bl::after { left: 4px; bottom: 4px; }
+  #hud-frame .c.br::after { right: 4px; bottom: 4px; }
+
+  #hud { font-variant-numeric: tabular-nums; letter-spacing: 0.1px; }
+  .panel {
+    background: linear-gradient(180deg, rgba(9, 17, 24, 0.86) 0%, rgba(6, 11, 17, 0.90) 100%);
+    border: 1px solid rgba(126, 196, 224, 0.26);
+    border-radius: 6px;
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.42), inset 0 0 0 1px rgba(255, 255, 255, 0.035);
+    backdrop-filter: blur(7px);
+  }
+  .tag { color: #8fd3ea; letter-spacing: 1.6px; text-transform: none; font-size: 9.5px; }
+  .hud-btn {
+    background: rgba(11, 21, 31, 0.90);
+    border: 1px solid rgba(126, 196, 224, 0.30);
+    border-radius: 4px;
+    color: #dcecf5; font-weight: 700; letter-spacing: 0.2px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+  .hud-btn:hover { background: rgba(20, 38, 54, 0.95); border-color: rgba(150, 220, 245, 0.55); }
+  .hud-btn.active {
+    background: linear-gradient(180deg, rgba(8, 96, 132, 0.95), rgba(6, 66, 94, 0.95));
+    border-color: rgba(251, 191, 36, 0.75); color: #f6fdff;
+    box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.25), inset 0 0 12px rgba(125, 224, 255, 0.28);
+  }
+  .hud-btn.stab-on { background: linear-gradient(180deg, rgba(6, 122, 138, 0.85), rgba(5, 82, 96, 0.9)); border-color: rgba(94, 234, 255, 0.6); color: #dffbff; }
+  .hud-btn.auto-on { background: linear-gradient(180deg, rgba(14, 122, 92, 0.8), rgba(9, 86, 66, 0.86)); border-color: rgba(74, 222, 170, 0.55); color: #ccfbee; }
+  .hud-btn.cruise-on { background: linear-gradient(180deg, rgba(130, 92, 10, 0.82), rgba(92, 64, 8, 0.88)); border-color: rgba(251, 191, 36, 0.65); color: #fdf3c4; }
+  .hud-btn.gift-btn { background: linear-gradient(90deg, #5b2a86, #a21c54); border-color: rgba(244, 194, 220, 0.5); }
+  .cb { background: rgba(11, 21, 31, 0.92); border-color: rgba(126, 196, 224, 0.28); border-radius: 4px; }
+  .cb.active { background: linear-gradient(180deg, rgba(146, 94, 12, 0.95), rgba(104, 64, 8, 0.95)); border-color: rgba(251, 191, 36, 0.8); }
+  #cmd-bar { background: linear-gradient(180deg, rgba(9, 16, 23, 0.9), rgba(6, 11, 16, 0.94)); border-color: rgba(251, 191, 36, 0.35); }
+  #radio-box { background: rgba(4, 14, 18, 0.88); border-color: rgba(64, 214, 160, 0.35); border-left-width: 3px; border-radius: 5px; }
+  #minimap-canvas { border: 1px solid rgba(120, 200, 230, 0.35); border-radius: 5px; }
+
+  /* ---------- 가상 조이스틱: 무광 다크 패드 + 미세 십자 눈금 + 시안/앰버 링 ---------- */
+  #touch-pad {
+    background: radial-gradient(circle at 50% 56%, rgba(22, 34, 44, 0.62) 0%, rgba(8, 13, 19, 0.44) 62%, rgba(6, 10, 15, 0.20) 100%);
+    border: 1px solid rgba(138, 196, 216, 0.30);
+    box-shadow: inset 0 0 28px rgba(0, 0, 0, 0.62), 0 3px 16px rgba(0, 0, 0, 0.42), 0 0 0 5px rgba(9, 15, 21, 0.22);
+    backdrop-filter: blur(4px);
+  }
+  #touch-pad .stick-ticks { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  #stick-knob {
+    position: relative;
+    width: 52px; height: 52px; border-radius: 50%;
+    background: radial-gradient(circle at 42% 34%, #46576a 0%, #1d2833 58%, #0d141b 100%);
+    border: 1px solid rgba(176, 216, 232, 0.42);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.6), inset 0 0 10px rgba(120, 200, 230, 0.16);
+  }
+  #stick-knob i {
+    position: absolute; left: 50%; top: 50%; width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px;
+    border-radius: 50%; background: rgba(251, 191, 36, 0.85); box-shadow: 0 0 6px rgba(251, 191, 36, 0.75);
+  }
+  /* ---------- FIRE 트리거: 다크 글래스 + 앰버 링 ---------- */
+  #touch-fire {
+    position: relative; display: flex; align-items: center; justify-content: center; flex-direction: column;
+    background: radial-gradient(circle at 50% 62%, rgba(38, 26, 20, 0.92) 0%, rgba(14, 13, 13, 0.92) 68%, rgba(9, 9, 10, 0.94) 100%);
+    border: 1.5px solid rgba(251, 191, 36, 0.72);
+    border-radius: 50%; color: #ffe6a8;
+    box-shadow: 0 0 0 4px rgba(12, 12, 14, 0.55), inset 0 0 18px rgba(251, 168, 36, 0.14), 0 4px 18px rgba(0, 0, 0, 0.55);
+    letter-spacing: 1.6px;
+  }
+  #touch-fire .fire-arc {
+    position: absolute; inset: 5px; border-radius: 50%;
+    border: 1px solid rgba(255, 214, 128, 0.30);
+    border-top-color: rgba(255, 236, 180, 0.85);
+  }
+  #touch-fire .fire-txt { font-size: 16px; font-weight: 900; line-height: 1; text-shadow: 0 0 10px rgba(255, 190, 80, 0.65); }
+  #touch-fire .fire-sub { font-size: 8.5px; font-weight: 700; letter-spacing: 2px; opacity: 0.72; margin-top: 3px; }
+  #touch-fire:active { transform: scale(0.96); box-shadow: 0 0 0 4px rgba(12, 12, 14, 0.55), inset 0 0 26px rgba(255, 190, 70, 0.42); }
+
+  /* ---------- 모바일 하단 버튼: 아이콘 + 2글자 한글 라벨 ---------- */
+  .lbl2 { display: none; }
+  @media (max-width: 900px) {
+    #btn-cam-tps, #btn-cam-fps, #btn-cam-top, #btn-cam-cmd, .hud-btn.gift-btn { display: none !important; }
+    .hud-btn > .lbl { display: none !important; }
+    .lbl2 { display: block; font-size: 8.5px; line-height: 1.05; letter-spacing: 0; opacity: 0.94; margin-top: 2px; font-weight: 800; }
+    #hud-actions, #hud-weapons { display: grid; align-items: stretch; gap: 4px; }
+    #hud-actions { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+    #hud-weapons { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+    #hud-actions .hud-btn, #hud-weapons .hud-btn {
+      height: 40px; flex: none; min-width: 0; padding: 4px 0 3px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;
+      border-radius: 5px;
+    }
+    #hud-actions .hud-btn .ic, #hud-weapons .hud-btn .ic { width: 14px; height: 14px; margin: 0; }
+    #hud-actions { bottom: calc(144px + env(safe-area-inset-bottom, 0px)); }
+    #hud-weapons { bottom: calc(190px + env(safe-area-inset-bottom, 0px)); }
+    #touch-pad { width: 122px; height: 122px; }
+    #touch-fire { width: 92px; height: 92px; }
+    #cmd-bar { border-radius: 5px; }
+    .panel { border-radius: 5px; }
+  }
+  @media (max-width: 900px) {
+    #hud-status { width: calc(100% - 152px); padding: 3px 6px; }
+    #hud-status .row { font-size: 9.5px; gap: 5px; margin-top: 1px; }
+    #hud-status .bar-bg { width: 54px; height: 6px; }
+    #hud-status .tag { font-size: 8.5px; letter-spacing: 0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #hud-drive-mode { font-size: 9px !important; }
+    #minimap-box { width: 84px; }
+  }
+  @media (max-width: 430px) {
+    #hud-actions .hud-btn, #hud-weapons .hud-btn { height: 38px; }
+    .lbl2 { font-size: 8px; }
+    #hud-actions { bottom: calc(138px + env(safe-area-inset-bottom, 0px)); }
+    #hud-weapons { bottom: calc(182px + env(safe-area-inset-bottom, 0px)); }
+  }
+  @media (max-width: 1000px) and (max-height: 560px) and (orientation: landscape) {
+    #btn-cam-tps, #btn-cam-fps, #btn-cam-top, #btn-cam-cmd, .hud-btn.gift-btn { display: none !important; }
+    #hud-actions { left: 388px; top: calc(5px + env(safe-area-inset-top, 0px)); width: 366px; height: 32px; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 3px; }
+    #hud-weapons { left: 388px; top: calc(40px + env(safe-area-inset-top, 0px)); width: 366px; height: 32px; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 3px; }
+    #hud-actions .hud-btn, #hud-weapons .hud-btn { height: 32px; padding: 2px 0 1px; }
+    #hud-actions .hud-btn .ic, #hud-weapons .hud-btn .ic { width: 12px; height: 12px; }
+    .lbl2 { font-size: 7px; margin-top: 1px; }
+    #touch-pad { width: 100px; height: 100px; }
+    #touch-fire { width: 78px; height: 78px; }
+    #touch-fire .fire-txt { font-size: 13px; }
+    #touch-fire .fire-sub { font-size: 7px; }
+    #hud-frame .c { width: 20px; height: 20px; }
+  }
 </style>
 </head>
 <body>
@@ -555,9 +689,12 @@
   <symbol id="i-drone" viewBox="0 0 24 24"><path d="M8.4 8.4h7.2v7.2H8.4z"/><path d="M8.4 8.4L4.4 4.4M15.6 8.4l4-4M8.4 15.6l-4 4M15.6 15.6l4 4"/><circle cx="3.4" cy="3.4" r="1.7"/><circle cx="20.6" cy="3.4" r="1.7"/><circle cx="3.4" cy="20.6" r="1.7"/><circle cx="20.6" cy="20.6" r="1.7"/></symbol>
   <symbol id="i-objective" viewBox="0 0 24 24"><circle cx="12" cy="10" r="6.4"/><circle cx="12" cy="10" r="1.6"/><path d="M12 16.6V22"/><path d="M12 2.2v1.8M5.2 10H3.4M20.6 10h-1.8"/></symbol>
   <symbol id="i-engine" viewBox="0 0 24 24"><path d="M2.6 12h3.8l2.6-5.2v10.4l2.6-5.2h4.2"/><path d="M17 9.4v5.2"/><path d="M19.6 6.6v10.8"/></symbol>
+  <symbol id="i-terrain" viewBox="0 0 24 24"><path d="M2.4 18.6h19.2"/><path d="M3.6 18.6l5.2-8.4 3.2 4.6 2.6-3.6 5.8 7.4"/><path d="M15.4 6.2l1.4 2.4 2.6.4-1.9 1.9.5 2.7-2.6-1.4-2.6 1.4.5-2.7-1.9-1.9 2.6-.4z" opacity=".7"/></symbol>
+  <symbol id="i-fire" viewBox="0 0 24 24"><path d="M12 2.4c3.4 3.2 5.4 6.4 5.4 9.8a5.4 5.4 0 1 1-10.8 0c0-1.8.7-3.3 1.9-4.7.4 1.4 1.2 2.3 2.1 2.5.7-2.6.6-5 1.4-7.6z"/><path d="M12 21.6a3.2 3.2 0 0 0 3.2-3.2c0-1.6-1.4-3.2-3.2-4.6-1.8 1.4-3.2 3-3.2 4.6A3.2 3.2 0 0 0 12 21.6z" opacity=".6"/></symbol>
   <symbol id="i-eye" viewBox="0 0 24 24"><path d="M1.8 12s3.8-6.2 10.2-6.2S22.2 12 22.2 12s-3.8 6.2-10.2 6.2S1.8 12 1.8 12z"/><circle cx="12" cy="12" r="3"/></symbol>
 </defs></svg>
 <div id="canvas-wrap"></div>
+<div id="hud-frame" aria-hidden="true"><i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i></div>
 <div id="fps-vignette"></div>
 <div id="shield-vignette"></div>
 <div id="damage-flash"></div>
@@ -663,7 +800,7 @@
 <div id="hud">
   <!-- 1. Unit status -->
   <div id="hud-status" class="panel">
-    <div class="tag" id="hud-mode-tag">PROJECT CANON V6.4 · 대대장 · 3개 중대</div>
+    <div class="tag" id="hud-mode-tag">CANON V7.0 · 대대장 · 3개 중대</div>
     <div class="row">
       <span>아군 <strong id="hud-allies" class="cyan">0</strong></span>
       <span>적전차 <strong id="hud-etanks" class="red">0</strong></span>
@@ -694,25 +831,25 @@
     <button id="btn-cam-fps" class="hud-btn" onclick="window._setCameraMode('fps')"><svg class="ic"><use href="#i-cam-fps"/></svg><span class="lbl">1인칭</span></button>
     <button id="btn-cam-top" class="hud-btn" onclick="window._setCameraMode('top')"><svg class="ic"><use href="#i-cam-top"/></svg><span class="lbl">탑뷰</span></button>
     <button id="btn-cam-cmd" class="hud-btn" onclick="window._setCameraMode('cmd')"><svg class="ic"><use href="#i-cam-cmd"/></svg><span class="lbl">지휘 부감</span></button>
-    <div id="cam-cycle-wrap"><button id="btn-cam-cycle" class="hud-btn" onclick="window._cycleCamera()"><svg class="ic"><use href="#i-cam-tps"/></svg></button></div>
-    <button id="btn-cruise" class="hud-btn cruise-on" onclick="window._toggleAutoDrive()"><svg class="ic"><use href="#i-engine"/></svg><span class="lbl">자율기동 ON [P]</span></button>
-    <button id="btn-auto-def" class="hud-btn auto-on" onclick="window._toggleAutoDef()"><svg class="ic"><use href="#i-shield"/></svg><span class="lbl">자동방어 ON [T]</span></button>
-    <button class="hud-btn" onclick="window._orderAllies()"><svg class="ic"><use href="#i-charge"/></svg><span class="lbl">아군돌격 [G]</span></button>
-    <button class="hud-btn" onclick="window._toggleBigMap()"><svg class="ic"><use href="#i-map"/></svg><span class="lbl">전술맵 [M]</span></button>
-    <button class="hud-btn" onclick="window._openSettings()"><svg class="ic"><use href="#i-settings"/></svg><span class="lbl">설정</span></button>
+    <div id="cam-cycle-wrap"><button id="btn-cam-cycle" class="hud-btn" onclick="window._cycleCamera()"><svg class="ic"><use href="#i-cam-tps"/></svg><span class="lbl2">시점</span></button></div>
+    <button id="btn-cruise" class="hud-btn cruise-on" onclick="window._toggleAutoDrive()"><svg class="ic"><use href="#i-engine"/></svg><span class="lbl">자율기동 ON [P]</span><span class="lbl2">자율</span></button>
+    <button id="btn-auto-def" class="hud-btn auto-on" onclick="window._toggleAutoDef()"><svg class="ic"><use href="#i-shield"/></svg><span class="lbl">자동방어 ON [T]</span><span class="lbl2">자동</span></button>
+    <button class="hud-btn" onclick="window._orderAllies()"><svg class="ic"><use href="#i-charge"/></svg><span class="lbl">아군돌격 [G]</span><span class="lbl2">돌격</span></button>
+    <button class="hud-btn" onclick="window._toggleBigMap()"><svg class="ic"><use href="#i-map"/></svg><span class="lbl">전술맵 [M]</span><span class="lbl2">지도</span></button>
+    <button class="hud-btn" onclick="window._openSettings()"><svg class="ic"><use href="#i-settings"/></svg><span class="lbl">설정</span><span class="lbl2">설정</span></button>
     <button class="hud-btn gift-btn" onclick="window._openGiftModal()"><svg class="ic"><use href="#i-gift"/></svg><span class="lbl">선물</span></button>
   </div>
 
   <!-- 3. Weapons / skills -->
   <div id="hud-weapons">
-    <button id="btn-wpn-sonic" class="hud-btn active" onclick="window._setWeapon('sonic')"><svg class="ic"><use href="#i-sonic"/></svg><span class="lbl">1. SONIC 공진포</span></button>
-    <button id="btn-wpn-he" class="hud-btn" onclick="window._setWeapon('he')"><svg class="ic"><use href="#i-gun"/></svg><span class="lbl">2. 120mm 철갑탄</span></button>
-    <button id="btn-wpn-msl" class="hud-btn" onclick="window._setWeapon('missile')"><svg class="ic"><use href="#i-missile"/></svg><span class="lbl">3. ATGM 유도탄</span></button>
-    <button id="btn-wpn-mg" class="hud-btn" onclick="window._setWeapon('mg')"><svg class="ic"><use href="#i-mg"/></svg><span class="lbl">4. 30mm 기관포</span></button>
-    <button id="btn-snap" class="hud-btn" onclick="window._snapTarget()"><svg class="ic"><use href="#i-lock"/></svg><span class="lbl">자동조준 [Tab]</span></button>
-    <button id="btn-shield" class="hud-btn" onclick="window._triggerShield(false)"><svg class="ic"><use href="#i-shield"/></svg><span class="lbl">방어막 [C]</span></button>
-    <button id="btn-smoke" class="hud-btn" onclick="window._triggerSmoke()"><svg class="ic"><use href="#i-smoke"/></svg><span class="lbl">연막수리 [L]</span></button>
-    <button id="btn-stab" class="hud-btn stab-on" onclick="window._toggleStab()"><svg class="ic"><use href="#i-stab"/></svg><span class="lbl">안정화 ON [U]</span></button>
+    <button id="btn-wpn-sonic" class="hud-btn active" onclick="window._setWeapon('sonic')"><svg class="ic"><use href="#i-sonic"/></svg><span class="lbl">1. SONIC 공진포</span><span class="lbl2">공진</span></button>
+    <button id="btn-wpn-he" class="hud-btn" onclick="window._setWeapon('he')"><svg class="ic"><use href="#i-gun"/></svg><span class="lbl">2. 120mm 철갑탄</span><span class="lbl2">철갑</span></button>
+    <button id="btn-wpn-msl" class="hud-btn" onclick="window._setWeapon('missile')"><svg class="ic"><use href="#i-missile"/></svg><span class="lbl">3. ATGM 유도탄</span><span class="lbl2">유도</span></button>
+    <button id="btn-wpn-mg" class="hud-btn" onclick="window._setWeapon('mg')"><svg class="ic"><use href="#i-mg"/></svg><span class="lbl">4. 30mm 기관포</span><span class="lbl2">기관</span></button>
+    <button id="btn-snap" class="hud-btn" onclick="window._snapTarget()"><svg class="ic"><use href="#i-lock"/></svg><span class="lbl">자동조준 [Tab]</span><span class="lbl2">조준</span></button>
+    <button id="btn-shield" class="hud-btn" onclick="window._triggerShield(false)"><svg class="ic"><use href="#i-shield"/></svg><span class="lbl">방어막 [C]</span><span class="lbl2">방어</span></button>
+    <button id="btn-smoke" class="hud-btn" onclick="window._triggerSmoke()"><svg class="ic"><use href="#i-smoke"/></svg><span class="lbl">연막수리 [L]</span><span class="lbl2">연막</span></button>
+    <button id="btn-stab" class="hud-btn stab-on" onclick="window._toggleStab()"><svg class="ic"><use href="#i-stab"/></svg><span class="lbl">안정화 ON [U]</span><span class="lbl2">안정</span></button>
   </div>
 
   <!-- 3-b. Commander tactical bar: rank / stance / attack orders -->
@@ -773,7 +910,7 @@
 
   <!-- 7. Keyboard hints -->
   <div id="hud-controls" class="panel controls">
-    <div class="tag" style="margin-bottom:3px;">V6.4 조종 — 차체·포탑 분리 제어 · 전술 지도 · 계급·태세 지시</div>
+    <div class="tag" style="margin-bottom:3px;">V7.0 조종 — 차체·포탑 분리 제어 · 전술 지도 · 계급·태세 지시</div>
     • <b>차체</b> <kbd>W/A/S/D</kbd>·<kbd>↑←↓→</kbd> 주행·선회 · <kbd>Y</kbd> 터보 · <kbd>P</kbd> 자율기동<br>
     • <b>포탑</b> 마우스 이동(락온 후) 또는 드래그 · <kbd>Q</kbd><kbd>E</kbd> 선회 · <kbd>R</kbd><kbd>F</kbd> 고저 · <kbd>U</kbd> 안정화 · <kbd>Tab</kbd> 락온<br>
     • <kbd>Z</kbd> 쐐기 · <kbd>X</kbd> 횡대 · <kbd>B</kbd> 측면 · <kbd>N</kbd> 집중 화력 · <kbd>H</kbd> 공격 개시<br>
@@ -798,9 +935,20 @@
   </div>
 
   <!-- 9. Virtual joystick + fire (touch devices / small screens) -->
-  <div id="touch-pad"><div id="stick-knob"></div></div>
+  <div id="touch-pad">
+    <svg class="stick-ticks" viewBox="0 0 132 132" aria-hidden="true">
+      <circle cx="66" cy="66" r="52" fill="none" stroke="rgba(150,205,225,0.16)" stroke-width="1"/>
+      <circle cx="66" cy="66" r="40" fill="none" stroke="rgba(150,205,225,0.10)" stroke-width="1" stroke-dasharray="2 5"/>
+      <g stroke="rgba(150,205,225,0.38)" stroke-width="1.4" stroke-linecap="round">
+        <path d="M66 12v9M66 111v9M12 66h9M111 66h9"/>
+        <path d="M30 30l6 6M96 96l6 6M102 30l-6 6M36 96l-6 6" opacity="0.55"/>
+      </g>
+      <circle cx="66" cy="66" r="4" fill="none" stroke="rgba(251,191,36,0.55)" stroke-width="1"/>
+    </svg>
+    <div id="stick-knob"><i></i></div>
+  </div>
   <div id="mobile-right">
-    <button id="touch-fire">발사</button>
+    <button id="touch-fire"><span class="fire-arc"></span><span class="fire-txt">FIRE</span><span class="fire-sub">발사</span></button>
   </div>
 </div>
 
@@ -811,20 +959,20 @@
 <div id="overlay" class="modal-bg">
   <div class="modal">
     <div id="gift-banner" class="gift-ribbon"></div>
-    <div class="tag">대장님 연구 4호 · V6.4 차체·포탑 분리 조종 + 전술 지도 에디션</div>
-    <h1 style="margin:6px 0 8px;">PROJECT CANON V6.4 : 독립 포탑 조종 &amp; 전장 전술 지도</h1>
+    <div class="tag">대장님 연구 4호 · V7.0 PBR 전장 · 파티클 이펙트 · 관제 HUD 에디션</div>
+    <h1 style="margin:6px 0 8px;">PROJECT CANON V7.0 : 리얼 PBR 전장 &amp; 관제 HUD</h1>
     <p style="font-size:13px; color:#cbd5e1; line-height:1.55; margin:0 0 8px;">
-      이제 <strong>차체와 포탑을 각각 따로 조종</strong>합니다. <strong>WASD·방향키(좌측 조이스틱)</strong>로 차체를 몰고,
-      <strong>마우스·Q/E·R/F(우측 조준 존 드래그)</strong>로 포탑을 독립 선회·조준하십시오. 2축 자이로 안정화로 차체가 돌아도 조준이 흔들리지 않습니다.
-      <strong>전술 지도(M)</strong>에서 전장 전체의 지형·도로·제대·시야 원추를 확인하고, 지도를 눌러 목표를 지정한 뒤 공격 개시·집중 포격·항공 지원을 내리십시오.
+      V7.0은 전장을 <strong>절차적 PBR 텍스처와 파티클 이펙트</strong>로 다시 지었습니다. 흙·마른풀·자갈이 섞인 지형, 균열과 흙먼지가 밴 전술 도로,
+      완만한 다중 능선과 대기 원근의 산맥, 위장막 막사·콘크리트 벙커·레이더 돔, K2식 위장 도장과 금속 반사까지 실제 기갑 전장의 질감입니다.
+      <strong>차체(WASD·좌측 조이스틱)와 포탑(마우스·우측 드래그)</strong>을 따로 조종하고, <strong>전술 지도(M)</strong>에서 목표를 지정해 공격·포격·항공 지원을 내리십시오.
     </p>
     <div class="badge-strip">
-      <span class="v6-badge"><svg class="ic sm"><use href="#i-hull"/></svg> 차체 주행·선회 독립 제어</span>
-      <span class="v6-badge"><svg class="ic sm"><use href="#i-turret"/></svg> 포탑 독립 선회·고저 조준</span>
+      <span class="v6-badge"><svg class="ic sm"><use href="#i-terrain"/></svg> 절차적 PBR 지형·도로 텍스처</span>
+      <span class="v6-badge"><svg class="ic sm"><use href="#i-hull"/></svg> 차체·포탑 독립 제어</span>
       <span class="v6-badge"><svg class="ic sm"><use href="#i-stab"/></svg> 2축 안정화 ON/OFF</span>
+      <span class="v6-badge"><svg class="ic sm"><use href="#i-fire"/></svg> 파티클 화염·연기·예광 이펙트</span>
       <span class="v6-badge"><svg class="ic sm"><use href="#i-map"/></svg> 전장 전역 전술 지도</span>
-      <span class="v6-badge"><svg class="ic sm"><use href="#i-artillery"/></svg> 지도 상 포격·CAS 지시</span>
-      <span class="v6-badge"><svg class="ic sm"><use href="#i-aim"/></svg> 밀리터리 SVG 관제 UI</span>
+      <span class="v6-badge"><svg class="ic sm"><use href="#i-aim"/></svg> 관제기 스타일 HUD</span>
     </div>
     <div class="scale-grid">
       <div class="scale-card" id="sc-platoon" onclick="window._selectScale('platoon')">
@@ -843,7 +991,7 @@
     <p style="font-size:12px; color:#fbbf24; margin:0 0 4px;">아군 편성은 지휘 계급이 결정합니다 — 전차장(1개 소대) · 대대장(3개 중대+포병) · 사단장(전차대대+기계화+포병대대+CAS). 출격 후 HUD 지휘소에서 전환하십시오.</p>
     <p id="modal-result" style="display:none; font-size:15px; font-weight:800;"></p>
     <button id="btn-start" class="btn-start"><svg class="ic lg"><use href="#i-engine"/></svg> 기동전투 엔진 가동 · 연구 4호 전면전 출격</button>
-    <button class="btn-gift-open" onclick="window._openGiftModal()"><svg class="ic"><use href="#i-gift"/></svg> V6.4 선물용 HTML 생성</button>
+    <button class="btn-gift-open" onclick="window._openGiftModal()"><svg class="ic"><use href="#i-gift"/></svg> V7.0 선물용 HTML 생성</button>
   </div>
 </div>
 
@@ -865,14 +1013,14 @@
 <div id="gift-modal" class="modal-bg" style="display:none; z-index:75;">
   <div class="modal" style="max-width:520px;">
     <div class="tag">GIFT PACKAGING ENGINE · 1-FILE STANDALONE</div>
-    <h2 style="margin:6px 0 8px;"><svg class="ic lg"><use href="#i-gift"/></svg> V6.4 선물용 맞춤 게임 만들기</h2>
-    <p style="font-size:12.5px; color:#cbd5e1;">받는 분 이름과 메시지를 입력하시면 외부 파일 없이 V6.4 전체가 담긴 단일 HTML 파일이 생성됩니다.</p>
+    <h2 style="margin:6px 0 8px;"><svg class="ic lg"><use href="#i-gift"/></svg> V7.0 선물용 맞춤 게임 만들기</h2>
+    <p style="font-size:12.5px; color:#cbd5e1;">받는 분 이름과 메시지를 입력하시면 외부 파일 없이 V7.0 전체가 담긴 단일 HTML 파일이 생성됩니다.</p>
     <label style="font-size:12px; color:#94a3b8;">보내는 사람</label>
     <input id="gift-from" class="inp" value="대장님">
     <label style="font-size:12px; color:#94a3b8;">받는 사람</label>
     <input id="gift-to" class="inp" placeholder="받는 분 성함 또는 애칭">
     <label style="font-size:12px; color:#94a3b8;">선물 메시지</label>
-    <input id="gift-msg" class="inp" value="직접 기획·업그레이드한 연구 4호 V6.4 차체·포탑 독립 조종 전차 게임 선물합니다.">
+    <input id="gift-msg" class="inp" value="직접 기획·업그레이드한 연구 4호 V7.0 PBR 전장 전차 게임 선물합니다.">
     <button class="btn-start" onclick="window._downloadGiftFile()"><svg class="ic"><use href="#i-gift"/></svg> 맞춤 선물 게임 파일 (.html) 생성</button>
     <button class="hud-btn" style="width:100%; margin-top:8px; padding:9px;" onclick="document.getElementById('gift-modal').style.display='none'">닫기</button>
   </div>
@@ -920,7 +1068,7 @@
     a.click();
     URL.revokeObjectURL(a.href);
     document.getElementById('gift-modal').style.display = 'none';
-    showBanner(`'${meta.to}'님 전용 V6.4 선물 게임 HTML 다운로드 완료`, '#f472b6', 'gift');
+    showBanner(`'${meta.to}'님 전용 V7.0 선물 게임 HTML 다운로드 완료`, '#f472b6', 'gift');
   };
 
   // ============================================================================
@@ -1132,7 +1280,7 @@
   const wrap = document.getElementById('canvas-wrap');
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x9fb6c8);
-  scene.fog = new THREE.Fog(0xc3d0da, 105, 690);
+  scene.fog = new THREE.Fog(0xc8d2d8, 120, 720);
 
   const camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.2, 1400);
   const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -1141,7 +1289,7 @@
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 0.98;
+  renderer.toneMappingExposure = 1.06;
   wrap.appendChild(renderer.domElement);
 
   // ---------------------------------------------------------------------------
@@ -1172,13 +1320,13 @@
 
     // Sun glow (matches the directional light azimuth) + soft disc
     const sx = 1360, sy = 430;
-    const sg = ctx.createRadialGradient(sx, sy, 6, sx, sy, 230);
-    sg.addColorStop(0, 'rgba(255,248,224,0.85)');
-    sg.addColorStop(0.10, 'rgba(255,238,192,0.36)');
-    sg.addColorStop(0.42, 'rgba(255,228,172,0.11)');
-    sg.addColorStop(1, 'rgba(255,224,164,0)');
-    ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(sx, sy, 230, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = 'rgba(255,252,240,0.9)'; ctx.beginPath(); ctx.arc(sx, sy, 17, 0, Math.PI * 2); ctx.fill();
+    const sg = ctx.createRadialGradient(sx, sy, 4, sx, sy, 190);
+    sg.addColorStop(0, 'rgba(255,250,232,0.92)');
+    sg.addColorStop(0.06, 'rgba(255,244,206,0.42)');
+    sg.addColorStop(0.28, 'rgba(255,236,190,0.13)');
+    sg.addColorStop(1, 'rgba(255,228,172,0)');
+    ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(sx, sy, 190, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,253,246,0.95)'; ctx.beginPath(); ctx.arc(sx, sy, 10, 0, Math.PI * 2); ctx.fill();
 
     // Layered fair-weather clouds
     const puff = (cx, cy, rx, ry, alpha, tint) => {
@@ -1213,115 +1361,366 @@
     tex.colorSpace = THREE.SRGBColorSpace;
     return tex;
   }
+  const skyTex = makeSkyTex();
   const skyDome = new THREE.Mesh(
     new THREE.SphereGeometry(760, 48, 32),
-    new THREE.MeshBasicMaterial({ map: makeSkyTex(), side: THREE.BackSide, fog: false, depthWrite: false })
+    new THREE.MeshBasicMaterial({ map: skyTex, side: THREE.BackSide, fog: false, depthWrite: false })
   );
   scene.add(skyDome);
   scene.background = null;
+  // 하늘에서 뽑아낸 환경 반사(IBL) — 장갑 금속의 사실감을 살린다
+  try {
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    pmrem.compileEquirectangularShader();
+    scene.environment = pmrem.fromEquirectangular(skyTex).texture;
+    pmrem.dispose();
+  } catch (e) { /* IBL 미지원 시 기존 조명만 사용 */ }
 
-  // Neutral high-frequency ground detail (vertex colors carry the hue)
-  function makeGroundTex() {
-    const c = document.createElement('canvas'); c.width = 512; c.height = 512;
-    const ctx = c.getContext('2d');
-    ctx.fillStyle = '#c9c9c9'; ctx.fillRect(0, 0, 512, 512);
-    for (let i = 0; i < 2600; i++) {
-      const v = 150 + Math.random() * 105;
-      ctx.fillStyle = `rgba(${v},${v},${v},0.5)`;
-      ctx.beginPath();
-      ctx.arc(Math.random() * 512, Math.random() * 512, 2 + Math.random() * 12, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    for (let i = 0; i < 16000; i++) {
-      const v = Math.random() > 0.5 ? 235 : 130;
-      ctx.fillStyle = `rgba(${v},${v},${v},0.30)`;
-      ctx.fillRect(Math.random() * 512, Math.random() * 512, Math.random() * 2.2 + 0.6, Math.random() * 2.2 + 0.6);
-    }
-    // dry grass streaks
-    for (let i = 0; i < 900; i++) {
-      ctx.strokeStyle = `rgba(${215 + Math.random() * 40},${215 + Math.random() * 30},${180 + Math.random() * 40},0.22)`;
-      ctx.lineWidth = 1;
-      const x = Math.random() * 512, y = Math.random() * 512;
-      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + (Math.random() - 0.5) * 7, y - 3 - Math.random() * 7); ctx.stroke();
-    }
-    const tex = new THREE.CanvasTexture(c);
-    tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(120, 120);
-    tex.colorSpace = THREE.SRGBColorSpace;
-    return tex;
+  // ============================================================================
+  // V7 PROCEDURAL SURFACE LIBRARY — tileable value-noise fields → albedo / bump / roughness
+  // ============================================================================
+  let groundBumpTex = null, groundRoughTex = null;
+  const MAX_ANISO = Math.min(8, (renderer.capabilities && renderer.capabilities.getMaxAnisotropy) ? renderer.capabilities.getMaxAnisotropy() : 4);
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      let t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
   }
-  const groundDetailTex = makeGroundTex();
-
-  // Procedural Military Camouflage + Panel Lines + Rivets Texture
-  function makeArmorTex(palette, isDigital = true) {
-    const c = document.createElement('canvas'); c.width = 256; c.height = 256;
-    const ctx = c.getContext('2d');
-    ctx.fillStyle = palette[0]; ctx.fillRect(0, 0, 256, 256);
-    for (let i = 0; i < 140; i++) {
-      ctx.fillStyle = palette[1 + (i % (palette.length - 1))];
-      if (isDigital) {
-        const w = 14 + Math.floor(Math.random()*3)*10, h = 10 + Math.floor(Math.random()*3)*8;
-        ctx.fillRect(Math.floor(Math.random()*32)*8, Math.floor(Math.random()*32)*8, w, h);
-      } else {
-        ctx.beginPath();
-        ctx.ellipse(Math.random()*256, Math.random()*256, 18+Math.random()*26, 10+Math.random()*18, Math.random()*3, 0, Math.PI*2);
-        ctx.fill();
+  // Tileable fractal value noise (smoothstep interpolation, wraps on both axes)
+  function fbmField(size, baseCells, octaves, seed, gain) {
+    gain = gain === undefined ? 0.5 : gain;
+    const out = new Float32Array(size * size);
+    let amp = 1, tot = 0;
+    for (let o = 0; o < octaves; o++) {
+      const cells = Math.max(2, baseCells << o);
+      const rnd = mulberry32(seed + o * 977);
+      const g = new Float32Array(cells * cells);
+      for (let i = 0; i < g.length; i++) g[i] = rnd();
+      const scale = cells / size;
+      for (let y = 0; y < size; y++) {
+        const fy = y * scale, y0 = Math.floor(fy), ty = fy - y0;
+        const sy = ty * ty * (3 - 2 * ty);
+        const r0 = (y0 % cells) * cells, r1 = ((y0 + 1) % cells) * cells;
+        for (let x = 0; x < size; x++) {
+          const fx = x * scale, x0 = Math.floor(fx), tx = fx - x0;
+          const sx = tx * tx * (3 - 2 * tx);
+          const c0 = x0 % cells, c1 = (x0 + 1) % cells;
+          const v0 = g[r0 + c0] * (1 - sx) + g[r0 + c1] * sx;
+          const v1 = g[r1 + c0] * (1 - sx) + g[r1 + c1] * sx;
+          out[y * size + x] += amp * (v0 * (1 - sy) + v1 * sy);
+        }
       }
+      tot += amp; amp *= gain;
     }
-    // Armor panel seams & weathering
-    ctx.strokeStyle = 'rgba(0,0,0,0.32)'; ctx.lineWidth = 2;
-    for (let p = 64; p < 256; p += 64) {
-      ctx.beginPath(); ctx.moveTo(p, 0); ctx.lineTo(p, 256); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(0, p); ctx.lineTo(256, p); ctx.stroke();
-    }
-    // Rivets
-    ctx.fillStyle = 'rgba(255,255,255,0.16)';
-    for (let x = 8; x < 256; x += 32) for (let y = 8; y < 256; y += 32) ctx.fillRect(x, y, 2, 2);
-    // Scratches
-    ctx.strokeStyle = 'rgba(200,210,220,0.12)'; ctx.lineWidth = 1;
-    for (let s = 0; s < 35; s++) {
-      const sx = Math.random()*256, sy = Math.random()*256;
-      ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(sx + (Math.random()-0.5)*24, sy + (Math.random()-0.5)*14); ctx.stroke();
-    }
-    const tex = new THREE.CanvasTexture(c); tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    return tex;
+    for (let i = 0; i < out.length; i++) out[i] /= tot;
+    return out;
   }
-
-  // Concrete / Bunker Wall Texture
-  function makeConcreteTex() {
-    const c = document.createElement('canvas'); c.width = 256; c.height = 256;
+  function newCanvas(size) {
+    const c = document.createElement('canvas'); c.width = c.height = size;
+    return { c, ctx: c.getContext('2d') };
+  }
+  function pixelCanvas(size, fn) {
+    const c = document.createElement('canvas'); c.width = c.height = size;
     const ctx = c.getContext('2d');
-    ctx.fillStyle = '#5e5a52'; ctx.fillRect(0, 0, 256, 256);
-    for (let i = 0; i < 3500; i++) {
-      ctx.fillStyle = Math.random() > 0.5 ? 'rgba(130,126,118,0.22)' : 'rgba(30,28,25,0.25)';
-      ctx.fillRect(Math.random()*256, Math.random()*256, 2, 2);
+    const img = ctx.createImageData(size, size);
+    fn(img.data, size);
+    ctx.putImageData(img, 0, 0);
+    return c;
+  }
+  function texOf(canvas, opt) {
+    opt = opt || {};
+    const t = new THREE.CanvasTexture(canvas);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.anisotropy = opt.aniso === false ? 1 : MAX_ANISO;
+    if (opt.srgb) t.colorSpace = THREE.SRGBColorSpace;
+    if (opt.repeat) t.repeat.set(opt.repeat[0], opt.repeat[1]);
+    t.needsUpdate = true;
+    return t;
+  }
+  const smoothstep = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  const mixN = (a, b, t) => a + (b - a) * t;
+
+  // ---- 지형: 마른 흙 · 마른풀 · 자갈 · 잔디가 섞인 고해상도 알베도/범프/러프니스 ----
+  const groundDetailTex = (() => {
+    const S = 1024;
+    const macro = fbmField(S, 3, 5, 1481);          // 흙 ↔ 마른풀 큰 덩어리
+    const mid   = fbmField(S, 12, 4, 7331);          // 중간 규모 얼룩
+    const fine  = fbmField(S, 64, 3, 9137);          // 잔 자갈·입자
+    const rnd = mulberry32(4242);
+    const albedo = pixelCanvas(S, (d, size) => {
+      for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+          const i = y * size + x, p = i * 4;
+          const m = macro[i], md = mid[i], fn = fine[i];
+          // 기본: 마른 흙 (따뜻한 황갈)
+          let r = 108, g = 95, b = 72;
+          // 마른풀 덩어리 (khaki)
+          const dryT = smoothstep(0.46, 0.78, m * 0.62 + md * 0.38);
+          r = mixN(r, 140, dryT); g = mixN(g, 132, dryT); b = mixN(b, 86, dryT);
+          // 살아있는 잔디 (dark olive) — 중간 규모 얼룩에서만
+          const grassT = smoothstep(0.62, 0.92, md * 0.7 + m * 0.3) * 0.85;
+          r = mixN(r, 79, grassT); g = mixN(g, 92, grassT); b = mixN(b, 47, grassT);
+          // 모래·자갈 (밝은 회갈)
+          const gravT = smoothstep(0.84, 0.99, fn) * 0.8;
+          r = mixN(r, 158, gravT); g = mixN(g, 152, gravT); b = mixN(b, 132, gravT);
+          // 미세 입자 노이즈
+          const n = (rnd() - 0.5) * 17;
+          const shade = 0.86 + fn * 0.28;
+          d[p]     = Math.max(0, Math.min(255, (r + n) * shade));
+          d[p + 1] = Math.max(0, Math.min(255, (g + n) * shade));
+          d[p + 2] = Math.max(0, Math.min(255, (b + n * 0.8) * shade));
+          d[p + 3] = 255;
+        }
+      }
+    });
+    const bump = pixelCanvas(512, (d, size) => {
+      for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+        const i = (y * 2) * S + (x * 2), p = (y * size + x) * 4;
+        const v = 128 + (fine[i] - 0.5) * 150 + (mid[i] - 0.5) * 70;
+        d[p] = d[p + 1] = d[p + 2] = Math.max(0, Math.min(255, v)); d[p + 3] = 255;
+      }
+    });
+    const rough = pixelCanvas(512, (d, size) => {
+      for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+        const i = (y * 2) * S + (x * 2), p = (y * size + x) * 4;
+        const v = 225 + (mid[i] - 0.5) * 46;
+        d[p] = d[p + 1] = d[p + 2] = Math.max(0, Math.min(255, v)); d[p + 3] = 255;
+      }
+    });
+    groundBumpTex = texOf(bump, { srgb: false, repeat: [54, 54], aniso: false });
+    groundRoughTex = texOf(rough, { srgb: false, repeat: [54, 54], aniso: false });
+    return texOf(albedo, { srgb: true, repeat: [54, 54] });
+  })();
+
+  // ---- 콘크리트 (벙커·방벽): 얼룩 · 곰팡이 · 거푸집 자국 · 박리 ----
+  function makeConcreteTex() {
+    const S = 512;
+    const f1 = fbmField(S, 6, 4, 5150), f2 = fbmField(S, 40, 3, 8821);
+    const rnd = mulberry32(9921);
+    const c = pixelCanvas(S, (d, size) => {
+      for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+        const i = y * size + x, p = i * 4;
+        let r = 126, g = 121, b = 111;
+        const stain = smoothstep(0.5, 0.92, f1[i]);
+        r = mixN(r, 92, stain * 0.75); g = mixN(g, 88, stain * 0.75); b = mixN(b, 79, stain * 0.75);
+        const moss = smoothstep(0.78, 0.99, f1[i] * 0.4 + f2[i] * 0.6);
+        r = mixN(r, 96, moss * 0.5); g = mixN(g, 104, moss * 0.5); b = mixN(b, 78, moss * 0.5);
+        const grit = (rnd() - 0.5) * 26;
+        const sh = 0.9 + f2[i] * 0.22;
+        d[p] = Math.max(0, Math.min(255, (r + grit) * sh));
+        d[p + 1] = Math.max(0, Math.min(255, (g + grit) * sh));
+        d[p + 2] = Math.max(0, Math.min(255, (b + grit) * sh));
+        d[p + 3] = 255;
+      }
+    });
+    const ctx = c.getContext('2d');
+    // 거푸집 이음선 · 균열 · 물때 자국
+    ctx.strokeStyle = 'rgba(58,54,48,0.42)'; ctx.lineWidth = 2;
+    for (let p = 0; p < S; p += 128) {
+      ctx.beginPath(); ctx.moveTo(0, p + 0.5); ctx.lineTo(S, p + 0.5); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(p + 0.5, 0); ctx.lineTo(p + 0.5, S); ctx.stroke();
     }
-    ctx.strokeStyle = 'rgba(25,24,22,0.4)'; ctx.lineWidth = 2;
-    for (let y = 0; y < 256; y += 32) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(256, y); ctx.stroke(); }
-    for (let x = 0; x < 256; x += 64) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 256); ctx.stroke(); }
-    const tex = new THREE.CanvasTexture(c); tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(2, 1);
-    return tex;
+    ctx.strokeStyle = 'rgba(40,38,34,0.5)'; ctx.lineWidth = 1.2;
+    for (let k = 0; k < 16; k++) {
+      let x = rnd() * S, y = rnd() * S;
+      ctx.beginPath(); ctx.moveTo(x, y);
+      for (let s = 0; s < 7; s++) { x += (rnd() - 0.5) * 44; y += 8 + rnd() * 26; ctx.lineTo(x, y); }
+      ctx.stroke();
+    }
+    ctx.strokeStyle = 'rgba(70,66,58,0.16)'; ctx.lineWidth = 5;
+    for (let k = 0; k < 10; k++) {
+      const x = rnd() * S; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + (rnd() - 0.5) * 12, S); ctx.stroke();
+    }
+    return texOf(c, { srgb: true, repeat: [2, 1] });
   }
 
-  const texPlayerCamo = makeArmorTex(['#46604f', '#33473c', '#5c6d58', '#2a3833'], true);
-  const texAllyCamo   = makeArmorTex(['#3c5a6d', '#2c4454', '#4c7186', '#233340'], true);
-  const texEnemyCamo  = makeArmorTex(['#4e4d3a', '#3a3b2c', '#5e5640', '#2b2a22'], false);
-  const texBossCamo   = makeArmorTex(['#4b2323', '#331717', '#612d25', '#1f1616'], false);
-  const texConcrete   = makeConcreteTex();
+  // ---- 아스팔트 전술 도로: 골재 · 균열 · 마모된 중앙선 · 흙먼지 갓길 ----
+  function makeRoadTex() {
+    const S = 512;
+    const f1 = fbmField(S, 8, 4, 6613), f2 = fbmField(S, 56, 3, 3319);
+    const rnd = mulberry32(717);
+    const c = pixelCanvas(S, (d, size) => {
+      for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+        const i = y * size + x, p = i * 4;
+        let v = 54 + f1[i] * 22 + (rnd() - 0.5) * 24;
+        // 골재 알갱이
+        if (f2[i] > 0.86) v += 26;
+        if (rnd() > 0.995) v += 34;
+        // 바퀴 마모 띠 (중앙이 살짝 밝게 닳음)
+        const wear = Math.exp(-Math.pow((x / size - 0.28) / 0.1, 2)) + Math.exp(-Math.pow((x / size - 0.72) / 0.1, 2));
+        v += wear * 7;
+        d[p] = Math.max(0, Math.min(255, v * 0.99));
+        d[p + 1] = Math.max(0, Math.min(255, v));
+        d[p + 2] = Math.max(0, Math.min(255, v * 1.06));
+        d[p + 3] = 255;
+      }
+    });
+    const ctx = c.getContext('2d');
+    // 균열 (뱀처럼 번지는 아스팔트 크랙)
+    ctx.strokeStyle = 'rgba(26,26,28,0.72)';
+    for (let k = 0; k < 12; k++) {
+      let x = rnd() * S, y = rnd() * S;
+      ctx.lineWidth = 0.8 + rnd() * 1.6;
+      ctx.beginPath(); ctx.moveTo(x, y);
+      for (let s = 0; s < 12; s++) { x += (rnd() - 0.5) * 26; y += (rnd() - 0.5) * 30; ctx.lineTo(x, y); }
+      ctx.stroke();
+    }
+    // 패치 자국 (보수 흔적)
+    ctx.fillStyle = 'rgba(38,38,40,0.55)';
+    for (let k = 0; k < 5; k++) {
+      const w = 40 + rnd() * 90, h = 30 + rnd() * 80;
+      ctx.fillRect(rnd() * (S - w), rnd() * (S - h), w, h);
+    }
+    // 마모된 중앙 점선 (노란 페인트가 닳은 모습)
+    ctx.strokeStyle = 'rgba(186,162,96,0.5)'; ctx.lineWidth = 9; ctx.lineCap = 'butt';
+    for (let y = 24; y < S; y += 132) { ctx.beginPath(); ctx.moveTo(S / 2, y); ctx.lineTo(S / 2, y + 56); ctx.stroke(); }
+    // 갓길 흙먼지 (양쪽 가장자리)
+    const edge = ctx.createLinearGradient(0, 0, S, 0);
+    edge.addColorStop(0, 'rgba(96,80,56,0.92)');
+    edge.addColorStop(0.10, 'rgba(96,80,56,0.30)');
+    edge.addColorStop(0.24, 'rgba(96,80,56,0)');
+    edge.addColorStop(0.76, 'rgba(96,80,56,0)');
+    edge.addColorStop(0.90, 'rgba(96,80,56,0.30)');
+    edge.addColorStop(1, 'rgba(96,80,56,0.92)');
+    ctx.fillStyle = edge; ctx.fillRect(0, 0, S, S);
+    return texOf(c, { srgb: true });
+  }
+  function makeGravelTex() {
+    const S = 512;
+    const f1 = fbmField(S, 24, 4, 2281), f2 = fbmField(S, 90, 2, 5512);
+    const rnd = mulberry32(313);
+    const c = pixelCanvas(S, (d, size) => {
+      for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+        const i = y * size + x, p = i * 4;
+        let r = 118, g = 106, b = 84;
+        const st = smoothstep(0.4, 0.9, f1[i]);
+        r = mixN(r, 92, st * 0.6); g = mixN(g, 83, st * 0.6); b = mixN(b, 66, st * 0.6);
+        if (f2[i] > 0.8) { r += 34; g += 32; b += 26; }
+        if (rnd() > 0.97) { r += 26; g += 24; b += 20; }
+        const n = (rnd() - 0.5) * 22;
+        d[p] = Math.max(0, Math.min(255, r + n)); d[p + 1] = Math.max(0, Math.min(255, g + n)); d[p + 2] = Math.max(0, Math.min(255, b + n));
+        d[p + 3] = 255;
+      }
+    });
+    const ctx = c.getContext('2d');
+    // 궤도 자국 (갓길을 지나간 전차 궤도 흔적)
+    ctx.fillStyle = 'rgba(60,52,40,0.30)';
+    for (let k = 0; k < 2; k++) {
+      const bx = S * (0.26 + k * 0.42);
+      for (let y = 0; y < S; y += 14) ctx.fillRect(bx - 15, y, 30, 9);
+      ctx.fillStyle = 'rgba(60,52,40,0.22)';
+    }
+    return texOf(c, { srgb: true });
+  }
+
+  // ---- 기갑 위장 무늬: 다중 스케일 얼룩 + 패널 이음선 + 먼지/흘림 자국 (+범프·러프니스) ----
+  function makeCamoSet(pal, opt) {
+    opt = opt || {};
+    const S = 512;
+    const c = document.createElement('canvas'); c.width = c.height = S;
+    const ctx = c.getContext('2d');
+    const rnd = mulberry32(opt.seed || 1234);
+    ctx.fillStyle = pal[0]; ctx.fillRect(0, 0, S, S);
+    const blob = (cx, cy, r, col) => {
+      ctx.fillStyle = col; ctx.beginPath();
+      const n = 12 + Math.floor(rnd() * 6);
+      const pts = [];
+      for (let i = 0; i < n; i++) {
+        const a = (i / n) * Math.PI * 2, rr = r * (0.55 + rnd() * 0.75);
+        pts.push([cx + Math.cos(a) * rr, cy + Math.sin(a) * rr]);
+      }
+      ctx.moveTo((pts[0][0] + pts[n - 1][0]) / 2, (pts[0][1] + pts[n - 1][1]) / 2);
+      for (let i = 0; i < n; i++) {
+        const p0 = pts[i], p1 = pts[(i + 1) % n];
+        ctx.quadraticCurveTo(p0[0], p0[1], (p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2);
+      }
+      ctx.closePath(); ctx.fill();
+    };
+    // 큰 덩어리 → 중간 덩어리 → 작은 반점 (위장 표준 3색 배합)
+    for (let i = 0; i < 26; i++) blob(rnd() * S, rnd() * S, 40 + rnd() * 70, pal[1 + (i % (pal.length - 1))]);
+    for (let i = 0; i < 54; i++) blob(rnd() * S, rnd() * S, 16 + rnd() * 34, pal[1 + ((i + 2) % (pal.length - 1))]);
+    for (let i = 0; i < 120; i++) blob(rnd() * S, rnd() * S, 5 + rnd() * 12, pal[1 + ((i + 1) % (pal.length - 1))]);
+    if (opt.digital) {
+      // 디지털 픽셀 반점
+      for (let i = 0; i < 1400; i++) {
+        ctx.fillStyle = pal[1 + Math.floor(rnd() * (pal.length - 1))];
+        ctx.globalAlpha = 0.35;
+        ctx.fillRect(Math.floor(rnd() * S / 4) * 4, Math.floor(rnd() * S / 4) * 4, 4, 4);
+      }
+      ctx.globalAlpha = 1;
+    }
+    // 패널 이음선 · 리벳 · 용접 자국
+    ctx.strokeStyle = 'rgba(18,20,18,0.34)'; ctx.lineWidth = 1.6;
+    for (let p = 64; p < S; p += 64) {
+      ctx.beginPath(); ctx.moveTo(p, 0); ctx.lineTo(p, S); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, p); ctx.lineTo(S, p); ctx.stroke();
+    }
+    ctx.fillStyle = 'rgba(230,230,220,0.13)';
+    for (let x = 8; x < S; x += 32) for (let y = 8; y < S; y += 32) { ctx.beginPath(); ctx.arc(x, y, 1.5, 0, 6.283); ctx.fill(); }
+    // 먼지 · 진흙 흘림 · 긁힘
+    for (let i = 0; i < 70; i++) {
+      const x = rnd() * S, y = rnd() * S, h = 20 + rnd() * 90;
+      const g = ctx.createLinearGradient(x, y, x, y + h);
+      g.addColorStop(0, 'rgba(122,104,74,0.20)'); g.addColorStop(1, 'rgba(122,104,74,0)');
+      ctx.fillStyle = g; ctx.fillRect(x, y, 2 + rnd() * 6, h);
+    }
+    ctx.strokeStyle = 'rgba(206,206,196,0.10)'; ctx.lineWidth = 1;
+    for (let i = 0; i < 60; i++) {
+      const x = rnd() * S, y = rnd() * S;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + (rnd() - 0.5) * 30, y + (rnd() - 0.5) * 16); ctx.stroke();
+    }
+    // 범프/러프니스: 알베도 휘도 기반 (어두운 이음선 = 함몰)
+    const src = ctx.getImageData(0, 0, S, S).data;
+    const bumpC = document.createElement('canvas'); bumpC.width = bumpC.height = S;
+    const bctx = bumpC.getContext('2d'); const bimg = bctx.createImageData(S, S);
+    const roughC = document.createElement('canvas'); roughC.width = roughC.height = S;
+    const rctx = roughC.getContext('2d'); const rimg = rctx.createImageData(S, S);
+    for (let i = 0; i < src.length; i += 4) {
+      const lum = (src[i] * 0.30 + src[i + 1] * 0.59 + src[i + 2] * 0.11);
+      const bv = Math.max(0, Math.min(255, 90 + lum * 0.62));
+      bimg.data[i] = bimg.data[i + 1] = bimg.data[i + 2] = bv; bimg.data[i + 3] = 255;
+      const rv = Math.max(0, Math.min(255, 150 + (1 - lum / 255) * 90));
+      rimg.data[i] = rimg.data[i + 1] = rimg.data[i + 2] = rv; rimg.data[i + 3] = 255;
+    }
+    bctx.putImageData(bimg, 0, 0); rctx.putImageData(rimg, 0, 0);
+    const map = texOf(c, { srgb: true });
+    return { map, bump: texOf(bumpC, { srgb: false }), rough: texOf(roughC, { srgb: false }) };
+  }
+
+  const armPlayer = makeCamoSet(['#58603f', '#414a34', '#797659', '#8a7c58', '#333a2c'], { digital: true, seed: 811 });
+  const armAlly   = makeCamoSet(['#48513f', '#3b4436', '#5d6450', '#6b6850', '#2f372c'], { digital: true, seed: 233 });
+  const armEnemy  = makeCamoSet(['#3e4132', '#33362a', '#4b4c39', '#2a2c22', '#55543c'], { digital: false, seed: 917 });
+  const armBoss   = makeCamoSet(['#413330', '#2d2422', '#51413a', '#241c1a', '#5c4a3d'], { digital: false, seed: 455 });
+  const texConcrete = makeConcreteTex();
+
 
   // ---------------------------------------------------------------------------
   // Natural daylight: warm low sun + cool sky fill + soft ambient bounce
   // ---------------------------------------------------------------------------
-  scene.add(new THREE.HemisphereLight(0xc6dcf4, 0x736245, 0.85));
-  scene.add(new THREE.AmbientLight(0x93a9bb, 0.30));
-  const sun = new THREE.DirectionalLight(0xffe3bd, 1.95);
-  sun.position.set(132, 148, -96); sun.castShadow = true;
-  sun.shadow.mapSize.set(1024, 1024);
-  sun.shadow.camera.left = -150; sun.shadow.camera.right = 150; sun.shadow.camera.top = 150; sun.shadow.camera.bottom = -150;
-  sun.shadow.camera.near = 20; sun.shadow.camera.far = 520;
-  sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.35;
+  scene.add(new THREE.HemisphereLight(0xcfe2f6, 0x7d6a4c, 0.62));
+  scene.add(new THREE.AmbientLight(0x9fb2c2, 0.18));
+  const sun = new THREE.DirectionalLight(0xffe6c6, 2.6);
+  sun.position.set(96, 118, -74); sun.castShadow = true;
+  const SHADOW_HALF = 92;
+  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.camera.left = -SHADOW_HALF; sun.shadow.camera.right = SHADOW_HALF;
+  sun.shadow.camera.top = SHADOW_HALF; sun.shadow.camera.bottom = -SHADOW_HALF;
+  sun.shadow.camera.near = 20; sun.shadow.camera.far = 460;
+  sun.shadow.bias = -0.00035; sun.shadow.normalBias = 0.28;
+  sun.shadow.radius = 2.2;
   scene.add(sun);
   scene.add(sun.target);
-  const sunFill = new THREE.DirectionalLight(0xa8c8ea, 0.42);
+  // 태양(그림자) 리그를 플레이어 전차 주변으로 따라가게 해 접지 그림자를 또렷하게 유지
+  function updateSunRig() {
+    const px = playerRoot ? playerRoot.position.x : 0, pz = playerRoot ? playerRoot.position.z : 0;
+    sun.target.position.set(px, 0, pz - 10);
+    sun.position.set(px + 96, 118, pz - 84);
+    sun.target.updateMatrixWorld();
+  }
+  const sunFill = new THREE.DirectionalLight(0xa8c8ea, 0.36);
   sunFill.position.set(-120, 70, 120); scene.add(sunFill);
 
   // ---------------------------------------------------------------------------
@@ -1332,9 +1731,9 @@
   {
     const pos = groundGeo.attributes.position;
     const colArr = new Float32Array(pos.count * 3);
-    const cGrass = new THREE.Color(0x54702f), cDry = new THREE.Color(0x8a8452),
-          cDirt = new THREE.Color(0x7d6547), cRock = new THREE.Color(0x8d887b);
-    const tmpC = new THREE.Color();
+    const cGrass = new THREE.Color(0x7e9251), cDry = new THREE.Color(0xb5a97c),
+          cDirt = new THREE.Color(0xa78d68), cRock = new THREE.Color(0xb3ad9d);
+    const tmpC = new THREE.Color(), WHITE_C = new THREE.Color(0xffffff);
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i), z = pos.getZ(i);
       const h = terrainHeight(x, z);
@@ -1348,6 +1747,8 @@
       tmpC.lerp(cDirt, Math.max(0, Math.min(0.9, n3 * 0.85 + 0.12)));
       tmpC.multiplyScalar(0.88 + Math.abs(n2) * 0.26);
       tmpC.lerp(cRock, Math.max(0, Math.min(0.55, h * 0.16 + Math.abs(n2) * 0.10 - 0.05)));
+      // 알베도 텍스처와 곱해지므로 밝기 손실을 보정한다
+      tmpC.lerp(WHITE_C, 0.42);
       colArr[i * 3] = tmpC.r; colArr[i * 3 + 1] = tmpC.g; colArr[i * 3 + 2] = tmpC.b;
     }
     groundGeo.setAttribute('color', new THREE.BufferAttribute(colArr, 3));
@@ -1355,27 +1756,35 @@
   }
   const ground = new THREE.Mesh(
     groundGeo,
-    new THREE.MeshStandardMaterial({ map: groundDetailTex, vertexColors: true, roughness: 0.97, metalness: 0.02 })
+    new THREE.MeshStandardMaterial({
+      map: groundDetailTex, vertexColors: true,
+      bumpMap: groundBumpTex, bumpScale: 0.55,
+      roughnessMap: groundRoughTex, roughness: 1.0, metalness: 0.02
+    })
   );
   ground.receiveShadow = true; scene.add(ground);
 
   // Asphalt tactical roads with gravel shoulders (laid on the flattened corridors)
-  const roadMat = new THREE.MeshStandardMaterial({ color: 0x3a3d41, roughness: 0.95, metalness: 0.04 });
-  const shoulderMat = new THREE.MeshStandardMaterial({ color: 0x7a6f5a, roughness: 0.98 });
-  const stripeMat = new THREE.MeshBasicMaterial({ color: 0xd8bd77 });
+  const roadTexBase = makeRoadTex();
+  const gravelTexBase = makeGravelTex();
+  const matShoulder = new THREE.MeshStandardMaterial({ map: gravelTexBase, bumpMap: groundBumpTex, bumpScale: 0.35, roughness: 1.0, metalness: 0.02 });
+  function roadMaterial(len, w) {
+    const t = roadTexBase.clone(); t.needsUpdate = true;
+    t.wrapT = THREE.RepeatWrapping; t.wrapS = THREE.ClampToEdgeWrapping;
+    t.repeat.set(1, Math.max(2, len / 26));
+    return new THREE.MeshStandardMaterial({ map: t, bumpMap: groundBumpTex, bumpScale: 0.18, roughness: 0.94, metalness: 0.04 });
+  }
+  function shoulderMaterial(len) {
+    const t = gravelTexBase.clone(); t.needsUpdate = true;
+    t.repeat.set(1, Math.max(2, len / 16));
+    return new THREE.MeshStandardMaterial({ map: t, roughness: 1.0, metalness: 0.02 });
+  }
   function addRoad(x, z, w, l, rotY = 0) {
-    const sh = new THREE.Mesh(new THREE.PlaneGeometry(w + 4.5, l), shoulderMat);
+    const sh = new THREE.Mesh(new THREE.PlaneGeometry(w + 7.0, l), shoulderMaterial(l));
     sh.rotation.x = -Math.PI / 2; sh.rotation.z = rotY; sh.position.set(x, 0.02, z); sh.receiveShadow = true; scene.add(sh);
-    const r = new THREE.Mesh(new THREE.PlaneGeometry(w, l), roadMat);
-    r.rotation.x = -Math.PI / 2; r.rotation.z = rotY; r.position.set(x, 0.035, z); r.receiveShadow = true; scene.add(r);
-    const dashes = Math.floor(l / 14);
-    for (let i = 0; i < dashes; i++) {
-      const d = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 5.5), stripeMat);
-      d.rotation.x = -Math.PI / 2;
-      const off = -l / 2 + i * 14 + 7;
-      d.position.set(x + Math.sin(rotY) * off, 0.05, z + Math.cos(rotY) * off);
-      d.rotation.z = rotY; scene.add(d);
-    }
+    const r = new THREE.Mesh(new THREE.PlaneGeometry(w, l), roadMaterial(l, w));
+    r.rotation.x = -Math.PI / 2; r.rotation.z = rotY; r.position.set(x, 0.035, z); r.receiveShadow = true;
+    r.material.polygonOffset = true; r.material.polygonOffsetFactor = -1; scene.add(r);
   }
   addRoad(0, -10, 13, 380, 0);
   addRoad(0, -15, 11, 380, Math.PI / 2);
@@ -1419,7 +1828,7 @@
     const grassGeo = makeCrossedBladeGeo();
     const grassMat = new THREE.MeshStandardMaterial({
       map: makeBladeTex(), transparent: true, alphaTest: 0.3, side: THREE.DoubleSide,
-      roughness: 0.95, metalness: 0, color: 0xb9c48c, depthWrite: true
+      roughness: 0.95, metalness: 0, color: 0x9aa47c, depthWrite: true
     });
     const COUNT = 1500;
     const inst = new THREE.InstancedMesh(grassGeo, grassMat, COUNT);
@@ -1487,51 +1896,122 @@
   }
 
   // ---------------------------------------------------------------------------
-  // Layered mountain ridge ring + distant tree line for a natural horizon
+  // Layered natural mountain ranges (noise ridge profile + atmospheric perspective)
   // ---------------------------------------------------------------------------
-  const ridgeCols = [0x5c6b52, 0x53624d, 0x475741, 0x64705a, 0x4b5a48];
-  const ridgeMats = ridgeCols.map(c => new THREE.MeshStandardMaterial({ color: c, roughness: 1, flatShading: true }));
-  for (let i = 0; i < 52; i++) {
-    const ang = (i / 52) * Math.PI * 2 + (i % 2) * 0.02;
-    const dist = 268 + (i % 5) * 21;
-    const hh = 22 + (i * 23 % 46), rr = 58 + (i * 17 % 52);
-    const mtn = new THREE.Mesh(
-      new THREE.ConeGeometry(rr, hh, 11, 1),
-      ridgeMats[i % ridgeMats.length]
-    );
-    mtn.position.set(Math.cos(ang) * dist, hh / 2 - 10, Math.sin(ang) * dist);
-    mtn.rotation.y = i * 0.7;
-    mtn.scale.set(1.25 + (i % 4) * 0.3, 1, 1.1 + (i % 3) * 0.25);
-    scene.add(mtn);
+  function ridgeHeights(segments, seed) {
+    const rnd = mulberry32(seed);
+    const phases = [rnd() * 6.28, rnd() * 6.28, rnd() * 6.28, rnd() * 6.28, rnd() * 6.28];
+    const out = new Float32Array(segments);
+    for (let a = 0; a < segments; a++) {
+      const th = (a / segments) * Math.PI * 2;
+      let h = 0.52
+        + 0.30 * Math.sin(th * 3 + phases[0])
+        + 0.17 * Math.sin(th * 7 + phases[1])
+        + 0.09 * Math.sin(th * 13 + phases[2])
+        + 0.05 * Math.sin(th * 23 + phases[3])
+        + 0.03 * Math.sin(th * 41 + phases[4]);
+      out[a] = Math.max(0.06, h);
+    }
+    return out;
   }
+  function buildMountainRing(o) {
+    const seg = o.segments, ringN = o.rings;
+    const hs = ridgeHeights(seg, o.seed);
+    const pos = [], col = [], idx = [];
+    const cBase = new THREE.Color(o.base), cMid = new THREE.Color(o.mid), cTop = new THREE.Color(o.top), cHaze = new THREE.Color(o.haze);
+    const tmp = new THREE.Color();
+    for (let r = 0; r <= ringN; r++) {
+      const t = r / ringN;
+      const rad = o.r0 + (o.r1 - o.r0) * t;
+      // 능선은 중앙부에서 솟고 안·바깥쪽으로 완만하게 떨어진다
+      const prof = Math.pow(Math.sin(Math.PI * t), 0.75);
+      for (let a = 0; a <= seg; a++) {
+        const ai = a % seg;
+        const th = (a / seg) * Math.PI * 2;
+        // 능선마다 봉우리 위치를 조금씩 어긋나게 해 다중 능선처럼 보이게
+        const wob = 1 + 0.22 * Math.sin(th * 5 + o.seed) * Math.sin(th * 2.3);
+        const h = hs[ai] * o.amp * prof * wob;
+        const rr = rad * (1 + 0.05 * Math.sin(th * 9 + o.seed * 2));
+        const x = Math.cos(th) * rr, z = Math.sin(th) * rr;
+        pos.push(x, h + o.y0, z);
+        const k = Math.min(1, h / (o.amp * 0.9));
+        tmp.copy(cBase).lerp(cMid, Math.min(1, k * 1.5));
+        if (k > 0.55) tmp.lerp(cTop, (k - 0.55) / 0.45);
+        // 원거리 대기 원근: 먼 쪽일수록 창백한 청회색
+        tmp.lerp(cHaze, o.hazeAmt * (0.35 + 0.65 * t) * (0.6 + 0.4 * k));
+        col.push(tmp.r, tmp.g, tmp.b);
+      }
+    }
+    const W = seg + 1;
+    for (let r = 0; r < ringN; r++) for (let a = 0; a < seg; a++) {
+      const i0 = r * W + a, i1 = i0 + 1, i2 = i0 + W, i3 = i2 + 1;
+      idx.push(i0, i2, i1, i1, i2, i3);
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    g.setIndex(idx); g.computeVertexNormals();
+    const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 0, flatShading: false }));
+    m.receiveShadow = false;
+    scene.add(m);
+    return m;
+  }
+  // 근경 구릉 (어두운 올리브) — 전장을 감싸는 완만한 다중 능선
+  buildMountainRing({ segments: 168, rings: 10, r0: 196, r1: 330, amp: 30, y0: -6, seed: 3,
+    base: '#4a5340', mid: '#3f4a37', top: '#55603f', haze: '#9fb0bb', hazeAmt: 0.34 });
+  // 원경 산맥 (높고 창백한 청회색) — 대기 원근으로 겹겹이
+  buildMountainRing({ segments: 200, rings: 10, r0: 320, r1: 560, amp: 62, y0: -10, seed: 17,
+    base: '#5a6570', mid: '#68737c', top: '#7c8790', haze: '#c3d0d8', hazeAmt: 0.62 });
+  buildMountainRing({ segments: 220, rings: 8, r0: 520, r1: 700, amp: 84, y0: -14, seed: 41,
+    base: '#7d8b96', mid: '#8d99a3', top: '#a2adb5', haze: '#d5dee4', hazeAmt: 0.78 });
+
+  // ---------------------------------------------------------------------------
+  // Distant forest line — irregular multi-lobed canopies (instanced, 2 draw calls)
+  // ---------------------------------------------------------------------------
   {
-    const treeGeo = new THREE.ConeGeometry(2.6, 9.5, 6);
-    const treeMat = new THREE.MeshStandardMaterial({ color: 0x35452f, roughness: 1, flatShading: true });
-    const COUNT = 260;
-    const inst = new THREE.InstancedMesh(treeGeo, treeMat, COUNT);
+    const COUNT = 300;
+    const trunkGeo = new THREE.CylinderGeometry(0.25, 0.4, 3.4, 5);
+    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x3a2e22, roughness: 0.96 });
+    const canopyGeo = new THREE.IcosahedronGeometry(1, 0);
+    const canopyMat = new THREE.MeshStandardMaterial({ color: 0x35452f, roughness: 0.94, flatShading: true });
+    const trunks = new THREE.InstancedMesh(trunkGeo, trunkMat, COUNT);
+    const canopy = new THREE.InstancedMesh(canopyGeo, canopyMat, COUNT * 3);
     const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), s = new THREE.Vector3(), p = new THREE.Vector3();
+    const tmpC = new THREE.Color();
+    let ci = 0;
     for (let i = 0; i < COUNT; i++) {
-      const ang = Math.random() * Math.PI * 2, dist = 175 + Math.random() * 105;
+      const ang = Math.random() * Math.PI * 2, dist = 168 + Math.random() * 110;
       const x = Math.cos(ang) * dist, z = Math.sin(ang) * dist - 10;
       const sc = 0.7 + Math.random() * 1.5;
+      const y = terrainHeight(x, z);
       e.set(0, Math.random() * Math.PI, 0); q.setFromEuler(e);
-      s.set(sc, sc * (0.9 + Math.random() * 0.5), sc);
-      p.set(x, terrainHeight(x, z) + 4.2 * sc, z);
-      m4.compose(p, q, s); inst.setMatrixAt(i, m4);
+      s.set(sc, sc, sc); p.set(x, y + 1.7 * sc, z);
+      m4.compose(p, q, s); trunks.setMatrixAt(i, m4);
+      for (let b = 0; b < 3; b++) {
+        const bs = (1.9 + Math.random() * 1.5) * sc;
+        p.set(x + (Math.random() - 0.5) * 2.6 * sc, y + (3.4 + b * 1.5 + Math.random() * 0.7) * sc, z + (Math.random() - 0.5) * 2.6 * sc);
+        e.set(Math.random(), Math.random() * 3, Math.random() * 0.5); q.setFromEuler(e);
+        s.set(bs * 1.15, bs * 0.78, bs * 1.05);
+        m4.compose(p, q, s); canopy.setMatrixAt(ci, m4);
+        tmpC.setHSL(0.26 + Math.random() * 0.05, 0.22 + Math.random() * 0.12, 0.13 + Math.random() * 0.09);
+        canopy.setColorAt(ci, tmpC);
+        ci++;
+      }
     }
-    scene.add(inst);
+    trunks.instanceMatrix.needsUpdate = true; canopy.instanceMatrix.needsUpdate = true;
+    if (canopy.instanceColor) canopy.instanceColor.needsUpdate = true;
+    scene.add(trunks); scene.add(canopy);
   }
-
   // ============================================================================
   // 3. REALISTIC TANK BUILDER (K2 BLACK PANTHER / K-CANON & T-90M PRORYV)
   // ============================================================================
   const wheelGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.56, 12);
   wheelGeo.rotateZ(Math.PI / 2);
-  const wheelRimGeo = new THREE.CylinderGeometry(0.24, 0.24, 0.60, 8);
+  const wheelRimGeo = new THREE.CylinderGeometry(0.21, 0.21, 0.58, 10);
   wheelRimGeo.rotateZ(Math.PI / 2);
-  const matRubber = new THREE.MeshStandardMaterial({ color: 0x24262a, roughness: 0.94, metalness: 0.06 });
-  const matSteel  = new THREE.MeshStandardMaterial({ color: 0x5a636d, roughness: 0.5, metalness: 0.42 });
-  const matGunMetal = new THREE.MeshStandardMaterial({ color: 0x3b4147, roughness: 0.52, metalness: 0.45 });
+  const matRubber = new THREE.MeshStandardMaterial({ color: 0x1d1f22, roughness: 0.95, metalness: 0.08, envMapIntensity: 0.25 });
+  const matSteel  = new THREE.MeshStandardMaterial({ color: 0x434a50, roughness: 0.62, metalness: 0.38, envMapIntensity: 0.5 });
+  const matGunMetal = new THREE.MeshStandardMaterial({ color: 0x2f353a, roughness: 0.55, metalness: 0.45, envMapIntensity: 0.55 });
   const matERA    = new THREE.MeshStandardMaterial({ color: 0x46523f, roughness: 0.76, metalness: 0.12 });
   const matEnemyERA = new THREE.MeshStandardMaterial({ color: 0x51523d, roughness: 0.78, metalness: 0.12 });
   const matGlass  = new THREE.MeshStandardMaterial({ color: 0x0ea5e9, roughness: 0.12, metalness: 0.9, emissive: 0x0369a1, emissiveIntensity: 0.4 });
@@ -1679,8 +2159,8 @@
   const playerRoot = new THREE.Group(); playerRoot.position.set(0, 0, 82); scene.add(playerRoot);
   const playerHullPivot = new THREE.Group(); playerRoot.add(playerHullPivot); // Suspension pitch/roll pivot
 
-  const pHullMat = new THREE.MeshStandardMaterial({ map: texPlayerCamo, roughness: 0.74, metalness: 0.10 });
-  const pAccent  = new THREE.MeshStandardMaterial({ color: 0x36454d, roughness: 0.66, metalness: 0.22 });
+  const pHullMat = armorMaterial(armPlayer);
+  const pAccent  = new THREE.MeshStandardMaterial({ color: 0x333b30, roughness: 0.68, metalness: 0.32, envMapIntensity: 0.5 });
   const pGlow    = new THREE.MeshBasicMaterial({ color: 0x22d3ee });
   const pGold    = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.28, metalness: 0.85 });
   const pCanvas  = new THREE.MeshStandardMaterial({ color: 0x5a5b46, roughness: 0.95, metalness: 0.05 });
@@ -1689,7 +2169,8 @@
 
   // Player angular K2-style composite turret
   const playerTurret = new THREE.Group(); playerTurret.position.set(0, 1.66, 0.05); playerHullPivot.add(playerTurret);
-  const tBase = new THREE.Mesh(boxG(3.15, 0.88, 3.8), pHullMat);
+  const pTurretMat = armorMaterial(armPlayer); pTurretMat.color.setScalar(1.06);
+  const tBase = new THREE.Mesh(boxG(3.15, 0.88, 3.8), pTurretMat);
   tBase.position.set(0, 0.48, 0.35); tBase.castShadow = true; playerTurret.add(tBase);
   // Sloped cheek armor (쐐기형 전면 포탑 장갑)
   [-0.88, 0.88].forEach(cx => {
@@ -1818,8 +2299,8 @@
   objRing.rotation.x = -Math.PI / 2; objRing.position.y = 0.14; objMarker.add(objRing);
   const objRing2 = new THREE.Mesh(new THREE.RingGeometry(2.0, 2.6, 28), new THREE.MeshBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0.75, side: THREE.DoubleSide }));
   objRing2.rotation.x = -Math.PI / 2; objRing2.position.y = 0.16; objMarker.add(objRing2);
-  const objBeam = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 70, 8, 1, true), new THREE.MeshBasicMaterial({ color: 0xfbbf24, transparent: true, opacity: 0.14, depthWrite: false, side: THREE.DoubleSide }));
-  objBeam.position.y = 35; objMarker.add(objBeam);
+  const objBeam = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 60, 6, 1, true), new THREE.MeshBasicMaterial({ color: 0xfbbf24, transparent: true, opacity: 0.03, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending }));
+  objBeam.position.y = 30; objMarker.add(objBeam);
   const objDiamond = new THREE.Mesh(new THREE.OctahedronGeometry(1.5, 0), new THREE.MeshBasicMaterial({ color: 0x22d3ee }));
   objDiamond.position.y = 10; objMarker.add(objDiamond);
 
@@ -1829,116 +2310,209 @@
   const obstacles = [];
   const animatedProps = []; // Rotating radar dishes, beacons
 
-  const matConcreteWall = new THREE.MeshStandardMaterial({ map: texConcrete, roughness: 0.9, metalness: 0.08 });
-  const matDarkConcrete = new THREE.MeshStandardMaterial({ color: 0x55524a, roughness: 0.94 });
-  const matReflPanel    = new THREE.MeshStandardMaterial({ color: 0x437f9e, roughness: 0.42, metalness: 0.25 });
-  const matSteelTruss   = new THREE.MeshStandardMaterial({ color: 0x6b7885, roughness: 0.6, metalness: 0.3 });
-  const matSandbag      = new THREE.MeshStandardMaterial({ color: 0x8b7d63, roughness: 0.96 });
-  const matPineBark     = new THREE.MeshStandardMaterial({ color: 0x473323, roughness: 0.95 });
-  const matPineLeaf1    = new THREE.MeshStandardMaterial({ color: 0x243b26, roughness: 0.9, flatShading: true });
-  const matPineLeaf2    = new THREE.MeshStandardMaterial({ color: 0x2f4d2e, roughness: 0.88, flatShading: true });
-  const matRock         = new THREE.MeshStandardMaterial({ color: 0x57534e, roughness: 0.94, flatShading: true });
-  const matContainer1   = new THREE.MeshStandardMaterial({ color: 0x3f4f3c, roughness: 0.75, metalness: 0.25 });
-  const matContainer2   = new THREE.MeshStandardMaterial({ color: 0x7c3f2c, roughness: 0.72, metalness: 0.28 });
-
-  // 1) Acoustic Reflector Array Towers (음향 공진 반사탑) & Reinforced Tactical Bunkers
-  function addStructure(x, z, w, h, d, rotY, isRefl) {
-    const grp = new THREE.Group();
-    grp.position.set(x, terrainHeight(x, z), z); grp.rotation.y = rotY;
-    scene.add(grp);
-
-    const colMesh = new THREE.Mesh(
-      boxG(w, h, d),
-      isRefl ? matReflPanel : matConcreteWall
-    );
-    colMesh.position.y = h / 2; colMesh.castShadow = true; colMesh.receiveShadow = true;
-    grp.add(colMesh);
-
-    if (isRefl) {
-      // Steel frame & energy rib details
-      const frame = new THREE.LineSegments(new THREE.EdgesGeometry(boxG(w+0.15, h+0.15, d+0.15)), new THREE.LineBasicMaterial({ color: 0x38bdf8 }));
-      frame.position.y = h / 2; grp.add(frame);
-      for (let i = -2; i <= 2; i++) {
-        const strut = new THREE.Mesh(boxG(0.45, h + 1.2, d + 0.7), matSteelTruss);
-        strut.position.set((i / 2.2) * (w / 2), (h + 1.2) / 2, 0); strut.castShadow = true; grp.add(strut);
-      }
-      const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.42, 8, 8), new THREE.MeshBasicMaterial({ color: 0x22d3ee }));
-      beacon.position.set(0, h + 1.5, 0); grp.add(beacon);
-    } else {
-      // Tactical Concrete Bunker: roof parapet, firing slits, sandbags, antenna
-      const roof = new THREE.Mesh(boxG(w + 0.8, 0.65, d + 0.8), matDarkConcrete);
-      roof.position.y = h + 0.3; roof.castShadow = true; grp.add(roof);
-      // Firing slits (총안구)
-      for (let s = -1; s <= 1; s++) {
-        const slit = new THREE.Mesh(boxG(1.7, 0.36, d + 0.12), new THREE.MeshBasicMaterial({ color: 0x1b1f26 }));
-        slit.position.set(s * (w * 0.28), h * 0.68, 0); grp.add(slit);
-      }
-      // Sandbag barrier in front
-      for (let sb = -3; sb <= 3; sb++) {
-        const bag = new THREE.Mesh(boxG(1.4, 0.75, 0.9), matSandbag);
-        bag.position.set(sb * 1.48, 0.38, d/2 + 0.75); bag.castShadow = true; grp.add(bag);
-      }
-      const ant = new THREE.Mesh(cylG(0.05, 0.08, 4.5, 6), matSteelTruss);
-      ant.position.set(w * 0.35, h + 2.5, 0); grp.add(ant);
+  const texConcreteBig = texConcrete.clone(); texConcreteBig.repeat.set(3, 2); texConcreteBig.needsUpdate = true;
+  const matConcreteWall = new THREE.MeshStandardMaterial({ map: texConcreteBig, bumpMap: texConcreteBig, bumpScale: 0.55, color: 0xd9d5cc, roughness: 0.93, metalness: 0.05, envMapIntensity: 0.3 });
+  const matDarkConcrete = new THREE.MeshStandardMaterial({ color: 0x5b574d, roughness: 0.95, metalness: 0.05, envMapIntensity: 0.2 });
+  const matRadome       = new THREE.MeshStandardMaterial({ color: 0xb8b6ac, roughness: 0.78, metalness: 0.04, envMapIntensity: 0.3 });
+  const matSteelTruss   = new THREE.MeshStandardMaterial({ color: 0x5f6a72, roughness: 0.62, metalness: 0.42, envMapIntensity: 0.5 });
+  const matSandbag      = new THREE.MeshStandardMaterial({ color: 0x8a7c60, roughness: 0.98, metalness: 0.0, envMapIntensity: 0.2 });
+  const matSandbag2     = new THREE.MeshStandardMaterial({ color: 0x7c6f55, roughness: 0.98, metalness: 0.0, envMapIntensity: 0.2 });
+  const matPineBark     = new THREE.MeshStandardMaterial({ color: 0x3d2c1e, roughness: 0.97 });
+  const matLeafA        = new THREE.MeshStandardMaterial({ color: 0x2b3b25, roughness: 0.96 });
+  const matLeafB        = new THREE.MeshStandardMaterial({ color: 0x37472a, roughness: 0.95 });
+  const matLeafC        = new THREE.MeshStandardMaterial({ color: 0x475333, roughness: 0.95 });
+  const matRock         = new THREE.MeshStandardMaterial({ color: 0x635e56, roughness: 0.95, flatShading: true, envMapIntensity: 0.2 });
+  const matContainer1   = new THREE.MeshStandardMaterial({ color: 0x46503c, roughness: 0.82, metalness: 0.22, envMapIntensity: 0.35 });
+  const matContainer2   = new THREE.MeshStandardMaterial({ color: 0x6e4432, roughness: 0.84, metalness: 0.2, envMapIntensity: 0.3 });
+  // 위장막(camo net) 알파 텍스처
+  const camoNetTex = (() => {
+    const S = 256, { c, ctx } = newCanvas(S);
+    ctx.clearRect(0, 0, S, S);
+    const rnd = mulberry32(5511);
+    ctx.strokeStyle = 'rgba(58,66,44,0.92)'; ctx.lineWidth = 3.2;
+    for (let i = -S; i < S * 2; i += 13) {
+      ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i + S, S); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(i, S); ctx.lineTo(i + S, 0); ctx.stroke();
     }
-
-    // Invisible collision proxy aligned in world space
-    const proxy = new THREE.Mesh(boxG(w, h, d), new THREE.MeshBasicMaterial({ visible: false }));
-    proxy.position.set(x, h/2, z); proxy.rotation.y = rotY;
-    proxy.userData = { isReflector: isRefl, w, d, radius: Math.hypot(w, d) * 0.45 };
-    scene.add(proxy);
-    obstacles.push(proxy);
+    for (let k = 0; k < 900; k++) {
+      ctx.fillStyle = `rgba(${52 + rnd() * 40 | 0},${62 + rnd() * 40 | 0},${38 + rnd() * 30 | 0},${0.55 + rnd() * 0.45})`;
+      ctx.beginPath(); ctx.ellipse(rnd() * S, rnd() * S, 2 + rnd() * 7, 1 + rnd() * 4, rnd() * 3, 0, 6.283); ctx.fill();
+    }
+    return texOf(c, { srgb: true });
+  })();
+  const matCamoNet = new THREE.MeshStandardMaterial({ map: camoNetTex, transparent: true, alphaTest: 0.12, side: THREE.DoubleSide, roughness: 1, metalness: 0, color: 0xa8b08e });
+  // 기갑 위장 재질 (알베도 + 범프 + 러프니스 + 금속 반사)
+  function armorMaterial(arm) {
+    return new THREE.MeshStandardMaterial({
+      map: arm.map, bumpMap: arm.bump, bumpScale: 0.28,
+      roughnessMap: arm.rough, roughness: 1.0, metalness: 0.34,
+      envMapIntensity: 0.55
+    });
   }
 
-  addStructure(-66, 0, 22, 8.2, 2.8, Math.PI * 0.22, true);
-  addStructure(66, 0, 22, 8.2, 2.8, -Math.PI * 0.22, true);
-  addStructure(-86, -76, 24, 8.5, 2.8, Math.PI * 0.18, true);
-  addStructure(86, -76, 24, 8.5, 2.8, -Math.PI * 0.18, true);
-  addStructure(-24, -18, 16, 4.8, 5.2, 0.12, false);
-  addStructure(28, -22, 16, 4.8, 5.2, -0.15, false);
-  addStructure(-48, -62, 15, 5.2, 4.6, 0.22, false);
-  addStructure(48, -62, 15, 5.2, 4.6, -0.22, false);
+  // 1) 강화 콘크리트 벙커 · 위장막 막사 · 모래주머니 진지 (군사 시설)
+  function addObstacleProxy(x, z, w, h, d, rotY, radius) {
+    const proxy = new THREE.Mesh(boxG(w, h, d), new THREE.MeshBasicMaterial({ visible: false }));
+    proxy.position.set(x, h / 2, z); proxy.rotation.y = rotY;
+    proxy.userData = { w, d, radius: radius || Math.hypot(w, d) * 0.45 };
+    scene.add(proxy); obstacles.push(proxy);
+  }
+  const sandbagQueue = [];
+  function queueSandbag(parent, px, py, pz, sx, sy, sz, ry, alt) {
+    const o = new THREE.Object3D();
+    o.position.set(px, py, pz); o.rotation.y = ry || 0; o.scale.set(sx, sy, sz);
+    parent.add(o);
+    sandbagQueue.push({ node: o, alt: !!alt, parent });
+  }
 
-  // 2) Rotating Military Radar Stations (회전 레이더 기지)
+  function addBunker(x, z, w, h, d, rotY) {
+    const grp = new THREE.Group();
+    grp.position.set(x, terrainHeight(x, z), z); grp.rotation.y = rotY; scene.add(grp);
+    // 주 구조물 + 상부 경사 슬래브
+    const body = new THREE.Mesh(boxG(w, h, d), matConcreteWall);
+    body.position.y = h / 2; body.castShadow = true; body.receiveShadow = true; grp.add(body);
+    const roof = new THREE.Mesh(boxG(w + 1.2, 0.7, d + 1.2), matDarkConcrete);
+    roof.position.y = h + 0.28; roof.castShadow = true; roof.receiveShadow = true; grp.add(roof);
+    // 토사 피복(흙 덮개)
+    const soil = new THREE.Mesh(boxG(w + 0.2, 0.5, d + 0.2), new THREE.MeshStandardMaterial({ color: 0x6a5c43, roughness: 1 }));
+    soil.position.y = h + 0.78; grp.add(soil);
+    // 총안구 (사격 슬릿) — 전면
+    for (let s = -1; s <= 1; s++) {
+      const slit = new THREE.Mesh(boxG(1.5, 0.34, 0.18), new THREE.MeshStandardMaterial({ color: 0x12140f, roughness: 1 }));
+      slit.position.set(s * (w * 0.27), h * 0.68, d / 2 + 0.02); grp.add(slit);
+    }
+    // 입구 차폐벽 + 모래주머니
+    const apron = new THREE.Group(); apron.position.set(0, 0, d / 2 + 1.5); grp.add(apron);
+    for (let row = 0; row < 3; row++) {
+      for (let i = -3; i <= 3; i++) {
+        queueSandbag(apron, i * 1.4 + (row % 2) * 0.35, 0.21 + row * 0.4, 0,
+          1.35, 0.42, 0.82, (Math.random() - 0.5) * 0.16, (i + row) % 2 === 0);
+      }
+    }
+    // 통신 안테나 + 위장망 걸이
+    const ant = new THREE.Mesh(cylG(0.05, 0.09, 5.2, 6), matSteelTruss);
+    ant.position.set(w * 0.34, h + 3.0, -d * 0.2); grp.add(ant);
+    const net = new THREE.Mesh(new THREE.PlaneGeometry(w * 0.62, d * 0.62, 6, 6), matCamoNet);
+    net.rotation.x = -Math.PI / 2; net.position.set(-w * 0.14, h + 1.05, 0); grp.add(net);
+    addObstacleProxy(x, z, w, h, d, rotY);
+  }
+  function addBarracks(x, z, w, d, rotY) {
+    const grp = new THREE.Group();
+    grp.position.set(x, terrainHeight(x, z), z); grp.rotation.y = rotY; scene.add(grp);
+    // 반원형 위장막 천막 (프레임 + 천)
+    const frame = new THREE.Mesh(new THREE.CylinderGeometry(w / 2, w / 2, d, 14, 1, true, 0, Math.PI), matCamoNet);
+    frame.geometry.rotateZ(Math.PI / 2); frame.geometry.rotateY(Math.PI / 2);
+    frame.position.y = 0.1; frame.rotation.z = 0; grp.add(frame);
+    const inner = new THREE.Mesh(new THREE.CylinderGeometry(w / 2 - 0.35, w / 2 - 0.35, d - 0.2, 12, 1, true, 0, Math.PI), new THREE.MeshStandardMaterial({ color: 0x2f3428, roughness: 1, side: THREE.DoubleSide }));
+    inner.geometry.rotateZ(Math.PI / 2); inner.geometry.rotateY(Math.PI / 2);
+    inner.position.y = 0.1; grp.add(inner);
+    // 양쪽 모래주머니 벽
+    [-1, 1].forEach(sx => {
+      for (let row = 0; row < 2; row++) for (let i = -2; i <= 2; i++) {
+        queueSandbag(grp, sx * (w / 2 + 0.7), 0.22 + row * 0.4, i * 1.35, 1.3, 0.42, 0.8, 0, (i + row) % 2 === 0);
+      }
+    });
+    // 문 앞 통로 · 장비 상자
+    const crate = new THREE.Mesh(boxG(1.1, 0.8, 1.4), matContainer1);
+    crate.position.set(w * 0.2, 0.4, -d / 2 - 1.1); crate.castShadow = true; grp.add(crate);
+    addObstacleProxy(x, z, w, 4.2, d, rotY);
+  }
+  function addSandbagNest(x, z, rotY, r) {
+    const grp = new THREE.Group(); grp.position.set(x, terrainHeight(x, z), z); grp.rotation.y = rotY; scene.add(grp);
+    for (let ringI = 0; ringI < 2; ringI++) {
+      const rr = r - ringI * 0.9;
+      const n = Math.max(8, Math.round(rr * 2.6));
+      for (let i = 0; i < n; i++) {
+        const a = (i / n) * Math.PI * 2;
+        queueSandbag(grp, Math.cos(a) * rr, 0.2 + ringI * 0.38, Math.sin(a) * rr, 1.15, 0.4, 0.72, -a + Math.PI / 2, (i + ringI) % 2 === 0);
+      }
+    }
+  }
+  function addBarrierRun(x, z, rotY, n) {
+    const matB = new THREE.MeshStandardMaterial({ map: texConcrete, roughness: 0.95, metalness: 0.04, envMapIntensity: 0.2 });
+    for (let i = 0; i < n; i++) {
+      const b = new THREE.Mesh(boxG(0.62, 1.05, 2.6), matB);
+      const off = (i - (n - 1) / 2) * 2.75;
+      b.position.set(x + Math.cos(rotY) * off, terrainHeight(x, z) + 0.52, z - Math.sin(rotY) * off);
+      b.rotation.y = rotY; b.castShadow = true; b.receiveShadow = true; scene.add(b);
+    }
+  }
+
+  addBarracks(-66, 0, 15, 20, Math.PI * 0.22);
+  addBarracks(66, 0, 15, 20, -Math.PI * 0.22);
+  addBunker(-86, -76, 16, 6.4, 11, Math.PI * 0.18);
+  addBunker(86, -76, 16, 6.4, 11, -Math.PI * 0.18);
+  addBunker(-24, -18, 13, 4.6, 8, 0.12);
+  addBunker(28, -22, 13, 4.6, 8, -0.15);
+  addBunker(-48, -62, 12, 4.9, 7.5, 0.22);
+  addBunker(48, -62, 12, 4.9, 7.5, -0.22);
+  addSandbagNest(-34, 26, 0.2, 4.2); addSandbagNest(36, 24, -0.3, 4.0);
+  addSandbagNest(-13, -46, 0, 3.4); addSandbagNest(14, -46, 0, 3.4);
+  addBarrierRun(9.2, 10, 0, 5); addBarrierRun(-9.2, -34, 0, 5);
+
+  // 2) 회전 레이더 돔 기지 (radome) + 감시초소
   function addRadarStation(x, z) {
     const g = new THREE.Group(); g.position.set(x, terrainHeight(x, z), z); scene.add(g);
-    const base = new THREE.Mesh(boxG(7.5, 4.2, 7.5), matConcreteWall);
-    base.position.y = 2.1; base.castShadow = true; base.receiveShadow = true; g.add(base);
-    const tower = new THREE.Mesh(cylG(1.1, 1.8, 6.5, 8), matSteelTruss);
-    tower.position.y = 7.4; tower.castShadow = true; g.add(tower);
-    const dishGrp = new THREE.Group(); dishGrp.position.y = 11.0; g.add(dishGrp);
-    const dish = new THREE.Mesh(boxG(5.6, 2.2, 0.45), matReflPanel);
-    dish.rotation.x = -0.22; dishGrp.add(dish);
-    const feed = new THREE.Mesh(cylG(0.15, 0.15, 1.8, 6), matSteelTruss);
-    feed.rotation.x = Math.PI / 2; feed.position.z = 1.0; dishGrp.add(feed);
-    animatedProps.push({ obj: dishGrp, speed: 1.35 });
-    const proxy = new THREE.Mesh(boxG(8, 12, 8), new THREE.MeshBasicMaterial({ visible: false }));
-    proxy.position.set(x, 6, z); proxy.userData = { isReflector: false, w: 8, d: 8, radius: 5.5 };
-    scene.add(proxy); obstacles.push(proxy);
+    const base = new THREE.Mesh(boxG(9.0, 3.0, 9.0), matConcreteWall);
+    base.position.y = 1.5; base.castShadow = true; base.receiveShadow = true; g.add(base);
+    const deck = new THREE.Mesh(boxG(9.6, 0.5, 9.6), matDarkConcrete);
+    deck.position.y = 3.2; deck.castShadow = true; g.add(deck);
+    // 레이더 돔 (반구)
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(4.4, 26, 16, 0, Math.PI * 2, 0, Math.PI / 2), matRadome);
+    dome.position.y = 3.45; dome.castShadow = true; dome.receiveShadow = true; g.add(dome);
+    // 돔 위 회전 안테나 + 경고등
+    const dishGrp = new THREE.Group(); dishGrp.position.y = 8.0; g.add(dishGrp);
+    const mast = new THREE.Mesh(cylG(0.14, 0.2, 1.0, 8), matSteelTruss); mast.position.y = -0.4; dishGrp.add(mast);
+    const dish = new THREE.Mesh(new THREE.SphereGeometry(1.5, 16, 8, 0, Math.PI * 2, 0, Math.PI * 0.42), new THREE.MeshStandardMaterial({ color: 0x8d949a, roughness: 0.45, metalness: 0.55, side: THREE.DoubleSide, envMapIntensity: 0.6 }));
+    dish.rotation.x = -1.15; dishGrp.add(dish);
+    const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 8), matRedEye);
+    beacon.position.set(0, 0.4, 0); dishGrp.add(beacon);
+    animatedProps.push({ obj: dishGrp, speed: 1.25 });
+    // 위장막 천막과 발전기
+    const gen = new THREE.Mesh(boxG(2.6, 1.4, 1.6), matContainer1);
+    gen.position.set(5.6, 0.7, 3.0); gen.castShadow = true; g.add(gen);
+    addObstacleProxy(x, z, 9, 8, 9, 0, 6.2);
   }
   addRadarStation(-108, 22);
   addRadarStation(108, -98);
 
-  // 3) Military Watchtowers & Supply Containers (감시초소 & 군용 컨테이너)
+  // 3) 감시초소 & 군용 컨테이너
   function addWatchtower(x, z) {
     const g = new THREE.Group(); g.position.set(x, terrainHeight(x, z), z); scene.add(g);
-    [[-1.6,-1.6],[1.6,-1.6],[-1.6,1.6],[1.6,1.6]].forEach(([lx,lz]) => {
-      const leg = new THREE.Mesh(boxG(0.28, 9.5, 0.28), matSteelTruss);
-      leg.position.set(lx, 4.75, lz); leg.castShadow = true; g.add(leg);
+    // 콘크리트 기초 + 철제 다리
+    const foot = new THREE.Mesh(boxG(4.6, 0.5, 4.6), matDarkConcrete);
+    foot.position.y = 0.25; foot.receiveShadow = true; g.add(foot);
+    [[-1.7, -1.7], [1.7, -1.7], [-1.7, 1.7], [1.7, 1.7]].forEach(([lx, lz]) => {
+      const leg = new THREE.Mesh(boxG(0.24, 9.2, 0.24), matSteelTruss);
+      leg.position.set(lx, 5.0, lz); leg.castShadow = true; g.add(leg);
+      const brace = new THREE.Mesh(boxG(0.12, 4.4, 0.12), matSteelTruss);
+      brace.position.set(lx * 0.55, 3.0, lz * 0.55); brace.rotation.z = lx > 0 ? 0.5 : -0.5; g.add(brace);
     });
-    const cabin = new THREE.Mesh(boxG(4.2, 2.8, 4.2), matConcreteWall);
-    cabin.position.y = 10.6; cabin.castShadow = true; g.add(cabin);
-    const roof = new THREE.Mesh(new THREE.ConeGeometry(3.4, 1.4, 4), matDarkConcrete);
-    roof.rotation.y = Math.PI / 4; roof.position.y = 12.7; g.add(roof);
-    const light = new THREE.Mesh(new THREE.SphereGeometry(0.28, 8, 8), matRedEye);
-    light.position.y = 13.5; g.add(light);
+    const cabin = new THREE.Mesh(boxG(4.0, 2.6, 4.0), matConcreteWall);
+    cabin.position.y = 10.4; cabin.castShadow = true; g.add(cabin);
+    // 위장막 지붕
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(3.4, 1.5, 4), matCamoNet);
+    roof.rotation.y = Math.PI / 4; roof.position.y = 12.4; g.add(roof);
+    const rail = new THREE.Mesh(boxG(4.6, 0.16, 4.6), matSteelTruss);
+    rail.position.y = 9.0; g.add(rail);
+    const light = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 8), matRedEye);
+    light.position.y = 13.2; g.add(light);
+    addObstacleProxy(x, z, 4, 12, 4, 0, 2.6);
   }
   addWatchtower(-34, 48); addWatchtower(34, 48); addWatchtower(-72, -118); addWatchtower(72, -118);
+
 
   function addContainer(x, z, rotY, alt = false) {
     const c = new THREE.Mesh(boxG(3.2, 3.0, 8.2), alt ? matContainer2 : matContainer1);
     c.position.set(x, terrainHeight(x, z) + 1.5, z); c.rotation.y = rotY; c.castShadow = true; c.receiveShadow = true; scene.add(c);
-    c.userData = { isReflector: false, w: 3.2, d: 8.2, radius: 4.5 };
+    // 골판지 리브 (컨테이너 주름)
+    for (let r = -3; r <= 3; r++) {
+      const rib = new THREE.Mesh(boxG(3.26, 2.5, 0.1), alt ? matContainer2 : matContainer1);
+      rib.position.set(0, 0, r * 1.1); c.add(rib);
+    }
+    const doorBar = new THREE.Mesh(boxG(0.12, 2.6, 0.12), matSteelTruss);
+    doorBar.position.set(0, 0, 4.16); c.add(doorBar);
+    c.userData = { w: 3.2, d: 8.2, radius: 4.5 };
     obstacles.push(c);
   }
   addContainer(-28, 30, 0.15, false); addContainer(-24, 31, 0.15, true);
@@ -1955,13 +2529,23 @@
   [-16,-11,-6,6,11,16].forEach(hx => { addHedgehog(hx, 18); addHedgehog(hx, -46); });
 
   // 5) Detailed Pine Forests & Rock Outcrops (소나무 숲 & 바위 군락)
+  const treeCanopyGeo = new THREE.IcosahedronGeometry(1, 2);
+  const treeLeafMats = [matLeafA, matLeafB, matLeafC];
   function addPineTree(x, z, s = 1.0) {
     const g = new THREE.Group(); g.position.set(x, terrainHeight(x, z), z); g.scale.setScalar(s);
-    const trunk = new THREE.Mesh(cylG(0.22, 0.36, 3.4, 7), matPineBark);
-    trunk.position.y = 1.7; trunk.castShadow = true; g.add(trunk);
-    const c1 = new THREE.Mesh(new THREE.ConeGeometry(2.4, 4.4, 7), matPineLeaf1); c1.position.y = 4.6; c1.castShadow = true; g.add(c1);
-    const c2 = new THREE.Mesh(new THREE.ConeGeometry(1.85, 3.8, 7), matPineLeaf2); c2.position.y = 6.9; c2.castShadow = true; g.add(c2);
-    const c3 = new THREE.Mesh(new THREE.ConeGeometry(1.15, 2.8, 7), matPineLeaf1); c3.position.y = 8.9; g.add(c3);
+    const trunk = new THREE.Mesh(cylG(0.20, 0.40, 4.2, 7), matPineBark);
+    trunk.position.y = 2.1; trunk.castShadow = true; g.add(trunk);
+    // 가지가 뻗은 다층 캐노피 (불규칙 구형 덩어리)
+    const n = 5 + Math.floor(Math.random() * 3);
+    for (let k = 0; k < n; k++) {
+      const r = (0.82 + Math.random() * 0.85) * (1 - k * 0.10);
+      const blob = new THREE.Mesh(treeCanopyGeo, treeLeafMats[(k + Math.abs(Math.floor(x))) % 3]);
+      const a = (k / n) * Math.PI * 2 + Math.random();
+      blob.position.set(Math.cos(a) * (0.35 + Math.random() * 0.7), 3.5 + k * 0.92 + Math.random() * 0.4, Math.sin(a) * (0.35 + Math.random() * 0.7));
+      blob.scale.set(r * 1.25, r * 0.82, r * 1.15);
+      blob.rotation.set(Math.random(), Math.random() * 3, Math.random() * 0.4);
+      blob.castShadow = k < 2; g.add(blob);
+    }
     scene.add(g);
   }
   function addRockCluster(x, z, s = 1.0) {
@@ -1981,7 +2565,24 @@
     if (Math.abs(tx) < 15 || Math.abs(tz + 15) < 14) continue; // Keep roads clear
     if (Math.hypot(tx, tz - 82) < 22) continue; // Keep spawn clear
     if (i % 4 === 0) addRockCluster(tx, tz, 0.85 + (i % 3) * 0.35);
-    else addPineTree(tx, tz, 0.8 + (i % 5) * 0.16);
+    else addPineTree(tx, tz, 0.72 + (i % 5) * 0.14);
+  }
+
+  // 모래주머니 일괄 인스턴싱 (수백 개 메쉬 → 2개 드로우콜)
+  {
+    scene.updateMatrixWorld(true);
+    const unitBox = new THREE.BoxGeometry(1, 1, 1);
+    [[sandbagQueue.filter(s => !s.alt), matSandbag], [sandbagQueue.filter(s => s.alt), matSandbag2]].forEach(([list, mat]) => {
+      if (!list.length) return;
+      const inst = new THREE.InstancedMesh(unitBox, mat, list.length);
+      list.forEach((s, i) => {
+        inst.setMatrixAt(i, s.node.matrixWorld);
+        if (s.node.parent) s.node.parent.remove(s.node);
+      });
+      inst.instanceMatrix.needsUpdate = true;
+      inst.castShadow = true; inst.receiveShadow = true;
+      scene.add(inst);
+    });
   }
 
   const echoLineGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]);
@@ -1992,13 +2593,194 @@
   // ============================================================================
   const allies = [], enemies = [], aircrafts = [], drones = [], bombs = [];
   const projectiles = [], particles = [], shockDomes = [], activeFires = [], flyingTurrets = [], laserBeams = [];
-  const geoSphere = new THREE.SphereGeometry(1, 7, 7), geoDebris = new THREE.DodecahedronGeometry(0.32, 0), geoRing = new THREE.TorusGeometry(0.65, 0.085, 8, 20);
+  const geoShockRing = new THREE.RingGeometry(1, 1.22, 44);
+  const geoSphere = new THREE.SphereGeometry(1, 7, 7), geoDebris = new THREE.DodecahedronGeometry(0.22, 0), geoRing = new THREE.TorusGeometry(0.65, 0.085, 8, 20);
 
-  function spawnParticle(pos, vel, col, size, life, grow = 1.4, grav = -9.8, op = 0.88, isDeb = false) {
-    if (particles.length > 480) return;
-    const mesh = new THREE.Mesh(isDeb ? geoDebris : geoSphere, new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: op }));
-    mesh.position.copy(pos); mesh.scale.setScalar(size); scene.add(mesh);
-    particles.push({ mesh, vel: vel.clone(), life, maxLife: life, grow, grav, rotVel: isDeb ? new THREE.Vector3(Math.random()*9, Math.random()*9, Math.random()*9) : null });
+  // ============================================================================
+  // V7 PARTICLE ENGINE — 부드러운 방사형 알파 텍스처를 입힌 THREE.Points 두 계통
+  //   · smoke  : 일반 알파 블렌딩 (흙먼지 · 연기 · 배기가스)
+  //   · spark  : 가산 블렌딩 (화염 · 예광 · 파편 불꽃 · 섬광)
+  //   CPU에서 물리(중력·항력·성장·페이드)를 계산하고 정점 속성만 갱신한다.
+  // ============================================================================
+  function makePuffTex(kind) {
+    const S = 128, { c, ctx } = newCanvas(S);
+    ctx.clearRect(0, 0, S, S);
+    const g = ctx.createRadialGradient(S / 2, S / 2, 1, S / 2, S / 2, S / 2);
+    if (kind === 'spark') {
+      // 불꽃: 원반이 아니라 여러 개의 작은 불티가 뭉친 불규칙한 형상
+      ctx.clearRect(0, 0, S, S);
+      const rnd = mulberry32(9021);
+      const glow = ctx.createRadialGradient(S / 2, S / 2, 2, S / 2, S / 2, S / 2);
+      glow.addColorStop(0, 'rgba(255,236,196,0.16)');
+      glow.addColorStop(0.45, 'rgba(255,190,120,0.06)');
+      glow.addColorStop(1, 'rgba(255,160,80,0)');
+      ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(S / 2, S / 2, S / 2, 0, 6.283); ctx.fill();
+      for (let i = 0; i < 9; i++) {
+        const a = rnd() * 6.283, r = S * (0.04 + rnd() * 0.26);
+        const cx = S / 2 + Math.cos(a) * r, cy = S / 2 + Math.sin(a) * r * 0.9;
+        const rad = S * (0.10 + rnd() * 0.17);
+        const bg = ctx.createRadialGradient(cx, cy, 1, cx, cy, rad);
+        bg.addColorStop(0, `rgba(255,${232 - rnd() * 40 | 0},${170 - rnd() * 60 | 0},${0.30 + rnd() * 0.26})`);
+        bg.addColorStop(0.55, `rgba(255,${190 - rnd() * 40 | 0},${110 - rnd() * 40 | 0},${0.12 + rnd() * 0.12})`);
+        bg.addColorStop(1, 'rgba(255,140,60,0)');
+        ctx.fillStyle = bg; ctx.beginPath(); ctx.arc(cx, cy, rad, 0, 6.283); ctx.fill();
+      }
+    } else {
+      g.addColorStop(0.00, 'rgba(255,255,255,0.92)');
+      g.addColorStop(0.30, 'rgba(255,255,255,0.62)');
+      g.addColorStop(0.58, 'rgba(255,255,255,0.26)');
+      g.addColorStop(0.82, 'rgba(255,255,255,0.07)');
+      g.addColorStop(1.00, 'rgba(255,255,255,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(S / 2, S / 2, S / 2, 0, 6.283); ctx.fill();
+      // 가장자리를 불규칙하게 깎아 연기 덩어리 느낌을 준다
+      ctx.globalCompositeOperation = 'destination-out';
+      const rnd = mulberry32(kind === 'dust' ? 77 : 33);
+      for (let i = 0; i < 14; i++) {
+        const a = rnd() * 6.283, r = S * (0.30 + rnd() * 0.22);
+        const px = S / 2 + Math.cos(a) * r, py = S / 2 + Math.sin(a) * r;
+        const rg = ctx.createRadialGradient(px, py, 1, px, py, 12 + rnd() * 22);
+        rg.addColorStop(0, 'rgba(0,0,0,0.55)'); rg.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(px, py, 34, 0, 6.283); ctx.fill();
+      }
+      ctx.globalCompositeOperation = 'source-over';
+    }
+    return texOf(c, { srgb: false, aniso: false });
+  }
+  const PUFF_TEX = makePuffTex('smoke');
+  const SPARK_TEX = makePuffTex('spark');
+
+  class PointPool {
+    constructor(max, additive, tex) {
+      this.max = max; this.list = [];
+      this.geo = new THREE.BufferGeometry();
+      this.posArr = new Float32Array(max * 3);
+      this.colArr = new Float32Array(max * 3);
+      this.alphaArr = new Float32Array(max);
+      this.sizeArr = new Float32Array(max);
+      this.geo.setAttribute('position', new THREE.BufferAttribute(this.posArr, 3).setUsage(THREE.DynamicDrawUsage));
+      this.geo.setAttribute('pcolor', new THREE.BufferAttribute(this.colArr, 3).setUsage(THREE.DynamicDrawUsage));
+      this.geo.setAttribute('palpha', new THREE.BufferAttribute(this.alphaArr, 1).setUsage(THREE.DynamicDrawUsage));
+      this.geo.setAttribute('psize', new THREE.BufferAttribute(this.sizeArr, 1).setUsage(THREE.DynamicDrawUsage));
+      this.geo.setDrawRange(0, 0);
+      this.mat = new THREE.ShaderMaterial({
+        uniforms: { map: { value: tex }, vh: { value: window.innerHeight * 0.5 * Math.min(window.devicePixelRatio || 1, 2) } },
+        vertexShader: `
+          attribute float psize;
+          attribute float palpha;
+          attribute vec3 pcolor;
+          varying float vA;
+          varying vec3 vC;
+          uniform float vh;
+          void main() {
+            vA = palpha; vC = pcolor;
+            vec4 mv = modelViewMatrix * vec4(position, 1.0);
+            gl_PointSize = clamp(psize * (vh / max(2.0, -mv.z)), 1.0, 260.0);
+            gl_Position = projectionMatrix * mv;
+          }`,
+        fragmentShader: `
+          uniform sampler2D map;
+          varying float vA;
+          varying vec3 vC;
+          void main() {
+            vec4 t = texture2D(map, gl_PointCoord);
+            float a = t.a * vA;
+            if (a < 0.004) discard;
+            gl_FragColor = vec4(vC * t.rgb, a);
+            #include <colorspace_fragment>
+          }`,
+        transparent: true, depthWrite: false, depthTest: true,
+        blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending
+      });
+      this.points = new THREE.Points(this.geo, this.mat);
+      this.points.frustumCulled = false;
+      scene.add(this.points);
+    }
+    spawn(p) { if (this.list.length >= this.max) this.list.shift(); this.list.push(p); }
+    clear() { this.list.length = 0; this.geo.setDrawRange(0, 0); }
+    resize() { this.mat.uniforms.vh.value = window.innerHeight * 0.5 * Math.min(window.devicePixelRatio || 1, 2); }
+    update(dt) {
+      const L = this.list;
+      let n = 0;
+      for (let i = L.length - 1; i >= 0; i--) {
+        const p = L[i];
+        p.life -= dt;
+        if (p.life <= 0) { L.splice(i, 1); continue; }
+        p.vy += p.grav * dt;
+        const dragK = Math.max(0, 1 - p.drag * dt);
+        p.vx *= dragK; p.vy *= dragK; p.vz *= dragK;
+        p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
+        if (p.y < 0.08 && p.grav < 0) { p.y = 0.08; p.vy *= -0.25; p.vx *= 0.7; p.vz *= 0.7; }
+      }
+      for (let i = 0; i < L.length && n < this.max; i++, n++) {
+        const p = L[i], k = 1 - p.life / p.maxLife;
+        this.posArr[n * 3] = p.x; this.posArr[n * 3 + 1] = p.y; this.posArr[n * 3 + 2] = p.z;
+        this.colArr[n * 3] = p.r; this.colArr[n * 3 + 1] = p.g; this.colArr[n * 3 + 2] = p.b;
+        this.sizeArr[n] = p.s0 + (p.s1 - p.s0) * k;
+        this.alphaArr[n] = p.a0 * Math.pow(1 - k, p.fade);
+      }
+      this.geo.setDrawRange(0, n);
+      this.geo.attributes.position.needsUpdate = true;
+      this.geo.attributes.pcolor.needsUpdate = true;
+      this.geo.attributes.palpha.needsUpdate = true;
+      this.geo.attributes.psize.needsUpdate = true;
+    }
+  }
+  const smokeFX = new PointPool(340, false, PUFF_TEX);
+  const sparkFX = new PointPool(240, true, SPARK_TEX);
+  const _fxCol = new THREE.Color();
+
+  function emitSmoke(x, y, z, vx, vy, vz, hex, s0, s1, life, a0, grav, drag, fade) {
+    _fxCol.setHex(hex);
+    smokeFX.spawn({ x, y, z, vx, vy, vz, r: _fxCol.r, g: _fxCol.g, b: _fxCol.b,
+      s0, s1, life, maxLife: life, a0: a0 === undefined ? 0.5 : a0,
+      grav: grav === undefined ? -0.6 : grav, drag: drag === undefined ? 1.4 : drag, fade: fade === undefined ? 1.5 : fade });
+  }
+  function emitSpark(x, y, z, vx, vy, vz, hex, s0, s1, life, a0, grav, drag) {
+    _fxCol.setHex(hex);
+    sparkFX.spawn({ x, y, z, vx, vy, vz, r: _fxCol.r, g: _fxCol.g, b: _fxCol.b,
+      s0, s1, life, maxLife: life, a0: a0 === undefined ? 0.9 : a0,
+      grav: grav === undefined ? -6 : grav, drag: drag === undefined ? 0.6 : drag, fade: 1.3 });
+  }
+
+  // ---- 주행 흙먼지 (궤도 뒤에서 피어오르는 부드러운 먼지 기둥) ----
+  function fxTrackDust(x, y, z, fwdX, fwdZ, power) {
+    const dc = Math.hypot(x - camera.position.x, z - camera.position.z);
+    if (dc > 130) return;
+    if (dc > 70 && Math.random() < 0.5) return;
+    const p = Math.min(1.25, 0.38 + power * 0.085);
+    for (let k = 0; k < 2; k++) {
+      const ox = -fwdX * (1.5 + Math.random() * 1.6) + (Math.random() - 0.5) * 1.6;
+      const oz = -fwdZ * (1.5 + Math.random() * 1.6) + (Math.random() - 0.5) * 1.6;
+      emitSmoke(x + ox, y + 0.25 + Math.random() * 0.25, z + oz,
+        (Math.random() - 0.5) * 1.4 - fwdX * 1.2, 0.5 + Math.random() * 0.9, (Math.random() - 0.5) * 1.4 - fwdZ * 1.2,
+        Math.random() > 0.5 ? 0x8d8067 : 0x9a8d73,
+        0.42 * p, 1.75 * p, 0.8 + Math.random() * 0.55, 0.26, -0.15, 1.6, 1.7);
+    }
+  }
+  // ---- 배기 가스 (엔진 데크 뒤) ----
+  function fxExhaust(x, y, z, fwdX, fwdZ) {
+    for (let k = 0; k < 1; k++) {
+      emitSmoke(x - fwdX * 0.4 + (Math.random() - 0.5) * 1.2, y + 0.5, z - fwdZ * 0.4 + (Math.random() - 0.5) * 1.2,
+        -fwdX * 0.8, 1.1 + Math.random() * 0.8, -fwdZ * 0.8, 0x3c3f3e,
+        0.22, 1.15, 0.6 + Math.random() * 0.4, 0.13, -0.05, 1.2, 1.5);
+    }
+  }
+
+  // 이전 API 호환: (pos, vel, col, size, life, grow, grav, opacity, isDeb, kind)
+  function spawnParticle(pos, vel, col, size, life, grow = 1.4, grav = -9.8, op = 0.88, isDeb = false, kind = 'smoke') {
+    if (isDeb) {
+      // 파편 덩어리 (물리 메쉬)
+      if (particles.length > 90) return;
+      const mesh = new THREE.Mesh(geoDebris, new THREE.MeshStandardMaterial({ color: 0x3a3733, roughness: 0.85, metalness: 0.35, envMapIntensity: 0.4 }));
+      mesh.position.copy(pos); mesh.scale.setScalar(size * 1.6); mesh.castShadow = true; scene.add(mesh);
+      particles.push({ mesh, vel: vel.clone(), life, maxLife: life, grow, grav, rotVel: new THREE.Vector3(Math.random()*9, Math.random()*9, Math.random()*9) });
+      return;
+    }
+    if (kind === 'spark' || kind === 'fire') {
+      emitSpark(pos.x, pos.y, pos.z, vel.x, vel.y, vel.z, col, size, size * 1.7, life, op, grav, 0.7);
+    } else {
+      emitSmoke(pos.x, pos.y, pos.z, vel.x, vel.y, vel.z, col, size, size * (1 + grow * 0.5), life, op, grav, 1.2, 1.4);
+    }
   }
   function spawnLaser(p0, p1, col = 0x34d399) {
     const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints([p0.clone(), p1.clone()]), new THREE.LineBasicMaterial({ color: col }));
@@ -2007,12 +2789,60 @@
   function spawnExplosion(pos, big = true) {
     audio.playExplosion(big);
     if (pos.distanceTo(playerRoot.position) < 110) state.screenShake = Math.max(state.screenShake, big ? 0.56 : 0.22);
-    const dome = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), new THREE.MeshBasicMaterial({ color: big ? 0xffaa44 : 0x38bdf8, transparent: true, opacity: 0.55, wireframe: !big }));
-    dome.position.copy(pos); scene.add(dome);
-    shockDomes.push({ mesh: dome, life: 0.45, maxLife: 0.45, maxScale: big ? 14.5 : 5.5 });
-    for (let i = 0; i < (big ? 16 : 7); i++) spawnParticle(pos.clone().add(new THREE.Vector3(0, 1, 0)), new THREE.Vector3((Math.random()-0.5)*(big?16:7), Math.random()*(big?14:6)+2, (Math.random()-0.5)*(big?16:7)), [0xfff2a6, 0xff9922, 0xff4411][i%3], big?1.2:0.55, big?0.85:0.42, 2.2, -4, 0.92);
-    for (let i = 0; i < (big ? 14 : 5); i++) spawnParticle(pos.clone().add(new THREE.Vector3(0, 1.4, 0)), new THREE.Vector3((Math.random()-0.5)*7, Math.random()*7+3.5, (Math.random()-0.5)*7), 0x3c3c40, big?1.05:0.55, big?1.8:1.0, 1.7, 1.2, 0.5);
-    for (let i = 0; i < (big ? 14 : 6); i++) spawnParticle(pos.clone().add(new THREE.Vector3(0, 1.2, 0)), new THREE.Vector3((Math.random()-0.5)*26, Math.random()*17+5, (Math.random()-0.5)*26), i%2===0?0xffcc44:0x323740, big?0.85:0.45, big?1.5:0.8, 0, -24, 1, true);
+    const px = pos.x, py = pos.y, pz = pos.z;
+    // 1) 섬광 (한 프레임짜리 강한 빛무리)
+    emitSpark(px, py + 0.9, pz, 0, 0, 0, 0xfff3d2, big ? 1.7 : 0.9, big ? 2.4 : 1.3, big ? 0.10 : 0.07, 0.85, 0, 0);
+    // 2) 화염: 작은 입자를 촘촘히 뿜어 올려 화구를 만든다 (큰 원반 금지)
+    const nFire = big ? 34 : 14;
+    for (let i = 0; i < nFire; i++) {
+      const a = Math.random() * 6.283, r = Math.random() * (big ? 2.4 : 1.1);
+      const up = Math.random() * (big ? 8.5 : 4.2) + 2.2;
+      const hex = i % 4 === 0 ? 0xffd98a : (i % 4 === 1 ? 0xffab4a : (i % 4 === 2 ? 0xf0722a : 0xff8a3a));
+      emitSpark(px + Math.cos(a) * r, py + 0.7 + Math.random() * 1.1, pz + Math.sin(a) * r,
+        Math.cos(a) * (1.2 + Math.random() * 2.6), up, Math.sin(a) * (1.2 + Math.random() * 2.6),
+        hex, big ? 0.9 + Math.random() * 1.1 : 0.5, big ? 1.9 + Math.random() * 1.4 : 1.0,
+        big ? 0.32 + Math.random() * 0.26 : 0.24, 0.62, 1.8, 1.2);
+    }
+    // 화구의 무게감 (어두운 주황 덩어리 · 일반 블렌딩)
+    for (let i = 0; i < (big ? 10 : 4); i++) {
+      const a = Math.random() * 6.283, r = Math.random() * (big ? 2.0 : 1.0);
+      emitSmoke(px + Math.cos(a) * r, py + 1.0 + Math.random() * 1.6, pz + Math.sin(a) * r,
+        Math.cos(a) * 1.2, 2.4 + Math.random() * 2.6, Math.sin(a) * 1.2,
+        0x8a3a12, big ? 1.6 : 0.9, big ? 3.4 : 1.7, big ? 0.55 : 0.34, 0.42, 1.2, 1.1, 1.4);
+    }
+    // 3) 연기 기둥 (검은 연기가 위로 피어오름)
+    const nSmoke = big ? 26 : 10;
+    for (let i = 0; i < nSmoke; i++) {
+      const a = Math.random() * 6.283, r = Math.random() * (big ? 5 : 2);
+      emitSmoke(px + Math.cos(a) * r, py + 1.0 + Math.random() * 2.2, pz + Math.sin(a) * r,
+        Math.cos(a) * (0.8 + Math.random() * 2), 2.2 + Math.random() * (big ? 6 : 3), Math.sin(a) * (0.8 + Math.random() * 2),
+        i % 4 === 0 ? 0x24252a : (i % 4 === 1 ? 0x36363a : 0x2c2c30),
+        big ? 1.8 : 0.9, big ? 6.4 : 2.9, big ? 2.6 + Math.random() * 1.6 : 1.2, 0.50, 0.5, 0.55, 1.4);
+    }
+    // 4) 지면 흙먼지 고리 (충격으로 사방으로 퍼지는 먼지)
+    for (let i = 0; i < (big ? 16 : 7); i++) {
+      const a = (i / (big ? 16 : 7)) * 6.283 + Math.random() * 0.3;
+      emitSmoke(px + Math.cos(a) * 1.2, py + 0.35, pz + Math.sin(a) * 1.2,
+        Math.cos(a) * (big ? 9 : 4.5), 0.5 + Math.random(), Math.sin(a) * (big ? 9 : 4.5),
+        0x9c8d72, big ? 1.5 : 0.8, big ? 4.6 : 2.2, big ? 1.1 : 0.6, 0.34, -0.2, 2.4, 1.8);
+    }
+    // 5) 파편 불꽃
+    for (let i = 0; i < (big ? 18 : 7); i++) {
+      emitSpark(px, py + 1.1, pz, (Math.random() - 0.5) * (big ? 26 : 12), Math.random() * (big ? 18 : 9) + 4, (Math.random() - 0.5) * (big ? 26 : 12),
+        i % 2 ? 0xffd27a : 0xffe9b8, big ? 0.45 : 0.25, big ? 0.16 : 0.1, big ? 0.9 + Math.random() * 0.6 : 0.5, 0.95, -18, 0.3);
+    }
+    // 6) 충격파 (지면을 타고 퍼지는 얇은 고리)
+    const ringMat = new THREE.MeshBasicMaterial({ color: big ? 0xffd9a0 : 0xdfeaf2, transparent: true, opacity: big ? 0.5 : 0.32, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending });
+    const ringG = geoShockRing;
+    const ring = new THREE.Mesh(ringG, ringMat);
+    ring.rotation.x = -Math.PI / 2; ring.position.set(px, py + 0.18, pz); scene.add(ring);
+    shockDomes.push({ mesh: ring, life: big ? 0.55 : 0.34, maxLife: big ? 0.55 : 0.34, maxScale: big ? 17 : 7 });
+    // 7) 파편 덩어리
+    for (let i = 0; i < (big ? 7 : 3); i++) {
+      spawnParticle(new THREE.Vector3(px, py + 1.2, pz),
+        new THREE.Vector3((Math.random() - 0.5) * 16, Math.random() * 12 + 4, (Math.random() - 0.5) * 16),
+        0x323740, big ? 0.9 : 0.5, big ? 1.4 : 0.8, 0, -24, 1, true);
+    }
   }
   function attachFire(anchor, offset, intensity = 1.0) { if (activeFires.length < 28) activeFires.push({ anchor, offset: offset.clone(), timer: 0, intensity }); }
 
@@ -2022,18 +2852,18 @@
   const muzzleFlashes = [];
   let lastGunSoundT = 0;
   function spawnMuzzleFlash(pos, dir, scale = 1) {
-    const flash = new THREE.Mesh(geoSphere, new THREE.MeshBasicMaterial({ color: 0xffdd88, transparent: true, opacity: 0.95 }));
-    flash.position.copy(pos); flash.scale.setScalar(0.85 * scale); scene.add(flash);
-    muzzleFlashes.push({ mesh: flash, life: 0.13, maxLife: 0.13, scale });
-    for (let i = 0; i < 6; i++) {
-      spawnParticle(pos.clone().addScaledVector(dir, 0.6 + i * 0.35),
-        dir.clone().multiplyScalar(10 + Math.random() * 12).add(new THREE.Vector3((Math.random() - 0.5) * 2.2, Math.random() * 1.6, (Math.random() - 0.5) * 2.2)),
-        0xa9a49a, (0.28 + Math.random() * 0.22) * scale, 0.55 + Math.random() * 0.35, 1.1, 0.4, 0.34);
+    // 포구 화염: 가산 섬광 + 전방으로 뿜어지는 화염/연기
+    emitSpark(pos.x, pos.y, pos.z, dir.x * 12, dir.y * 12, dir.z * 12, 0xfff0c0, 2.1 * scale, 3.4 * scale, 0.14, 1.0, 0, 0);
+    emitSpark(pos.x, pos.y, pos.z, dir.x * 6, dir.y * 6, dir.z * 6, 0xffab3d, 1.5 * scale, 2.6 * scale, 0.11, 0.9, 0, 0);
+    for (let i = 0; i < 7; i++) {
+      const sp = 9 + Math.random() * 15;
+      emitSmoke(pos.x + dir.x * (0.8 + i * 0.4), pos.y + dir.y * (0.8 + i * 0.4), pos.z + dir.z * (0.8 + i * 0.4),
+        dir.x * sp + (Math.random() - 0.5) * 2.4, dir.y * sp + Math.random() * 1.6 + 0.5, dir.z * sp + (Math.random() - 0.5) * 2.4,
+        i < 3 ? 0xb9b2a4 : 0x8e8878, 0.42 * scale, 2.1 * scale, 0.75 + Math.random() * 0.5, 0.30, 0.3, 2.2, 1.6);
     }
+    // 포구 아래로 떨어지는 분진
     for (let i = 0; i < 3; i++) {
-      spawnParticle(pos.clone().add(new THREE.Vector3(0, -1.1, 0)),
-        new THREE.Vector3((Math.random() - 0.5) * 4, 0.9, (Math.random() - 0.5) * 4),
-        0x8b7f68, 0.5 * scale, 0.6, 1.4, -1.3, 0.28);
+      emitSmoke(pos.x, pos.y - 1.0, pos.z, (Math.random() - 0.5) * 4, 0.4, (Math.random() - 0.5) * 4, 0x9a8f7a, 0.6 * scale, 1.7 * scale, 0.7, 0.24, -0.6, 1.4, 1.6);
     }
   }
   function unitFire(u) {
@@ -2145,20 +2975,71 @@
     }, 2400);
   }
 
+  // ---------------------------------------------------------------------------
+  // 소형 전술 식별 태그 (아군 청록 셰브런 · 적 암적 마커) — 빌보드 스프라이트
+  // ---------------------------------------------------------------------------
+  function makeTagTexture(text, hex, kind) {
+    const W = 320, H = 96;
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    const ctx = c.getContext('2d');
+    ctx.clearRect(0, 0, W, H);
+    const col = '#' + hex.toString(16).padStart(6, '0');
+    ctx.font = '700 30px "Malgun Gothic", "Apple SD Gothic Neo", sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    // 상단 셰브런(∧) 마커
+    ctx.strokeStyle = col; ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    const cx = W / 2, cy = 26;
+    if (kind === 'enemy') {
+      ctx.beginPath(); ctx.moveTo(cx - 13, cy - 7); ctx.lineTo(cx, cy + 9); ctx.lineTo(cx + 13, cy - 7); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx - 13, cy + 9); ctx.lineTo(cx, cy + 25); ctx.lineTo(cx + 13, cy + 9); ctx.stroke();
+    } else {
+      ctx.beginPath(); ctx.moveTo(cx - 15, cy + 9); ctx.lineTo(cx, cy - 8); ctx.lineTo(cx + 15, cy + 9); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx - 9, cy + 8); ctx.lineTo(cx, cy - 1); ctx.lineTo(cx + 9, cy + 8); ctx.stroke();
+    }
+    // 호차 이름 (짧은 라벨)
+    ctx.shadowColor = 'rgba(0,0,0,0.85)'; ctx.shadowBlur = 6;
+    ctx.fillStyle = col;
+    ctx.font = '800 26px "Malgun Gothic", "Apple SD Gothic Neo", sans-serif';
+    ctx.fillText(text, cx, 66);
+    ctx.shadowBlur = 0;
+    // 미세 프레임 (양옆 짧은 브래킷)
+    ctx.strokeStyle = col; ctx.globalAlpha = 0.55; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(cx - 46, 52); ctx.lineTo(cx - 46, 78); ctx.moveTo(cx + 46, 52); ctx.lineTo(cx + 46, 78); ctx.stroke();
+    ctx.globalAlpha = 1;
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.needsUpdate = true;
+    return t;
+  }
+  const _tagCache = new Map();
+  function tacticalTag(text, hex, kind, scale) {
+    const key = text + '|' + hex + '|' + kind;
+    let tex = _tagCache.get(key);
+    if (!tex) { tex = makeTagTexture(text, hex, kind); _tagCache.set(key, tex); }
+    const spr = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: tex, transparent: true, depthWrite: false, depthTest: true,
+      opacity: kind === 'enemy' ? 0.82 : 0.92, sizeAttenuation: true
+    }));
+    const s = scale || 1;
+    spr.scale.set(3.3 * s, 0.99 * s, 1);
+    return spr;
+  }
   function createTankUnit(isAlly, cfg) {
     const root = new THREE.Group(); root.position.set(cfg.x, 0, cfg.z);
     const hullGrp = new THREE.Group(); root.add(hullGrp);
-    const armorMat = new THREE.MeshStandardMaterial({
-      map: isAlly ? texAllyCamo : (cfg.isBoss ? texBossCamo : texEnemyCamo),
-      roughness: 0.74, metalness: 0.10
-    });
-    const accentMat = new THREE.MeshStandardMaterial({ color: isAlly ? 0x35474f : 0x3c3d34, roughness: 0.68, metalness: 0.2 });
+    const armSet = isAlly ? armAlly : (cfg.isBoss ? armBoss : armEnemy);
+    const armorMat = armorMaterial(armSet);
+    const turretMat = armorMaterial(armSet);
+    turretMat.color.setScalar(1.08);
+    turretMat.roughness = 0.92;
+    const accentMat = new THREE.MeshStandardMaterial({ color: isAlly ? 0x2f3a2a : 0x2c2e24, roughness: 0.7, metalness: 0.3, envMapIntensity: 0.45 });
     const wheels = buildRealisticTankChassis(hullGrp, armorMat, accentMat, false, !isAlly, !!cfg.isBoss);
     const scl = cfg.isBoss ? 1.14 : 0.98;
 
-    // IFF tactical beacon
-    const beacon = new THREE.Mesh(new THREE.OctahedronGeometry(0.36, 0), new THREE.MeshBasicMaterial({ color: isAlly ? 0x38bdf8 : (cfg.isBoss ? 0xfbbf24 : 0xfb7185) }));
-    beacon.position.set(0, 3.65, 0); root.add(beacon);
+    // IFF 소형 전술 식별 태그 (아군 청록 · 적 암적)
+    const tagName = isAlly ? (cfg.name || '아군') : (cfg.isBoss ? '지휘' : '적');
+    const beacon = tacticalTag(tagName, isAlly ? 0x7de3c8 : (cfg.isBoss ? 0xffb347 : 0xff7f7f), isAlly ? 'ally' : 'enemy', isAlly ? 1.0 : 0.86);
+    beacon.position.set(0, 4.15 * (cfg.isBoss ? 1.1 : 1), 0); root.add(beacon);
 
     const turretGrp = new THREE.Group();
     turretGrp.position.set(0, 1.64 * scl, 0.15);
@@ -2166,12 +3047,12 @@
 
     if (isAlly) {
       // ---- K2-style angular composite turret ----
-      const tBody = new THREE.Mesh(boxG(2.95, 0.82, 3.6), armorMat);
+      const tBody = new THREE.Mesh(boxG(2.95, 0.82, 3.6), turretMat);
       tBody.position.set(0, 0.44, 0.2); tBody.castShadow = true; turretGrp.add(tBody);
-      const tNose = new THREE.Mesh(boxG(2.65, 0.72, 1.25), armorMat);
+      const tNose = new THREE.Mesh(boxG(2.65, 0.72, 1.25), turretMat);
       tNose.position.set(0, 0.42, -1.75); turretGrp.add(tNose);
       [-0.95, 0.95].forEach(cx => {
-        const cheek = new THREE.Mesh(boxG(1.15, 0.70, 1.05), armorMat);
+        const cheek = new THREE.Mesh(boxG(1.15, 0.70, 1.05), turretMat);
         cheek.position.set(cx, 0.44, -1.55); cheek.rotation.y = cx > 0 ? -0.34 : 0.34; turretGrp.add(cheek);
       });
       const bustle = new THREE.Mesh(boxG(2.6, 0.66, 1.2), accentMat);
@@ -2185,7 +3066,7 @@
       });
     } else {
       // ---- T-90M Proryv low sloped turret ----
-      const tDome = new THREE.Mesh(cylG(1.32, 1.88, 0.82, 8), armorMat);
+      const tDome = new THREE.Mesh(cylG(1.32, 1.88, 0.82, 8), turretMat);
       tDome.position.set(0, 0.44, 0); tDome.castShadow = true; turretGrp.add(tDome);
       const tRoof = new THREE.Mesh(cylG(1.0, 1.22, 0.18, 8), accentMat);
       tRoof.position.set(0, 0.90, 0); turretGrp.add(tRoof);
@@ -2307,8 +3188,8 @@
   function createSupportUnit(kind, cfg) {
     const root = new THREE.Group(); root.position.set(cfg.x, 0, cfg.z);
     const hullGrp = new THREE.Group(); root.add(hullGrp);
-    const armorMat = new THREE.MeshStandardMaterial({ map: texAllyCamo, roughness: 0.76, metalness: 0.1 });
-    const accentMat = new THREE.MeshStandardMaterial({ color: 0x33454f, roughness: 0.7, metalness: 0.22 });
+    const armorMat = armorMaterial(armAlly);
+    const accentMat = new THREE.MeshStandardMaterial({ color: 0x2f3a2a, roughness: 0.7, metalness: 0.3, envMapIntensity: 0.45 });
 
     const hull = new THREE.Mesh(boxG(3.0, 1.35, 6.0), armorMat);
     hull.position.y = 1.0; hull.castShadow = true; hull.receiveShadow = true; hullGrp.add(hull);
@@ -2337,8 +3218,8 @@
     const atgm = new THREE.Mesh(cylG(0.09, 0.09, 0.9, 6), matGunMetal);
     atgm.rotation.x = Math.PI / 2; atgm.position.set(-0.62, 0.66, -0.4); turretGrp.add(atgm);
     const muzzleTip = new THREE.Object3D(); muzzleTip.position.set(0, 0.36, -3.9); gunGrp.add(muzzleTip);
-    const beacon = new THREE.Mesh(new THREE.OctahedronGeometry(0.3, 0), new THREE.MeshBasicMaterial({ color: 0x34d399 }));
-    beacon.position.set(0, 3.1, 0); root.add(beacon);
+    const beacon = tacticalTag(cfg.name || '기계화', 0x8fe6a8, 'ally', 0.82);
+    beacon.position.set(0, 3.6, 0); root.add(beacon);
     const antennas = [];
     const ant = new THREE.Mesh(cylG(0.014, 0.026, 1.9, 5), matSteel);
     ant.position.set(1.0, 2.5, 1.7); turretGrp.add(ant); antennas.push(ant);
@@ -2369,7 +3250,7 @@
       const root = new THREE.Group();
       const x = (i - (n - 1) / 2) * 13, z = 112 + (i % 2) * 9;
       root.position.set(x, terrainHeight(x, z), z);
-      const mat = new THREE.MeshStandardMaterial({ map: texAllyCamo, roughness: 0.78, metalness: 0.1 });
+      const mat = armorMaterial(armAlly);
       const hull = new THREE.Mesh(boxG(3.5, 1.15, 6.6), mat);
       hull.position.y = 1.0; hull.castShadow = true; hull.receiveShadow = true; root.add(hull);
       const cab = new THREE.Mesh(boxG(3.1, 1.5, 2.0), mat);
@@ -2788,7 +3669,7 @@
       if (key === 'battalion') setTimeout(() => comms.say('대대 포병지원반', '대대장 지휘 계통 접속. 155mm 화력 지원 대기.', { prio: true }), 2200);
       if (key === 'division') setTimeout(() => comms.say('사단 포병대대', '사단장 지휘 계통 접속. 포병대대·기계화·CAS 전력 배속 완료.', { prio: true }), 2200);
     } else {
-      document.getElementById('hud-mode-tag').textContent = `PROJECT CANON V6.4 · ${R.label} 지휘`;
+      document.getElementById('hud-mode-tag').textContent = `CANON V7.0 · ${R.label} 지휘`;
     }
   };
 
@@ -3144,7 +4025,7 @@
       ctx.fillStyle = 'rgba(6,14,24,0.94)'; ctx.fillRect(12, state.tacH - 32, tw, 24);
       ctx.strokeStyle = 'rgba(56,189,248,0.32)'; ctx.strokeRect(12, state.tacH - 32, tw, 24);
       ctx.fillStyle = '#7dd3fc'; ctx.font = '800 9.5px Consolas, monospace'; ctx.textAlign = 'left';
-      ctx.fillText('PROJECT CANON V6.4 · 작전구역 380×350m · GRID 50m · 등고 0.75m', 19, state.tacH - 16);
+      ctx.fillText('PROJECT CANON V7.0 · 작전구역 380×350m · GRID 50m · 등고 0.75m', 19, state.tacH - 16);
     }
     ctx.restore();
     // 아군 포병 사거리 / CAS 범위
@@ -3540,6 +4421,7 @@
     casFlights.forEach(c => scene.remove(c.root)); casFlights.length = 0;
     casBombs.forEach(c => scene.remove(c.mesh)); casBombs.length = 0;
     activeFires.length = 0;
+    smokeFX.clear(); sparkFX.clear();
     clearObjective();
     state.attackOrder = false; state.attackTimer = 0; state.endQueued = false;
     state.artyCd = 0; state.casCd = 0;
@@ -3566,7 +4448,7 @@
     state.wavesLeft = R.waves;
     state.jetSpawnTimer = 5.5; state.droneSpawnTimer = 3.5;
     const echelon = R.companies === 1 ? '1개 소대' : `${R.companies}개 중대`;
-    document.getElementById('hud-mode-tag').textContent = `PROJECT CANON V6.4 · ${R.label} · ${echelon}`;
+    document.getElementById('hud-mode-tag').textContent = `CANON V7.0 · ${R.label} · ${echelon}`;
     document.getElementById('hud-echelon').textContent = echelon + (R.ifv ? ' + 기계화' : '');
     updateDriveUI();
     updateCmdUI();
@@ -3719,7 +4601,7 @@
       audio.play120mm();
       const sh = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 2.2, 8), new THREE.MeshBasicMaterial({ color: 0xffcc44 }));
       sh.position.copy(origin); sh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir); scene.add(sh);
-      projectiles.push({ mesh: sh, vel: dir.clone().multiplyScalar(172), life: 2.5, fromAlly: true, byPlayer: true, dmg: 68 });
+      projectiles.push({ mesh: sh, vel: dir.clone().multiplyScalar(172), life: 2.5, fromAlly: true, byPlayer: true, dmg: 68, trail: 0xffd08a });
       return;
     }
     state.recoil = 0.32; state.hullPitch += 0.022;
@@ -3861,7 +4743,7 @@
     if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') state.zoom = true;
   });
   window.addEventListener('keyup', (e) => { state.keys[e.code] = false; if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') state.zoom = false; });
-  window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+  window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); smokeFX.resize(); sparkFX.resize(); });
 
   // ============================================================================
   // 10. FFT + ALL-DOMAIN MAP RENDERERS
@@ -4164,14 +5046,19 @@
       playerWheels.forEach(w => { w.rotation.x -= state.hullSpeed * dt * 2.1; });
       playerAntennas.forEach((a, idx) => { a.rotation.x = Math.min(0.35, Math.abs(state.hullSpeed) * 0.012) + Math.sin(tSec * 7 + idx) * 0.05; });
 
-      // Dust & Diesel Exhaust Plume while moving
+      // 궤도 흙먼지 & 배기 가스 (부드러운 파티클)
       state.dustTimer -= dt;
-      if (Math.abs(state.hullSpeed) > 2.2 && state.dustTimer <= 0) {
-        state.dustTimer = 0.075;
+      if (Math.abs(state.hullSpeed) > 1.8 && state.dustTimer <= 0) {
+        state.dustTimer = 0.055;
+        const fwdX = -Math.sin(state.hullYaw), fwdZ = -Math.cos(state.hullYaw);
         [-1.9, 1.9].forEach(sideX => {
-          const wp = new THREE.Vector3(sideX, 0.35, 3.6).applyMatrix4(playerRoot.matrixWorld);
-          spawnParticle(wp, new THREE.Vector3((Math.random()-0.5)*1.8, 1.2 + Math.random()*1.1, (Math.random()-0.5)*1.8), 0x8f826d, 0.5, 0.62, 1.3, -0.8, 0.34);
+          const wp = new THREE.Vector3(sideX, 0.32, 3.5).applyMatrix4(playerRoot.matrixWorld);
+          fxTrackDust(wp.x, wp.y, wp.z, fwdX, fwdZ, Math.abs(state.hullSpeed));
         });
+        if (Math.random() < 0.5) {
+          const ep = new THREE.Vector3(0, 1.3, 3.7).applyMatrix4(playerRoot.matrixWorld);
+          fxExhaust(ep.x, ep.y, ep.z, fwdX, fwdZ);
+        }
       }
 
       document.getElementById('hud-spd').textContent = Math.round(Math.abs(state.hullSpeed) * 3.1);
@@ -4386,8 +5273,9 @@
         al.wheels.forEach(w => { w.rotation.x -= Math.max(spd, 1.5) * dt * 2.0; });
         al.dustTimer -= dt;
         if (spd > 2 && al.dustTimer <= 0) {
-          al.dustTimer = 0.22;
-          spawnParticle(al.root.position.clone().add(new THREE.Vector3(0, 0.4, 0)), new THREE.Vector3(0, 1.0, 0), 0x8a7e68, 0.5, 0.55, 1.5, -0.5, 0.32);
+          al.dustTimer = 0.19;
+          const afx = -Math.sin(al.hullYaw), afz = -Math.cos(al.hullYaw);
+          fxTrackDust(al.root.position.x, al.root.position.y, al.root.position.z, afx, afz, spd);
         }
         if (!tgt) return;
         const toT = new THREE.Vector3().subVectors(tgt.root.position, al.root.position).setY(0);
@@ -4410,7 +5298,7 @@
           sh.position.copy(wpA); scene.add(sh);
           const d = new THREE.Vector3().subVectors(tgt.root.position.clone().add(new THREE.Vector3(0, 1.35, 0)), wpA).normalize();
           d.x += (Math.random() - 0.5) * 0.05; d.y += (Math.random() - 0.5) * 0.02;
-          projectiles.push({ mesh: sh, vel: d.multiplyScalar(118), life: 3.0, fromAlly: true, byPlayer: false, dmg: al.dmg || 36 });
+          projectiles.push({ mesh: sh, vel: d.multiplyScalar(118), life: 3.0, fromAlly: true, byPlayer: false, dmg: al.dmg || 36, trail: 0x9fe6ff });
           al.talkTimer -= 3;
           if (al.talkTimer <= 0) {
             al.talkTimer = 12 + Math.random() * 10;
@@ -4454,7 +5342,11 @@
         en.gunGrp.position.z = -en.recoilDir * en.recoil;
         en.antennas.forEach((a, ai) => { a.rotation.z = Math.sin(tSec * 4 + ai) * 0.05; });
         en.dustTimer -= dt;
-        if (en.dustTimer <= 0) { en.dustTimer = 0.26; spawnParticle(en.root.position.clone().add(new THREE.Vector3(0,0.4,0)), new THREE.Vector3(0,1.0,0), 0x8a7e68, 0.5, 0.55, 1.5, -0.5, 0.30); }
+        if (en.dustTimer <= 0) {
+          en.dustTimer = 0.2;
+          const efx = Math.sin(en.hullYaw), efz = Math.cos(en.hullYaw);
+          fxTrackDust(en.root.position.x, en.root.position.y, en.root.position.z, efx, efz, spd);
+        }
 
         en.fireCd -= dt;
         if (en.fireCd <= 0 && minD < 175) {
@@ -4467,7 +5359,7 @@
           // Moving fast makes enemy shots harder to hit!
           const evadeSpread = (near === playerRoot && Math.abs(state.hullSpeed) > 10) ? 0.11 : 0.055;
           d.x += (Math.random()-0.5)*((near===playerRoot && state.smokeActive>0)?0.35:evadeSpread);
-          projectiles.push({ mesh:sh, vel:d.multiplyScalar(78), life:3.5, fromAlly:false, dmg:en.isBoss?12:8 });
+          projectiles.push({ mesh:sh, vel:d.multiplyScalar(78), life:3.5, fromAlly:false, dmg:en.isBoss?12:8, trail: 0xff9a78 });
         }
       });
 
@@ -4512,7 +5404,16 @@
           pr.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), pr.vel.clone().normalize());
         }
         pr.mesh.position.addScaledVector(pr.vel, dt);
-        if (pr.isMissile && Math.random()<0.85) spawnParticle(pr.mesh.position, new THREE.Vector3(0,0.3,0), 0xf8fafc, 0.3, 0.45, 1.5, 0, 0.5);
+        // 예광탄 궤적 (가산 발광 입자)
+        if (pr.isMissile) {
+          if (Math.random() < 0.9) emitSmoke(pr.mesh.position.x, pr.mesh.position.y, pr.mesh.position.z,
+            (Math.random()-0.5)*0.6, 0.4, (Math.random()-0.5)*0.6, 0xd8d8d0, 0.35, 1.5, 0.55, 0.28, 0.2, 1.2, 1.4);
+          if (Math.random() < 0.8) emitSpark(pr.mesh.position.x, pr.mesh.position.y, pr.mesh.position.z, 0, 0, 0, 0xffd0a0, 0.7, 0.2, 0.16, 0.8, 0, 0);
+        } else {
+          const tr = pr.trail || 0xffc46b;
+          emitSpark(pr.mesh.position.x, pr.mesh.position.y, pr.mesh.position.z, 0, 0, 0, tr, 0.52, 0.16, 0.13, 0.85, 0, 0);
+          if (Math.random() < 0.5) emitSmoke(pr.mesh.position.x, pr.mesh.position.y, pr.mesh.position.z, 0, 0.1, 0, 0x8e8878, 0.16, 0.6, 0.25, 0.16, 0, 1, 1.2);
+        }
         let hit = false;
         if (pr.fromAlly) {
           for (const en of enemies) { if (en.state==='active' && pr.mesh.position.distanceTo(en.root.position.clone().add(new THREE.Vector3(0,1.5,0)))<4.5) { spawnExplosion(pr.mesh.position.clone(), pr.isMissile); damageTank(en, pr.dmg, pr.isMissile?14:10, pr.byPlayer); hit=true; break; } }
@@ -4551,15 +5452,18 @@
     for (let i = laserBeams.length-1; i >= 0; i--) { laserBeams[i].life -= dt; if (laserBeams[i].life<=0) { scene.remove(laserBeams[i].line); laserBeams.splice(i,1); } }
     activeFires.forEach(f => {
       f.timer += dt;
-      if (f.timer >= 0.09) {
+      if (f.timer >= 0.075) {
         f.timer = 0; const wp = f.offset.clone().applyMatrix4(f.anchor.matrixWorld);
-        spawnParticle(wp, new THREE.Vector3((Math.random()-0.5)*1.2, 3.5+Math.random()*2, (Math.random()-0.5)*1.2), Math.random()>0.4?0xff6611:0xffcc33, 0.55*f.intensity, 0.45, 0.5, 1.4, 0.88);
-        if (Math.random()<0.6) spawnParticle(wp.clone().add(new THREE.Vector3(0,1,0)), new THREE.Vector3(0.8,4.5,0), 0x18181b, 0.8*f.intensity, 1.6, 2.2, 0.8, 0.58);
+        emitSpark(wp.x, wp.y, wp.z, (Math.random()-0.5)*1.1, 2.6+Math.random()*2.2, (Math.random()-0.5)*1.1,
+          Math.random() > 0.45 ? 0xff7418 : 0xffc04a, 0.9*f.intensity, 1.9*f.intensity, 0.34, 0.85, 1.6, 0.9);
+        emitSmoke(wp.x, wp.y + 1.1, wp.z, (Math.random()-0.5)*0.7, 2.4+Math.random()*1.6, (Math.random()-0.5)*0.7,
+          0x1b1b1c, 1.0*f.intensity, 3.4*f.intensity, 1.6+Math.random()*0.9, 0.42, 0.4, 0.8, 1.5);
       }
     });
     flyingTurrets.forEach(ft => { ft.vel.y -= 24*dt; ft.mesh.position.addScaledVector(ft.vel, dt); ft.mesh.rotation.x += ft.rotVel.x*dt; ft.mesh.rotation.y += ft.rotVel.y*dt; if (ft.mesh.position.y<0.65) { ft.mesh.position.y=0.65; ft.vel.y*=-0.35; ft.vel.x*=0.65; ft.vel.z*=0.65; } });
     for (let i = shockDomes.length-1; i >= 0; i--) { const sd=shockDomes[i]; sd.life-=dt; if (sd.life<=0) { scene.remove(sd.mesh); shockDomes.splice(i,1); } else { const p=1-sd.life/sd.maxLife; sd.mesh.scale.setScalar(1+p*sd.maxScale); sd.mesh.material.opacity=(1-p)*0.52; } }
-    for (let i = particles.length-1; i >= 0; i--) { const pt=particles[i]; pt.life-=dt; if (pt.life<=0) { scene.remove(pt.mesh); particles.splice(i,1); } else { pt.vel.y+=pt.grav*dt; pt.mesh.position.addScaledVector(pt.vel, dt); if (pt.mesh.position.y<0.15 && pt.grav<0) { pt.mesh.position.y=0.15; pt.vel.y*=-0.3; } if (pt.grow) pt.mesh.scale.addScalar(pt.grow*dt); pt.mesh.material.opacity=Math.max(0,(pt.life/pt.maxLife)*0.88); } }
+    for (let i = particles.length-1; i >= 0; i--) { const pt=particles[i]; pt.life-=dt; if (pt.life<=0) { scene.remove(pt.mesh); if (pt.mesh.material) pt.mesh.material.dispose(); particles.splice(i,1); } else { pt.vel.y+=pt.grav*dt; pt.mesh.position.addScaledVector(pt.vel, dt); if (pt.mesh.position.y<0.15 && pt.grav<0) { pt.mesh.position.y=0.15; pt.vel.y*=-0.3; } if (pt.rotVel) { pt.mesh.rotation.x += pt.rotVel.x*dt; pt.mesh.rotation.y += pt.rotVel.y*dt; } if (pt.grow) pt.mesh.scale.addScalar(pt.grow*dt); if (pt.mesh.material && pt.mesh.material.opacity !== undefined) pt.mesh.material.opacity=Math.max(0,(pt.life/pt.maxLife)*0.88); } }
+    smokeFX.update(dt); sparkFX.update(dt);
 
     for (let i = muzzleFlashes.length-1; i >= 0; i--) {
       const mf = muzzleFlashes[i]; mf.life -= dt;
@@ -4568,12 +5472,14 @@
     }
     if (state.running) comms.update(dt);
 
+    if ((state.frame = (state.frame || 0) + 1) % 6 === 0) updateSunRig();
     drawFFT(tSec);
     renderMap(miniCtx, 210, 290);
     if (state.bigMapOpen) renderTacMap();
     renderer.render(scene, camera);
   }
   // 읽기 전용 검증 훅 (테스트/디버깅용 — 게임 상태를 바꾸지 않음)
+  window.__scene = scene; window.__camera = camera; window.__renderer = renderer; window.__smoke = smokeFX; window.__spark = sparkFX;
   window.__tankRect = () => {
     // 플레이어 전차(차체+포탑)의 3D 바운딩 박스를 화면 좌표(px)로 투영 — HUD 겹침 실측용
     // 월드 박스를 전차 로컬 좌표로 되돌린 뒤, 포신·안테나 등 부속을 잘라 차체 실루엣만 사용한다.
