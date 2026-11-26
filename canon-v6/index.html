@@ -2294,19 +2294,19 @@
           if (vAge >= 1.0) discard;
           vec4 t = texture2D(map, vUv);
           float fade = pow(1.0 - vAge, 1.5);
-          float a = t.a * vP * fade * 0.66;
+          float a = t.a * vP * fade * 0.80;
           if (a < 0.006) discard;
-          gl_FragColor = vec4(t.rgb * 0.40, a);
+          gl_FragColor = vec4(t.rgb * 0.88, a);
           #include <colorspace_fragment>
         }`,
-      transparent: true, depthWrite: false, depthTest: true,
+      transparent: true, depthWrite: false, depthTest: true, side: THREE.DoubleSide,
       polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4
     });
     const mesh = new THREE.Mesh(geo, mat);
     mesh.frustumCulled = false; mesh.renderOrder = 1; scene.add(mesh);
 
     let head = 0, live = 0, tNow = 0;
-    const HALF_W = 0.35, LEN = 1.5;
+    const HALF_W = 0.42, LEN = 1.85;
     const CORNERS = [[-HALF_W, LEN / 2], [HALF_W, LEN / 2], [HALF_W, -LEN / 2], [-HALF_W, LEN / 2], [HALF_W, -LEN / 2], [-HALF_W, -LEN / 2]];
     const UVS = [[0, 0], [1, 0], [1, 1], [0, 0], [1, 1], [0, 1]];
 
@@ -2320,7 +2320,7 @@
         const wx = cx + fx * fwd + rx * side;
         const wz = cz + fz * fwd + rz * side;
         pos[bPos + i * 3] = wx;
-        pos[bPos + i * 3 + 1] = terrainHeight(wx, wz) + 0.03;
+        pos[bPos + i * 3 + 1] = terrainHeight(wx, wz) + 0.16;   // 지형 메쉬 보간 오차보다 위에 얹는다
         pos[bPos + i * 3 + 2] = wz;
         uv[bUv + i * 2] = UVS[i][0];
         uv[bUv + i * 2 + 1] = UVS[i][1];
@@ -2339,7 +2339,15 @@
       addQuad,
       update(dt) { tNow += dt; mat.uniforms.uTime.value = tNow; },
       count() { return live; },
-      reset() { head = 0; live = 0; geo.setDrawRange(0, 0); }
+      reset() { head = 0; live = 0; geo.setDrawRange(0, 0); },
+      debug() {
+        const p0 = new THREE.Vector3(pos[0], pos[1], pos[2]);
+        const sp = p0.clone().project(camera);
+        return { live, head, draw: geo.drawRange.count,
+                 first: [+p0.x.toFixed(1), +p0.y.toFixed(2), +p0.z.toFixed(1)],
+                 screen: [Math.round((sp.x * 0.5 + 0.5) * window.innerWidth), Math.round((-sp.y * 0.5 + 0.5) * window.innerHeight)],
+                 ndcZ: +sp.z.toFixed(3), visible: mesh.visible, player: [+playerRoot.position.x.toFixed(1), +playerRoot.position.z.toFixed(1)] };
+      }
     };
   })();
 
@@ -2351,7 +2359,7 @@
     if (!st) { st = { acc: 0, x: posVec.x, z: posVec.z }; _markTracker.set(posVec, st); }
     st.acc += Math.hypot(posVec.x - st.x, posVec.z - st.z);
     st.x = posVec.x; st.z = posVec.z;
-    const step = isPlayer ? 0.60 : 1.05;
+    const step = isPlayer ? 0.52 : 1.05;
     if (st.acc < step) return;
     st.acc = 0;
     const cy = Math.cos(yaw), sy = Math.sin(yaw);
@@ -7632,6 +7640,7 @@
     return muzzleFlashes.length;
   };
   window.__v80Render = () => { renderer.render(scene, camera); return true; };
+  window.__tm = () => TrackMarks.debug();
   window.__v80LookBack = () => { state.turretYaw = wrapAngle(state.turretYaw + Math.PI); return state.turretYaw; };
   window.__v80Clear = () => { clearDamageTags(); return dmgTags.length; };
 
