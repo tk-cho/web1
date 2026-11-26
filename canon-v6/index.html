@@ -1326,7 +1326,9 @@
     sg.addColorStop(0.28, 'rgba(255,236,190,0.13)');
     sg.addColorStop(1, 'rgba(255,228,172,0)');
     ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(sx, sy, 190, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = 'rgba(255,253,246,0.95)'; ctx.beginPath(); ctx.arc(sx, sy, 10, 0, Math.PI * 2); ctx.fill();
+    ctx.save(); ctx.filter = 'blur(3px)';
+    ctx.fillStyle = 'rgba(255,253,246,0.92)'; ctx.beginPath(); ctx.arc(sx, sy, 7, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
 
     // Layered fair-weather clouds
     const puff = (cx, cy, rx, ry, alpha, tint) => {
@@ -1337,6 +1339,8 @@
       ctx.save(); ctx.translate(cx, cy); ctx.scale(1, ry / rx); ctx.translate(-cx, -cy);
       ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(cx, cy, rx, 0, Math.PI * 2); ctx.fill(); ctx.restore();
     };
+    ctx.save();
+    ctx.filter = 'blur(9px)';
     for (let b = 0; b < 7; b++) {
       const baseY = 210 + b * 62;
       const count = 5 + (b % 3);
@@ -1350,6 +1354,7 @@
         puff(cx - rx * 0.25, cy - ry * 0.35, rx * 0.62, ry * 0.72, 0.35, '255,255,255');
       }
     }
+    ctx.restore();
     // Haze band at the horizon
     const hz = ctx.createLinearGradient(0, 640, 0, 780);
     hz.addColorStop(0, 'rgba(226,214,190,0)');
