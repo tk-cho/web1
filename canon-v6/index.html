@@ -158,7 +158,8 @@
     #aps-badge { top: auto; bottom: calc(236px + env(safe-area-inset-bottom, 0px)); font-size: 13px; padding: 3px 12px; }
   }
   @media (max-width: 1000px) and (max-height: 560px) and (orientation: landscape) {
-    #aps-badge { top: 68%; bottom: auto; font-size: 11.5px; padding: 2px 10px; }
+    #aps-badge { top: 214px; left: 8px; right: auto; bottom: auto; transform: none; font-size: 11.5px; padding: 2px 10px; }
+    #aps-badge.on { transform: none; }
   }
   #minimap-box { pointer-events: auto; cursor: pointer; padding: 6px; }
 
@@ -4538,7 +4539,7 @@
     });
     ctx.restore();
     // ---- V7.2 제대별 세부 명령 경로 (중대 색 점선 + 명령 라벨) ----
-    ['1', '2', '3', 'sup'].forEach(k => {
+    ['1', '2', '3', 'sup'].forEach((k, ki) => {
       const sq = state.squad[k];
       if (!sq || sq.order === 'stance') return;
       const list = allies.filter(a => a.state === 'active' && companyKeyOf(a) === k);
@@ -4567,7 +4568,8 @@
         ctx.closePath(); ctx.fillStyle = col; ctx.fill();
         const O = SQUAD_ORDERS[sq.order];
         ctx.font = '800 9.5px Malgun Gothic, sans-serif'; ctx.fillStyle = col;
-        ctx.fillText(`${companyLabelOf(k)} ${O ? O.label : ''}`, (ax + bx) / 2 + 5, (ay + by) / 2 - 5);
+        const lx = ax + (bx - ax) * 0.42, ly = ay + (by - ay) * 0.42 + (ki - 1) * 12;
+        ctx.fillText(`${companyLabelOf(k)} ${O ? O.label : ''}`, lx + 5, ly - 4);
         ctx.restore();
       }
     });
