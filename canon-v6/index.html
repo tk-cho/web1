@@ -23,13 +23,23 @@
     gap: 8px 12px;
     padding: calc(10px + env(safe-area-inset-top, 0px)) calc(14px + env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) calc(14px + env(safe-area-inset-left, 0px));
   }
-  #hud-status  { grid-area: 1 / 1 / 2 / 2; justify-self: start; }
-  #hud-actions { grid-area: 2 / 1 / 3 / 2; justify-self: start; }
-  #hud-weapons { grid-area: 3 / 1 / 4 / 2; justify-self: start; }
-  #target-panel{ grid-area: 1 / 2 / 4 / 4; justify-self: end; align-self: start; }
-  #radio-box   { grid-area: 4 / 1 / 5 / 2; align-self: start; justify-self: start; }
-  #cmd-bar     { grid-area: 4 / 2 / 5 / 4; justify-self: end; align-self: start; width: min(560px, 100%); }
+  /* 데스크톱 레일 배치: 상단(상태·지휘)과 하단(무전·FFT·도움말·레이더) 가장자리에만 붙여
+     화면 중앙의 플레이어 전차 시야를 비워 둔다. */
+  #hud-status  { grid-area: 1 / 1 / 2 / 2; justify-self: start; align-self: start; }
+  #hud-actions { grid-area: 2 / 1 / 3 / 2; justify-self: start; align-self: start; }
+  #hud-weapons { grid-area: 3 / 1 / 4 / 2; justify-self: start; align-self: start; }
+  #target-panel{ grid-area: 1 / 2 / 2 / 4; justify-self: end; align-self: start; }
+  #cmd-bar     { grid-area: 2 / 2 / 3 / 4; justify-self: end; align-self: start; width: min(560px, 100%); }
+  #radio-box   { grid-area: 5 / 1 / 6 / 2; align-self: end; justify-self: start; max-height: 152px; overflow: hidden; }
   #hud-fft     { grid-area: 5 / 1 / 6 / 2; justify-self: start; align-self: end; }
+  /* 데스크톱에서만: 하단 레일 좌측에 무전(300px) + FFT(315px) 나란히 — 중앙 전차 시야 비움 */
+  @media (min-width: 901px) {
+    #hud #radio-box { width: 300px; max-width: 300px; }
+    #hud-fft { margin-left: 306px; }
+  }
+  /* 좁은 데스크톱 창: 하단 보조 패널(FFT·키보드 도움말)을 접어 무전/레이더만 남긴다 */
+  @media (min-width: 901px) and (max-width: 1450px) { #hud-fft { display: none; } }
+  @media (min-width: 901px) and (max-width: 1130px) { #hud-controls { display: none; } }
   #hud-controls{ grid-area: 5 / 2 / 6 / 3; justify-self: start; align-self: end; }
   #minimap-box { grid-area: 5 / 3 / 6 / 4; justify-self: end; align-self: end; }
   #banner-msg  { position: fixed; left: 50%; top: 14%; transform: translateX(-50%); }
@@ -239,37 +249,79 @@
 
   /* ======================= TABLET / PHONE LAYOUT ======================= */
   @media (max-width: 900px) {
-    #hud {
-      grid-template-columns: minmax(0, 1fr) auto;
-      grid-template-rows: auto auto auto minmax(0, 1fr) auto auto;
-      gap: 5px;
-      padding: calc(6px + env(safe-area-inset-top, 0px)) calc(6px + env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) calc(6px + env(safe-area-inset-left, 0px));
+    /* ── 폰 세로: 절대 배치 레일 — 상단(상태·레이더·무전 티커·지휘 토글) / 하단(무기·명령·스틱) ── */
+    #hud { display: block; padding: 0; }
+    #hud > * { position: absolute; }
+    #hud-status {
+      left: 6px; top: calc(6px + env(safe-area-inset-top, 0px));
+      width: calc(100% - 146px); padding: 4px 7px; border-radius: 7px;
     }
-    #hud-status  { grid-area: 1 / 1 / 2 / 2; justify-self: stretch; }
-    #minimap-box { grid-area: 1 / 2 / 2 / 3; justify-self: end; align-self: start; padding: 4px; }
-    #minimap-canvas { width: 88px; height: 88px; border-radius: 6px; }
-    #minimap-box .tag { font-size: 7.5px; letter-spacing: 0.2px; }
-    #hud-actions { grid-area: 2 / 1 / 3 / 3; justify-self: stretch; flex-wrap: nowrap; gap: 4px; }
-    #hud-weapons { grid-area: 3 / 1 / 4 / 3; justify-self: stretch; flex-wrap: nowrap; gap: 4px; }
-    #target-panel { display: none; }
-    #hud-fft, #hud-controls { display: none; }
-    #cmd-bar {
-      grid-area: 4 / 1 / 5 / 3; justify-self: stretch; align-self: end;
-      width: auto; padding: 5px 7px; gap: 4px;
+    #minimap-box {
+      right: 6px; top: calc(6px + env(safe-area-inset-top, 0px));
+      padding: 4px; border-radius: 7px;
     }
-    .cmd-head { font-size: 9.5px; gap: 6px; }
-    .cmd-head .cmd-obj { font-size: 9px; }
-    .cb { font-size: 10px; padding: 5px 2px; }
+    #minimap-canvas { width: 62px; height: 62px; border-radius: 5px; }
+    #minimap-box .tag { font-size: 6.5px; letter-spacing: 0; gap: 4px; }
+    #minimap-box .tag .gold { display: none; }
+    /* 좁은 폰(≤430px): 상태 패널이 무전 티커를 밀지 않도록 한 줄로 압축 */
+    @media (max-width: 430px) {
+      #hud-status .opt2 { display: none; }
+      #hud-status .row { font-size: 10px; gap: 6px; }
+      #hud-status { padding: 3px 6px; }
+      #cmd-bar .cmd-head .cmd-obj { display: none; }
+      #cmd-bar .cb { padding: 3px 1px; font-size: 9px; }
+      #cmd-bar .cmd-body, #cmd-bar .cmd-row { gap: 2px; }
+    }
+    /* 무전 로그: 1줄 슬림 티커 (탭하면 6줄 전체 펼침) */
     #radio-box {
-      grid-area: 5 / 1 / 6 / 3; align-self: end; justify-self: stretch;
-      max-width: none; max-height: 78px; overflow: hidden; font-size: 11px; padding: 5px 8px;
+      left: 6px; width: calc(100% - 12px); max-width: none;
+      top: calc(96px + env(safe-area-inset-top, 0px));
+      padding: 3px 8px; font-size: 10.5px; line-height: 1.3;
+      max-height: 26px; overflow: hidden; pointer-events: auto; cursor: pointer; z-index: 8;
     }
-    #radio-log .rl { font-size: 10.5px; }
+    #radio-box .radio-hdr { display: none; }
+    #radio-log { margin-top: 0; gap: 1px; }
+    #radio-log .rl { font-size: 10.5px; white-space: nowrap; overflow: hidden; }
+    #radio-log .rl .rl-tx { overflow: hidden; text-overflow: ellipsis; }
     #radio-log .rl:not(:last-child) { display: none; }
-    #touch-pad { grid-area: 6 / 1 / 7 / 2; align-self: end; justify-self: start; display: flex; }
-    #mobile-right { grid-area: 6 / 2 / 7 / 3; align-self: end; justify-self: end; display: flex; }
+    #radio-log:empty::before { content: '무전 대기 — CH-01 전술 무전망'; color: #6ee7b7; opacity: 0.55; font-size: 10px; }
+    #radio-box.open { max-height: none; z-index: 14; }
+    #radio-box.open .radio-hdr { display: flex; }
+    #radio-box.open #radio-log { margin-top: 2px; }
+    #radio-box.open #radio-log .rl { display: flex; }
+    body.radio-open #cmd-bar { display: none; }
+    /* 지휘 바: 1줄 컴팩트 토글 (탭하면 서랍처럼 아래로 펼침) */
+    #cmd-bar {
+      left: 6px; width: calc(100% - 12px);
+      top: calc(126px + env(safe-area-inset-top, 0px));
+      padding: 3px 8px; gap: 3px; z-index: 9;
+    }
+    .cmd-head { font-size: 9.5px; gap: 5px; }
+    .cmd-head .cmd-title { letter-spacing: 0.2px; }
+    .cmd-head .cmd-obj { font-size: 8.5px; }
+    #cmd-bar .cmd-body { gap: 3px; }
+    #cmd-bar .cmd-row { gap: 3px; }
+    .cb { font-size: 9.5px; padding: 4px 2px; }
+    #cmd-bar .cmd-fold { padding: 1px 7px; font-size: 9.5px; }
+    /* 하단: 무기·명령 버튼 → 조이스틱/발사 */
+    #target-panel, #hud-fft, #hud-controls { display: none; }
+    #hud-actions {
+      left: 6px; width: calc(100% - 12px);
+      bottom: calc(140px + env(safe-area-inset-bottom, 0px));
+      flex-wrap: nowrap; gap: 4px;
+    }
+    #hud-weapons {
+      left: 6px; width: calc(100% - 12px);
+      bottom: calc(180px + env(safe-area-inset-bottom, 0px));
+      flex-wrap: nowrap; gap: 4px;
+    }
+    #touch-pad {
+      left: 6px; bottom: calc(6px + env(safe-area-inset-bottom, 0px));
+      width: 118px; height: 118px; display: flex; z-index: 20;
+    }
+    #mobile-right { right: 6px; bottom: calc(8px + env(safe-area-inset-bottom, 0px)); display: flex; z-index: 20; }
     #banner-msg {
-      position: fixed; left: 50%; top: 38%; bottom: auto; transform: translateX(-50%);
+      position: fixed; left: 50%; top: 30%; bottom: auto; transform: translateX(-50%);
       font-size: 13.5px; padding: 6px 12px; max-width: 96%; z-index: 20;
     }
     #reticle-wrap { width: 168px; height: 168px; }
@@ -299,43 +351,60 @@
 
   /* ======================= PHONE LANDSCAPE ======================= */
   @media (max-width: 1000px) and (max-height: 560px) and (orientation: landscape) {
-    #hud {
-      grid-template-columns: auto minmax(0, 1fr) auto;
-      grid-template-rows: auto auto minmax(0, 1fr) auto auto;
-      gap: 4px 6px;
+    /* 절대 배치 레일: 좌상단(상태·무전 티커·지휘 토글) · 우상단(레이더·버튼) · 하단(스틱·발사) */
+    #hud { display: block; padding: 0; }
+    #hud > * { position: absolute; }
+    #hud-status { left: 6px; top: calc(6px + env(safe-area-inset-top, 0px)); width: 286px; padding: 3px 7px; }
+    #minimap-box { right: 6px; top: calc(6px + env(safe-area-inset-top, 0px)); padding: 3px; }
+    #minimap-canvas { width: 52px; height: 52px; border-radius: 4px; }
+    #minimap-box .tag { font-size: 6.5px; letter-spacing: 0; }
+    #hud-actions { left: 388px; width: 372px; top: calc(6px + env(safe-area-inset-top, 0px)); height: 26px; }
+    #hud-weapons { left: 388px; width: 372px; top: calc(36px + env(safe-area-inset-top, 0px)); height: 26px; display: flex; }
+    #hud-weapons .hud-btn { min-width: 0; }
+    #hud-actions .hud-btn, #hud-weapons .hud-btn { height: 25px; padding: 2px 2px; font-size: 11px; }
+    #radio-box {
+      left: 6px; width: 286px; top: calc(64px + env(safe-area-inset-top, 0px));
+      max-height: 22px; padding: 2px 7px; font-size: 10px; line-height: 1.3;
+      overflow: hidden; pointer-events: auto; cursor: pointer; z-index: 8;
     }
-    #hud-status  { grid-area: 1 / 1 / 2 / 3; justify-self: start; }
-    #minimap-box { grid-area: 1 / 3 / 2 / 4; }
-    #minimap-canvas { width: 66px; height: 66px; }
-    #hud-actions { grid-area: 2 / 1 / 3 / 4; }
-    #hud-weapons { grid-area: 3 / 1 / 4 / 2; align-self: end; justify-self: start; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; width: 186px; max-width: none; }
-    #hud-weapons .hud-btn { min-width: 0; padding: 7px 2px; }
-    #radio-box { grid-area: 3 / 2 / 4 / 3; align-self: end; justify-self: stretch; max-height: 56px; }
+    #radio-box .radio-hdr { display: none; }
+    #radio-log { margin-top: 0; gap: 1px; }
+    #radio-log .rl { font-size: 10px; white-space: nowrap; overflow: hidden; }
+    #radio-log .rl .rl-tx { overflow: hidden; text-overflow: ellipsis; }
+    #radio-log .rl:not(:last-child) { display: none; }
+    #radio-log:empty::before { content: '무전 대기 — CH-01 전술 무전망'; color: #6ee7b7; opacity: 0.55; font-size: 10px; }
+    #radio-box.open { max-height: none; z-index: 14; }
+    #radio-box.open .radio-hdr { display: flex; }
+    #radio-box.open #radio-log { margin-top: 2px; }
+    #radio-box.open #radio-log .rl { display: flex; }
+    body.radio-open #cmd-bar { display: none; }
+    /* 지휘 바: 조이스틱과 발사 버튼 사이 하단 얇은 토글 → 누르면 위로 서랍처럼 펼침 */
     #cmd-bar {
-      grid-area: 4 / 1 / 5 / 4; justify-self: stretch; align-self: end;
-      width: auto; flex-direction: row; align-items: center; gap: 5px;
-      padding: 4px 6px; border-left-width: 3px;
+      left: 120px; width: 630px; top: auto; bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+      padding: 2px 7px; gap: 2px; z-index: 9;
     }
-    #cmd-bar .cmd-head { display: none; }
-    #cmd-bar .cmd-body { flex-direction: row; flex: 1 1 auto; gap: 5px; min-width: 0; }
-    #cmd-bar .cmd-row { flex: 0 1 auto; }
-    #cmd-bar .cmd-row:first-child { flex: 0 0 auto; }
-    #cmd-bar .cb { flex: 0 0 auto; padding: 6px 6px; font-size: 10px; }
-    #touch-pad { grid-area: 5 / 1 / 6 / 2; align-self: end; display: flex; }
-    #mobile-right { grid-area: 5 / 3 / 6 / 4; align-self: end; display: flex; }
+    #cmd-bar .cmd-head { font-size: 9px; gap: 5px; }
+    #cmd-bar .cmd-title b { font-size: 9.5px; }
+    #cmd-bar .cmd-obj { display: none; }
+    #cmd-bar .cmd-body { flex-direction: row; flex-wrap: wrap; gap: 3px; min-width: 0; }
+    #cmd-bar .cmd-row { flex: 1 1 auto; min-width: 44%; gap: 2px; }
+    #cmd-bar .cb { flex: 1 1 0; min-width: 0; padding: 3px 2px; font-size: 9px; }
+    #cmd-bar .cmd-fold { padding: 1px 5px; font-size: 9px; }
+    #touch-pad { left: 6px; bottom: 4px; width: 96px; height: 96px; display: flex; z-index: 20; }
+    #mobile-right { right: 6px; bottom: 6px; display: flex; z-index: 20; }
     #banner-msg {
-      position: fixed; left: 50%; top: auto; bottom: 96px; transform: translateX(-50%);
-      max-width: 52vw; font-size: 11.5px; padding: 4px 8px;
+      position: fixed; left: 50%; top: 112px; bottom: auto; transform: translateX(-50%);
+      max-width: 52vw; font-size: 11.5px; padding: 4px 8px; z-index: 20;
     }
     #reticle-wrap { width: 132px; height: 132px; }
     #reticle-wrap svg { width: 132px; height: 132px; }
     #touch-fire { width: 74px; height: 74px; font-size: 12px; }
   }
 
-  /* Wide touch screens (tablet landscape): virtual stick in its own grid slot */
+  /* Wide touch screens (tablet landscape): virtual stick in its own slot above the radio log */
   @media (min-width: 901px) and (min-height: 700px) {
     body.touch-ui #touch-pad {
-      display: flex; grid-area: 5 / 1 / 6 / 2;
+      display: flex; grid-area: 4 / 1 / 5 / 2;
       align-self: end; justify-self: start;
     }
     body.touch-ui #hud-fft { display: none; }
@@ -385,7 +454,7 @@
       <span>아군 <strong id="hud-allies" class="cyan">0</strong></span>
       <span>적전차 <strong id="hud-etanks" class="red">0</strong></span>
       <span class="opt">제대 <strong id="hud-echelon" class="gold">3개 중대</strong></span>
-      <span>항공·드론 <strong id="hud-eair" class="orange">0</strong></span>
+      <span class="opt2">항공·드론 <strong id="hud-eair" class="orange">0</strong></span>
       <span>격파 <strong id="hud-kills" class="green">0</strong></span>
       <span class="opt">요격 <strong id="hud-def" class="cyan">0</strong></span>
       <span>SCORE <strong id="hud-score" class="gold">0</strong></span>
@@ -2432,7 +2501,15 @@
     state.cmdFolded = !state.cmdFolded;
     const bar = document.getElementById('cmd-bar');
     bar.classList.toggle('folded', state.cmdFolded);
-    document.getElementById('cmd-fold-btn').textContent = state.cmdFolded ? '▸' : '▾';
+    cmdFoldLabel();
+    if (!state.cmdFolded && document.body.classList.contains('radio-open')) window._toggleRadio(false);
+  };
+  // 무전 로그: 폰에서는 1줄 티커 ↔ 탭하면 6줄 전체 펼침
+  window._toggleRadio = (force) => {
+    const box = document.getElementById('radio-box');
+    const open = typeof force === 'boolean' ? force : !box.classList.contains('open');
+    box.classList.toggle('open', open);
+    document.body.classList.toggle('radio-open', open);
   };
 
   window._toggleMarkMode = () => {
@@ -2688,6 +2765,28 @@
     document.body.classList.add('touch-ui');
     const chk = document.getElementById('chk-touch');
     if (chk) chk.checked = true;
+  }
+
+  // 지휘 바 접기 라벨: 폰에서는 '전술 ▾' 토글, 데스크톱은 화살표
+  function cmdFoldLabel() {
+    const b = document.getElementById('cmd-fold-btn');
+    if (!b) return;
+    const phone = window.matchMedia('(max-width: 900px)').matches;
+    b.textContent = phone ? (state.cmdFolded ? '전술 ▾' : '닫기 ▴') : (state.cmdFolded ? '▸' : '▾');
+  }
+  // 폰: 지휘 바를 기본 1줄 컴팩트로 접어 두고, 누를 때만 펼친다 (전차 시야 확보)
+  if (window.innerWidth <= 900 && !state.cmdFolded) {
+    state.cmdFolded = true;
+    document.getElementById('cmd-bar').classList.add('folded');
+  }
+  cmdFoldLabel();
+  const radioBoxEl = document.getElementById('radio-box');
+  if (radioBoxEl) {
+    radioBoxEl.addEventListener('click', (e) => {
+      if (!window.matchMedia('(max-width: 900px)').matches) return;
+      if (e.target.closest && e.target.closest('button')) return;
+      window._toggleRadio();
+    });
   }
 
   let bannerT = null;
@@ -3094,6 +3193,24 @@
   // ============================================================================
   let lastT = performance.now();
   let perfStart = performance.now(), perfFrames = 0, perfAdjusted = 0;
+  // 3인칭 카메라 리그: 화면 종횡비에 따라 후진 거리·높이를 보정해
+  // 플레이어 전차가 상·하 HUD 사이의 빈 3D 시야 한가운데(세로 50~70% 영역)에 오도록 맞춘다.
+  let tpsRigCache = { w: 0, h: 0, d: 18.5, hh: 4.8 };
+  function tpsRig() {
+    const vw = window.innerWidth, vh = window.innerHeight;
+    if (tpsRigCache.w !== vw || tpsRigCache.h !== vh) {
+      const a = vw / Math.max(1, vh);
+      let d, hh;
+      if (a < 0.8) { d = 36.0; hh = 6.6; }          // 폰 세로: 멀리·조금 높게 → 전차가 세로 55~70%에
+      else if (a < 1.25) { d = 34.0; hh = 6.4; }    // 태블릿 세로
+      else if (a < 1.7) { d = 30.0; hh = 6.2; }     // 태블릿 가로/4:3 데스크톱
+      else { d = 34.0; hh = 6.4; }                  // 데스크톱/와이드
+      tpsRigCache = { w: vw, h: vh, d, hh };
+    }
+    const rig = state.zoom ? { d: 6.6, h: 3.2 } : { d: tpsRigCache.d, h: tpsRigCache.hh };
+    return window.__rigOverride || rig;
+  }
+
   function animate(now) {
     requestAnimationFrame(animate);
     const dt = Math.min(0.05, (now - lastT) / 1000); lastT = now; const tSec = now / 1000;
@@ -3249,7 +3366,8 @@
       const aimD = new THREE.Vector3(0, 0, -1).applyQuaternion(aimQ).normalize();
       const twp = new THREE.Vector3(); playerTurret.getWorldPosition(twp);
       if (state.camMode === 'tps') {
-        camera.position.lerp(twp.clone().addScaledVector(aimD, state.zoom?-6.6:-16.0).add(new THREE.Vector3(0, state.zoom?3.2:6.6, 0)), Math.min(1, dt*14));
+        const rig = tpsRig();
+        camera.position.lerp(twp.clone().addScaledVector(aimD, -rig.d).add(new THREE.Vector3(0, rig.h, 0)), Math.min(1, dt*14));
         camera.lookAt(twp.clone().addScaledVector(aimD, 75).add(new THREE.Vector3(0, 1.0, 0)));
       } else if (state.camMode === 'fps') {
         const fp = twp.clone().add(new THREE.Vector3(0, 1.95, 0)).addScaledVector(aimD, 3.4);
@@ -3588,6 +3706,33 @@
     renderer.render(scene, camera);
   }
   // 읽기 전용 검증 훅 (테스트/디버깅용 — 게임 상태를 바꾸지 않음)
+  window.__tankRect = () => {
+    // 플레이어 전차(차체+포탑)의 3D 바운딩 박스를 화면 좌표(px)로 투영 — HUD 겹침 실측용
+    // 월드 박스를 전차 로컬 좌표로 되돌린 뒤, 포신·안테나 등 부속을 잘라 차체 실루엣만 사용한다.
+    playerRoot.updateWorldMatrix(true, true);
+    const wb = new THREE.Box3().setFromObject(playerHullPivot);
+    const inv = new THREE.Matrix4().copy(playerRoot.matrixWorld).invert();
+    const lp = new THREE.Box3(); const t = new THREE.Vector3();
+    for (let i = 0; i < 8; i++) {
+      t.set(i & 1 ? wb.max.x : wb.min.x, i & 2 ? wb.max.y : wb.min.y, i & 4 ? wb.max.z : wb.min.z).applyMatrix4(inv);
+      lp.expandByPoint(t);
+    }
+    lp.min.x = Math.max(lp.min.x, -2.7); lp.max.x = Math.min(lp.max.x, 2.7);
+    lp.min.y = Math.max(lp.min.y, 0);    lp.max.y = Math.min(lp.max.y, 4.0);
+    lp.min.z = Math.max(lp.min.z, -5.8); lp.max.z = Math.min(lp.max.z, 5.8);
+    const v = new THREE.Vector3(); const xs = [], ys = []; let behind = 0;
+    for (let i = 0; i < 8; i++) {
+      v.set(i & 1 ? lp.max.x : lp.min.x, i & 2 ? lp.max.y : lp.min.y, i & 4 ? lp.max.z : lp.min.z)
+        .applyMatrix4(playerRoot.matrixWorld).project(camera);
+      if (v.z > 1) behind++;
+      xs.push((v.x * 0.5 + 0.5) * window.innerWidth); ys.push((-v.y * 0.5 + 0.5) * window.innerHeight);
+    }
+    const x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs), y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys);
+    return { x: +x0.toFixed(1), y: +y0.toFixed(1), w: +(x1 - x0).toFixed(1), h: +(y1 - y0).toFixed(1),
+             cx: +((x0 + x1) / 2).toFixed(1), cy: +((y0 + y1) / 2).toFixed(1), behind,
+             localBox: [+lp.min.x.toFixed(2), +lp.min.y.toFixed(2), +lp.min.z.toFixed(2), +lp.max.x.toFixed(2), +lp.max.y.toFixed(2), +lp.max.z.toFixed(2)],
+             camX: +camera.position.x.toFixed(1), camY: +camera.position.y.toFixed(1), camZ: +camera.position.z.toFixed(1), fov: +camera.fov.toFixed(1), mode: state.camMode };
+  };
   window.__v62 = () => ({
     rank: state.rank, stance: state.stance, camMode: state.camMode,
     allies: allies.filter(a => a.state === 'active').map(a => ({ x: +a.root.position.x.toFixed(1), z: +a.root.position.z.toFixed(1), c: a.company || 1, support: !!a.isSupport, slot: a._slot ? { x: +a._slot.x.toFixed(1), z: +a._slot.z.toFixed(1) } : null })),
