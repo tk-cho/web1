@@ -148,10 +148,10 @@
     position: fixed; left: 50%; top: calc(50% - 132px); transform: translateX(-50%) scale(0.86);
     font-size: 15px; font-weight: 900; letter-spacing: 1.2px; padding: 4px 14px; border-radius: 999px;
     color: #1a1205; background: linear-gradient(90deg, #fde68a, #fbbf24); border: 1px solid #fff7d6;
-    box-shadow: 0 0 22px rgba(251,191,36,0.7); opacity: 0; pointer-events: none; z-index: 22; transition: opacity 0.16s, transform 0.16s;
+    box-shadow: 0 0 22px rgba(251,191,36,0.7); opacity: 0; visibility: hidden; pointer-events: none; z-index: 22; transition: opacity 0.16s, transform 0.16s, visibility 0.16s;
     white-space: nowrap;
   }
-  #aps-badge.on { opacity: 1; transform: translateX(-50%) scale(1); }
+  #aps-badge.on { opacity: 1; visibility: visible; transform: translateX(-50%) scale(1); }
   #aps-badge.dry { background: linear-gradient(90deg, #fecdd3, #fb7185); color: #250509; box-shadow: 0 0 20px rgba(251,113,133,0.6); }
   #minimap-box { pointer-events: auto; cursor: pointer; padding: 6px; }
 
@@ -1098,8 +1098,8 @@
 <div id="overlay" class="modal-bg">
   <div class="modal">
     <div id="gift-banner" class="gift-ribbon"></div>
-    <div class="tag">대장님 연구 4호 · V7.1 실전 전차전 호흡 · 다단계 전선 에디션</div>
-    <h1 style="margin:6px 0 8px;">PROJECT CANON V7.1 : 실전 전차전 호흡 &amp; 다단계 전선</h1>
+    <div class="tag">대장님 연구 4호 · V7.2 전자전(APS·ECM) · 세부 제대 지휘 에디션</div>
+    <h1 style="margin:6px 0 8px;">PROJECT CANON V7.2 : 전자전 기갑전 &amp; 제대별 세부 지휘</h1>
     <p style="font-size:13px; color:#cbd5e1; line-height:1.55; margin:0 0 8px;">
       음향포를 걸어내고 <strong>실전 기갑 무장(철갑·고폭·유도·기관)</strong>으로 재편했습니다. 날아오는 적 대전차 탄두는 <strong>APS 요격탄</strong>이 공중에서 폭파하고,
       <strong>ECM 교란전파</strong>는 적 사통과 유도탄 락온을 무력화합니다. 대장은 <strong>전체 · 1·2·3중대 · 자주포</strong>를 골라 전진 돌격·엄폐 사격·좌우 우회·화력 집중·연막 후퇴를 따로 명할 수 있고,
@@ -4962,7 +4962,7 @@
     const R = RANKS[state.rank];
     const echelon = R.companies === 1 ? '1개 소대' : `${R.companies}개 중대`;
     const tag = document.getElementById('hud-mode-tag');
-    if (tag) tag.textContent = `CANON V7.1 · ${R.label} · ${state.phase ? state.phase + '/3 ' + PHASE_NAMES[state.phase - 1] : echelon}`;
+    if (tag) tag.textContent = `CANON V7.2 · ${R.label} · ${state.phase ? state.phase + '/3 ' + PHASE_NAMES[state.phase - 1] : echelon}`;
   }
   function spawnPhase(idx) {
     const P = phaseCfg()[idx] || { n: 4 };
