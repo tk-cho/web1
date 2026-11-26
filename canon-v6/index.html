@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>PROJECT CANON V7.2 — 전자전(APS·ECM) · 세부 제대 지휘 · 연구 4호</title>
+<title>PROJECT CANON V7.3 — 음성 지시(Voice Command) · 전자전(APS·ECM) · 세부 제대 지휘 · 연구 4호</title>
 <style>
   * { box-sizing: border-box; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
   html, body {
@@ -736,6 +736,60 @@
     #touch-fire .fire-sub { font-size: 7px; }
     #hud-frame .c { width: 20px; height: 20px; }
   }
+
+  /* ======================= V7.3 VOICE COMMAND (음성 지시) ======================= */
+  #voice-badge {
+    position: fixed; left: 50%; top: calc(10px + env(safe-area-inset-top, 0px)); transform: translateX(-50%);
+    display: none; align-items: center; gap: 6px; max-width: min(340px, 44vw); overflow: hidden;
+    padding: 3px 11px; border-radius: 999px; z-index: 21; pointer-events: none;
+    background: rgba(6, 15, 26, 0.88); border: 1px solid rgba(34, 211, 238, 0.5);
+    box-shadow: 0 0 16px rgba(34, 211, 238, 0.22), inset 0 0 10px rgba(34, 211, 238, 0.08);
+    color: #d7f6ff; font-size: 10.5px; font-weight: 800; letter-spacing: 0.3px; white-space: nowrap;
+  }
+  #voice-badge.on { display: flex; }
+  #voice-badge .vb-mic { width: 12px; height: 12px; color: #22d3ee; }
+  #voice-badge.listening .vb-mic { animation: vbMic 1.15s ease-in-out infinite; }
+  @keyframes vbMic { 0%, 100% { opacity: 1; color: #22d3ee; } 50% { opacity: 0.32; color: #a5f3fc; } }
+  #voice-badge.exec { border-color: rgba(251, 191, 36, 0.8); box-shadow: 0 0 18px rgba(251, 191, 36, 0.32); }
+  #voice-badge.exec .vb-mic { color: #fbbf24; }
+  #voice-badge.err { border-color: rgba(251, 113, 133, 0.8); box-shadow: 0 0 18px rgba(251, 113, 133, 0.32); color: #ffe4e6; }
+  #voice-badge.err .vb-mic { color: #fb7185; }
+  #vb-state { color: #a5f3fc; }
+  #voice-badge.exec #vb-state { color: #fde68a; }
+  #voice-badge.err #vb-state { color: #fecdd3; }
+  #vb-heard { color: #fde68a; font-weight: 800; overflow: hidden; text-overflow: ellipsis; max-width: 218px; }
+  #voice-badge:not(.exec) #vb-heard { color: #e2f6ff; opacity: 0.92; }
+  #voice-badge .vh-s { color: #67e8f9; }
+  #btn-voice.voice-on {
+    background: linear-gradient(180deg, rgba(8, 96, 132, 0.95), rgba(6, 66, 94, 0.95));
+    border-color: rgba(34, 211, 238, 0.9); color: #eafdff;
+    animation: vbBtn 1.5s ease-in-out infinite;
+  }
+  @keyframes vbBtn {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.45), inset 0 0 10px rgba(125, 224, 255, 0.25); }
+    55% { box-shadow: 0 0 0 5px rgba(34, 211, 238, 0.02), inset 0 0 14px rgba(125, 224, 255, 0.35); }
+  }
+  @media (max-width: 900px) {
+    /* 폰 세로: 지휘 바(펼침 147px)와 조준선 사이 빈 띠 — 상단 HUD·전차와 겹치지 않는다 */
+    #voice-badge {
+      left: 50%; right: auto; transform: translateX(-50%);
+      top: calc(280px + env(safe-area-inset-top, 0px));
+      max-width: min(330px, 92vw); font-size: 10px; padding: 2px 9px;
+    }
+    #vb-heard { max-width: 44vw; }
+    #hud-actions { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+    #btn-voice.voice-on { animation: none; box-shadow: 0 0 10px rgba(34, 211, 238, 0.55); }
+  }
+  @media (max-width: 1000px) and (max-height: 560px) and (orientation: landscape) {
+    /* 폰 가로: 무전 티커 아래 좌측 빈 칸 (지휘 바·배너·전차와 겹치지 않는다) */
+    #voice-badge {
+      left: 6px; right: auto; transform: none; justify-content: flex-start;
+      top: calc(90px + env(safe-area-inset-top, 0px));
+      max-width: 300px; font-size: 9.5px; padding: 2px 8px;
+    }
+    #vb-heard { max-width: 208px; }
+    #hud-actions { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+  }
 </style>
 </head>
 <body>
@@ -784,6 +838,7 @@
   <symbol id="i-terrain" viewBox="0 0 24 24"><path d="M2.4 18.6h19.2"/><path d="M3.6 18.6l5.2-8.4 3.2 4.6 2.6-3.6 5.8 7.4"/><path d="M15.4 6.2l1.4 2.4 2.6.4-1.9 1.9.5 2.7-2.6-1.4-2.6 1.4.5-2.7-1.9-1.9 2.6-.4z" opacity=".7"/></symbol>
   <symbol id="i-fire" viewBox="0 0 24 24"><path d="M12 2.4c3.4 3.2 5.4 6.4 5.4 9.8a5.4 5.4 0 1 1-10.8 0c0-1.8.7-3.3 1.9-4.7.4 1.4 1.2 2.3 2.1 2.5.7-2.6.6-5 1.4-7.6z"/><path d="M12 21.6a3.2 3.2 0 0 0 3.2-3.2c0-1.6-1.4-3.2-3.2-4.6-1.8 1.4-3.2 3-3.2 4.6A3.2 3.2 0 0 0 12 21.6z" opacity=".6"/></symbol>
   <symbol id="i-eye" viewBox="0 0 24 24"><path d="M1.8 12s3.8-6.2 10.2-6.2S22.2 12 22.2 12s-3.8 6.2-10.2 6.2S1.8 12 1.8 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9.1" y="2.4" width="5.8" height="11.4" rx="2.9"/><path d="M5.4 11.6a6.6 6.6 0 0 0 13.2 0"/><path d="M12 18.2v3.2M8.6 21.4h6.8"/></symbol>
 </defs></svg>
 <div id="canvas-wrap"></div>
 <div id="hud-frame" aria-hidden="true"><i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i></div>
@@ -836,6 +891,7 @@
 <div id="tac-feedback"></div>
 <div id="aps-badge">APS 요격!</div>
 <div id="banner-msg"></div>
+<div id="voice-badge" role="status" aria-live="polite"><svg class="ic vb-mic"><use href="#i-mic"/></svg><span id="vb-state">듣는 중…</span><span id="vb-heard"></span></div>
 
 <!-- V6.4 Full Battlefield Tactical Map -->
 <div id="big-map-overlay">
@@ -922,7 +978,7 @@
 <div id="hud">
   <!-- 1. Unit status -->
   <div id="hud-status" class="panel">
-    <div class="tag" id="hud-mode-tag">CANON V7.2 · 대대장 · 3개 중대</div>
+    <div class="tag" id="hud-mode-tag">CANON V7.3 · 대대장 · 3개 중대</div>
     <div class="row">
       <span>아군 <strong id="hud-allies" class="cyan">0</strong></span>
       <span>적전차 <strong id="hud-etanks" class="red">0</strong></span>
@@ -959,6 +1015,7 @@
     <button class="hud-btn" onclick="window._orderAllies()"><svg class="ic"><use href="#i-charge"/></svg><span class="lbl">아군돌격 [G]</span><span class="lbl2">돌격</span></button>
     <button class="hud-btn" onclick="window._toggleBigMap()"><svg class="ic"><use href="#i-map"/></svg><span class="lbl">전술맵 [M]</span><span class="lbl2">지도</span></button>
     <button class="hud-btn" onclick="window._openSettings()"><svg class="ic"><use href="#i-settings"/></svg><span class="lbl">설정</span><span class="lbl2">설정</span></button>
+    <button id="btn-voice" class="hud-btn" onclick="window._toggleVoice()" title="음성 지시 ON/OFF [O]"><svg class="ic"><use href="#i-mic"/></svg><span class="lbl">음성지시 [O]</span><span class="lbl2">음성</span></button>
     <button class="hud-btn gift-btn" onclick="window._openGiftModal()"><svg class="ic"><use href="#i-gift"/></svg><span class="lbl">선물</span></button>
   </div>
 
@@ -1061,12 +1118,13 @@
 
   <!-- 7. Keyboard hints -->
   <div id="hud-controls" class="panel controls">
-    <div class="tag" style="margin-bottom:3px;">V7.2 조종 — 차체·포탑 분리 제어 · APS/ECM 전자전 · 제대별 세부 지휘</div>
+    <div class="tag" style="margin-bottom:3px;">V7.3 음성 지시 — 말로 지휘하는 기갑전 · APS/ECM · 제대별 세부 지휘</div>
     • <b>차체</b> <kbd>W/A/S/D</kbd>·<kbd>↑←↓→</kbd> 주행·선회 · <kbd>Y</kbd> 터보 · <kbd>P</kbd> 자율기동<br>
     • <b>포탑</b> 마우스 이동(락온 후) 또는 드래그 · <kbd>Q</kbd><kbd>E</kbd> 선회 · <kbd>R</kbd><kbd>F</kbd> 고저 · <kbd>U</kbd> 안정화 · <kbd>Tab</kbd> 락온<br>
     • <kbd>1</kbd>철갑 · <kbd>2</kbd>고폭 · <kbd>3</kbd>유도 · <kbd>4</kbd>기관 · <kbd>C</kbd> APS 요격 · <kbd>I</kbd> ECM 교란 · <kbd>L</kbd> 연막수리<br>
     • <b>지휘</b> <kbd>Z</kbd> 쐐기 · <kbd>X</kbd> 횡대 · <kbd>B</kbd> 측면 · <kbd>N</kbd> 집중 · <kbd>H</kbd> 공격 · <kbd>J</kbd> 포격 · <kbd>K</kbd> CAS<br>
-    • 지휘소에서 <b>제대(전체·1·2·3·자주포) 선택 → 세부 명령</b> · 지도 <kbd>M</kbd>에서 제대 탭 = 해당 제대만 이동/집중 공격
+    • 지휘소에서 <b>제대(전체·1·2·3·자주포) 선택 → 세부 명령</b> · 지도 <kbd>M</kbd>에서 제대 탭 = 해당 제대만 이동/집중 공격<br>
+    • <b>음성</b> <kbd>O</kbd> 음성지시 ON — "발사" · "교란 전파" · "1중대 우측 우회" · "포격" · "3인칭"
   </div>
 
   <!-- 8. Radar -->
@@ -1110,14 +1168,16 @@
 <div id="overlay" class="modal-bg">
   <div class="modal">
     <div id="gift-banner" class="gift-ribbon"></div>
-    <div class="tag">대장님 연구 4호 · V7.2 전자전(APS·ECM) · 세부 제대 지휘 에디션</div>
-    <h1 style="margin:6px 0 8px;">PROJECT CANON V7.2 : 전자전 기갑전 &amp; 제대별 세부 지휘</h1>
+    <div class="tag">대장님 연구 4호 · V7.3 음성 지시(Voice Command) · 전자전(APS·ECM) 에디션</div>
+    <h1 style="margin:6px 0 8px;">PROJECT CANON V7.3 : 음성 지시 기갑전 &amp; 제대별 세부 지휘</h1>
     <p style="font-size:13px; color:#cbd5e1; line-height:1.55; margin:0 0 8px;">
-      음향포를 걸어내고 <strong>실전 기갑 무장(철갑·고폭·유도·기관)</strong>으로 재편했습니다. 날아오는 적 대전차 탄두는 <strong>APS 요격탄</strong>이 공중에서 폭파하고,
+      이제 <strong>말로 지휘합니다</strong> — <strong>"발사"·"철갑"·"교란 전파"·"1중대 우측 우회"·"포격"·"3인칭"</strong>처럼 말하면 즉시 실행됩니다.
+      음향포 대신 <strong>실전 기갑 무장(철갑·고폭·유도·기관)</strong>을 쓰고, 날아오는 적 대전차 탄두는 <strong>APS 요격탄</strong>이 공중에서 폭파하며
       <strong>ECM 교란전파</strong>는 적 사통과 유도탄 락온을 무력화합니다. 대장은 <strong>전체 · 1·2·3중대 · 자주포</strong>를 골라 전진 돌격·엄폐 사격·좌우 우회·화력 집중·연막 후퇴를 따로 명할 수 있고,
       지휘 부감·전술 지도에서 제대를 고른 뒤 지점을 탭하면 그 제대만 기동합니다. V7.0의 PBR 전장과 V7.1의 장갑·도탄·재장전·3단계 전선은 그대로입니다.
     </p>
     <div class="badge-strip">
+      <span class="v6-badge"><svg class="ic sm"><use href="#i-mic"/></svg> 음성 지시(ko-KR)</span>
       <span class="v6-badge"><svg class="ic sm"><use href="#i-gun"/></svg> 120mm 철갑·고폭 실전 무장</span>
       <span class="v6-badge"><svg class="ic sm"><use href="#i-aps"/></svg> APS 능동방어 요격</span>
       <span class="v6-badge"><svg class="ic sm"><use href="#i-ecm"/></svg> ECM 교란전파</span>
@@ -1142,7 +1202,7 @@
     <p style="font-size:12px; color:#fbbf24; margin:0 0 4px;">아군 편성은 지휘 계급이 결정합니다 — 전차장(1개 소대) · 대대장(3개 중대+포병) · 사단장(전차대대+기계화+포병대대+CAS). 출격 후 HUD 지휘소에서 전환하십시오.</p>
     <p id="modal-result" style="display:none; font-size:15px; font-weight:800;"></p>
     <button id="btn-start" class="btn-start"><svg class="ic lg"><use href="#i-engine"/></svg> 기동전투 엔진 가동 · 연구 4호 전면전 출격</button>
-    <button class="btn-gift-open" onclick="window._openGiftModal()"><svg class="ic"><use href="#i-gift"/></svg> V7.2 선물용 HTML 생성</button>
+    <button class="btn-gift-open" onclick="window._openGiftModal()"><svg class="ic"><use href="#i-gift"/></svg> V7.3 선물용 HTML 생성</button>
   </div>
 </div>
 
@@ -1164,7 +1224,7 @@
 <div id="gift-modal" class="modal-bg" style="display:none; z-index:75;">
   <div class="modal" style="max-width:520px;">
     <div class="tag">GIFT PACKAGING ENGINE · 1-FILE STANDALONE</div>
-    <h2 style="margin:6px 0 8px;"><svg class="ic lg"><use href="#i-gift"/></svg> V7.2 선물용 맞춤 게임 만들기</h2>
+    <h2 style="margin:6px 0 8px;"><svg class="ic lg"><use href="#i-gift"/></svg> V7.3 선물용 맞춤 게임 만들기</h2>
     <p style="font-size:12.5px; color:#cbd5e1;">받는 분 이름과 메시지를 입력하시면 외부 파일 없이 V7.0 전체가 담긴 단일 HTML 파일이 생성됩니다.</p>
     <label style="font-size:12px; color:#94a3b8;">보내는 사람</label>
     <input id="gift-from" class="inp" value="대장님">
@@ -4000,7 +4060,7 @@
       if (key === 'battalion') setTimeout(() => comms.say('대대 포병지원반', '대대장 지휘 계통 접속. 155mm 화력 지원 대기.', { prio: true }), 2200);
       if (key === 'division') setTimeout(() => comms.say('사단 포병대대', '사단장 지휘 계통 접속. 포병대대·기계화·CAS 전력 배속 완료.', { prio: true }), 2200);
     } else {
-      document.getElementById('hud-mode-tag').textContent = `CANON V7.2 · ${R.label} 지휘`;
+      document.getElementById('hud-mode-tag').textContent = `CANON V7.3 · ${R.label} 지휘`;
     }
   };
 
@@ -4494,7 +4554,7 @@
       ctx.fillStyle = 'rgba(6,14,24,0.94)'; ctx.fillRect(12, state.tacH - 32, tw, 24);
       ctx.strokeStyle = 'rgba(56,189,248,0.32)'; ctx.strokeRect(12, state.tacH - 32, tw, 24);
       ctx.fillStyle = '#7dd3fc'; ctx.font = '800 9.5px Consolas, monospace'; ctx.textAlign = 'left';
-      ctx.fillText('PROJECT CANON V7.2 · 작전구역 380×350m · GRID 50m · 등고 0.75m', 19, state.tacH - 16);
+      ctx.fillText('PROJECT CANON V7.3 · 작전구역 380×350m · GRID 50m · 등고 0.75m', 19, state.tacH - 16);
     }
     ctx.restore();
     // 아군 포병 사거리 / CAS 범위
@@ -4975,7 +5035,7 @@
     const R = RANKS[state.rank];
     const echelon = R.companies === 1 ? '1개 소대' : `${R.companies}개 중대`;
     const tag = document.getElementById('hud-mode-tag');
-    if (tag) tag.textContent = `CANON V7.2 · ${R.label} · ${state.phase ? state.phase + '/3 ' + PHASE_NAMES[state.phase - 1] : echelon}`;
+    if (tag) tag.textContent = `CANON V7.3 · ${R.label} · ${state.phase ? state.phase + '/3 ' + PHASE_NAMES[state.phase - 1] : echelon}`;
   }
   function spawnPhase(idx) {
     const P = phaseCfg()[idx] || { n: 4 };
@@ -5092,7 +5152,7 @@
     state.ecmActive = 0; state.ecmCd = 0; state.ecmLocks = 0;
     state.jetSpawnTimer = 5.5; state.droneSpawnTimer = 3.5;
     const echelon = R.companies === 1 ? '1개 소대' : `${R.companies}개 중대`;
-    document.getElementById('hud-mode-tag').textContent = `CANON V7.2 · ${R.label} · ${echelon}`;
+    document.getElementById('hud-mode-tag').textContent = `CANON V7.3 · ${R.label} · ${echelon}`;
     document.getElementById('hud-echelon').textContent = echelon + (R.ifv ? ' + 기계화' : '');
     updateDriveUI();
     updateCmdUI();
@@ -5489,6 +5549,7 @@
     if (e.code === 'Tab') window._snapTarget();
     if (e.code === 'KeyV') window._setCameraMode(state.camMode==='tps'?'fps':(state.camMode==='fps'?'top':(state.camMode==='top'?'cmd':'tps')));
     if (e.code === 'KeyM') window._toggleBigMap();
+    if (e.code === 'KeyO') window._toggleVoice();
     if (e.code === 'Escape' && state.bigMapOpen) window._toggleBigMap(false);
     if (e.code === 'KeyT') window._toggleAutoDef();
     if (e.code === 'KeyP') window._toggleAutoDrive();
@@ -6704,6 +6765,302 @@
     return projectiles.filter(p => !p.fromAlly && p.guided).length;
   };
   window.__cmdBtn = (sel) => { const b = document.querySelector(sel); if (b) b.click(); return !!b; };
+
+  // ============================================================================
+  // V7.3 음성 지시 (VOICE COMMAND) — Web Speech API(ko-KR) 자연어 명령 엔진
+  //   · interimResults 단계에서 발사/쏴/사격/격발 즉시 발사 (700ms 디바운스)
+  //   · 제대(1·2·3중대·자주포·전체) × 세부 명령(돌격·엄폐·우회·화력집중·연막후퇴)
+  //   · 무장·APS·ECM·포격·CAS·태세·시점·계급·전술지도까지 음성으로 지휘
+  // ============================================================================
+  const V73 = {
+    on: false, listening: false, manualStop: false, denied: false, rec: null,
+    lastFire: 0, lastFireText: '', lastFireAt: 0, restartT: 0, badgeT: 0, badgeLock: 0,
+    lastHeard: '', lastExec: '', history: [], speechMuted: false, prevVoiceOn: true, interim: ''
+  };
+  const voiceNorm = (s) => String(s || '').toLowerCase().replace(/[^0-9a-z가-힣]/g, '');
+  const VOICE_FIRE_RE = /(발사|쏴|쏘아|사격|격발)/;
+  const VOICE_CTX_RE = /(엄폐|집중|화력|우회|돌격|전진|후퇴|연막|포격|항공|폭격|개시|중대|자주포|전체|교란|방어|능동|철갑|고폭|유도|기관)/;
+  const V73R = (label, id, run) => ({ label, id, run });
+  const voiceSR = () => window.SpeechRecognition || window.webkitSpeechRecognition || null;
+
+  // ---- 한국어 자연어 → 명령 매핑 (앞쪽 규칙이 우선) ----
+  function voiceParse(t) {
+    // 1) 시점 · 지도
+    if (/(1인칭|일인칭)/.test(t)) return V73R('1인칭 시점', 'cam-fps', () => window._setCameraMode('fps'));
+    if (/(3인칭|삼인칭)/.test(t)) return V73R('3인칭 시점', 'cam-tps', () => window._setCameraMode('tps'));
+    if (/(탑뷰|탑시점|톱뷰|위에서본|상공시점)/.test(t)) return V73R('탑뷰', 'cam-top', () => window._setCameraMode('top'));
+    if (/(지휘부감|부감|지휘시점)/.test(t)) return V73R('지휘 부감', 'cam-cmd', () => window._setCameraMode('cmd'));
+    if (/(전술지도|전장지도|지도|맵)/.test(t)) return V73R('전술 지도 열기', 'map', () => window._toggleBigMap(true));
+    // 2) 지휘 계급
+    if (/사단장/.test(t)) return V73R('사단장 계급 전환', 'rank-division', () => window._setRank('division'));
+    if (/대대장/.test(t)) return V73R('대대장 계급 전환', 'rank-battalion', () => window._setRank('battalion'));
+    if (/전차장/.test(t)) return V73R('전차장 계급 전환', 'rank-tank', () => window._setRank('tank'));
+    // 3) 전술 태세
+    if (/(쐐기|쇄기)/.test(t)) return V73R('전술 태세 · 쐐기 돌파', 'stance-wedge', () => window._setStance('wedge'));
+    if (/횡대/.test(t)) return V73R('전술 태세 · 횡대 방어', 'stance-line', () => window._setStance('line'));
+    if (/포위/.test(t)) return V73R('전술 태세 · 측면 포위', 'stance-flank', () => window._setStance('flank'));
+    if (/(집중화력|화력태세)/.test(t)) return V73R('전술 태세 · 집중 화력', 'stance-focus', () => window._setStance('focus'));
+    // 4) 지휘 · 지원
+    if (/(집중포격|포격|화력지원|포병지원)/.test(t)) return V73R('집중 포격', 'artillery', () => window._callArtillery());
+    if (/(항공지원|근접지원|폭격|항공)/.test(t)) return V73R('항공 지원(CAS)', 'cas', () => window._callCAS());
+    if (/(공격개시|공격시작|총공격)/.test(t)) return V73R('공격 개시', 'attack', () => window._orderAttack());
+    // 5) 무장
+    if (/철갑/.test(t)) return V73R('철갑탄 장전', 'wpn-ap', () => window._setWeapon('ap'));
+    if (/고폭/.test(t)) return V73R('고폭탄 장전', 'wpn-heat', () => window._setWeapon('heat'));
+    if (/(유도탄|유도|미사일)/.test(t)) return V73R('유도탄 장전', 'wpn-missile', () => window._setWeapon('missile'));
+    if (/(기관포|기관)/.test(t)) return V73R('기관포 장전', 'wpn-mg', () => window._setWeapon('mg'));
+    // 6) 제대 대상 파싱
+    let tgt = null;
+    if (/(1중대|일중대|한중대|첫째중대)/.test(t)) tgt = '1';
+    else if (/(2중대|이중대|둘째중대)/.test(t)) tgt = '2';
+    else if (/(3중대|삼중대|셋째중대)/.test(t)) tgt = '3';
+    else if (/(자주포|자주포대)/.test(t)) tgt = 'arty';
+    else if (/(전체|전부대|전중대|모든중대)/.test(t)) tgt = 'all';
+    const tname = (k) => k === 'all' ? '전 부대' : (k === 'arty' ? '자주포대' : `${k}중대`);
+    // 7) 제대별 세부 지시 (대상 + 행동)
+    {
+      const ACTS = [
+        ['retreat', /(연막후퇴|후퇴|철수)/, '연막·후퇴'],
+        ['right', /(우측우회|오른쪽우회|우우회)/, '우측 우회'],
+        ['left', /(좌측우회|왼쪽우회|좌우회)/, '좌측 우회'],
+        ['overwatch', /(엄폐|홀드|홀딩)/, '엄폐 사격'],
+        ['assault', /(돌격|전진|진격)/, '전진 돌격'],
+        ['focus', /(화력집중|집중사격|집중공격|집중)/, '화력 집중']
+      ];
+      let ord = null, label = null;
+      for (const [k, re, lbl] of ACTS) { if (re.test(t)) { ord = k; label = lbl; break; } }
+      // "1중대 방어" = 해당 제대 엄폐 사격 (능동방어/APS가 아님)
+      if (!ord && tgt && /방어/.test(t) && !/능동|aps|에이피에스/.test(t)) { ord = 'overwatch'; label = '엄폐 사격'; }
+      if (ord) {
+        const key = tgt || (['all', '1', '2', '3', 'arty', 'sup'].includes(state.cmdTarget) ? state.cmdTarget : 'all');
+        return V73R(`${tname(key)} · ${label}`, 'squad-' + ord, () => {
+          window._setCmdTarget(key);
+          window._issueSquadOrder(ord);
+        });
+      }
+      if (tgt) return V73R(`${tname(tgt)} 지시 대상`, 'target-' + tgt, () => window._setCmdTarget(tgt));
+    }
+    // 8) 방어 · 전자전
+    if (/(능동방어|능동|에이피에스|aps|방어)/.test(t)) return V73R('APS 능동방어 전개', 'aps', () => window._triggerAPS(false));
+    if (/(교란전파|교란|전자전|재밍|재머)/.test(t)) return V73R('ECM 교란 전파', 'ecm', () => window._triggerECM());
+    // 9) 연막 · 수리
+    if (/(연막|수리|정비)/.test(t)) return V73R('연막 살포 · 장갑 수리', 'smoke', () => window._triggerSmoke());
+    // 10) 사격
+    if (VOICE_FIRE_RE.test(t)) return V73R('발사', 'fire', () => firePlayerWeapon());
+    return null;
+  }
+
+  // ---- 배지 ----
+  function voiceBadge(mode, main, heard) {
+    const el = document.getElementById('voice-badge');
+    if (!el) return;
+    el.classList.add('on');
+    el.classList.toggle('listening', mode === 'listen');
+    el.classList.toggle('exec', mode === 'exec');
+    el.classList.toggle('err', mode === 'err');
+    const st = document.getElementById('vb-state'), hd = document.getElementById('vb-heard');
+    if (st) st.textContent = main || '';
+    if (hd) hd.textContent = heard || '';
+  }
+  function voiceBadgeOff() {
+    const el = document.getElementById('voice-badge');
+    if (el) el.classList.remove('on', 'listening', 'exec', 'err');
+  }
+  function voiceIdleBadge() {
+    if (V73.on) voiceBadge('listen', '듣는 중…', V73.interim ? `"${V73.interim}"` : '');
+    else voiceBadgeOff();
+  }
+  function voiceBtnUI() {
+    const b = document.getElementById('btn-voice');
+    if (b) b.classList.toggle('voice-on', !!V73.on);
+  }
+  function voiceFeedback(raw, label) {
+    V73.lastExec = label;
+    V73.badgeLock = performance.now() + 1900;
+    voiceBadge('exec', '음성 명령 실행', `"${raw}" → ${label}`);
+    clearTimeout(V73.badgeT);
+    V73.badgeT = setTimeout(() => { V73.interim = ''; voiceIdleBadge(); }, 1900);
+    pushRadioLog('음성', `"${raw}" → ${label}`, false);
+  }
+  function voiceUnknown(raw) {
+    V73.badgeLock = performance.now() + 1300;
+    voiceBadge('exec', '인식됨 · 명령 없음', `"${raw}"`);
+    clearTimeout(V73.badgeT);
+    V73.badgeT = setTimeout(() => { V73.interim = ''; voiceIdleBadge(); }, 1300);
+  }
+
+  // ---- 명령 처리 (interim = 즉시 사격 / final = 전체 파싱) ----
+  function voiceHandle(raw, isFinal) {
+    const t = voiceNorm(raw);
+    if (!t) return null;
+    if (!isFinal) {
+      V73.interim = String(raw).trim();
+      if (performance.now() >= V73.badgeLock) voiceBadge('listen', '듣는 중…', `"${V73.interim}"`);
+      // 즉각 사격: interim 단계에서 감지 즉시 발사 (700ms 디바운스)
+      if (VOICE_FIRE_RE.test(t) && !VOICE_CTX_RE.test(t) && t.length <= 8) {
+        const now = performance.now();
+        if (now - V73.lastFire >= 700) {
+          V73.lastFire = now; V73.lastFireAt = now; V73.lastFireText = t;
+          V73.lastHeard = V73.interim;
+          firePlayerWeapon();
+          V73.history.push({ text: V73.interim, id: 'fire', label: '발사', final: false, at: Date.now() });
+          voiceFeedback(V73.interim, '발사');
+          return 'fire';
+        }
+      }
+      return null;
+    }
+    V73.lastHeard = String(raw).trim();
+    V73.interim = '';
+    // interim에서 이미 발사한 명령은 final에서 중복 실행하지 않는다
+    if (V73.lastFireText === t && performance.now() - V73.lastFireAt < 2500) {
+      V73.history.push({ text: V73.lastHeard, id: 'fire-dup', label: '발사(중복 차단)', final: true, at: Date.now() });
+      if (performance.now() >= V73.badgeLock) voiceIdleBadge();
+      return 'fire-dup';
+    }
+    const rule = voiceParse(t);
+    if (!rule) {
+      V73.history.push({ text: V73.lastHeard, id: 'unknown', label: '명령 없음', final: true, at: Date.now() });
+      voiceUnknown(V73.lastHeard);
+      return null;
+    }
+    try { rule.run(); } catch (err) { console.warn('[voice]', err); }
+    V73.history.push({ text: V73.lastHeard, id: rule.id, label: rule.label, final: true, at: Date.now() });
+    voiceFeedback(V73.lastHeard, rule.label);
+    return rule.id;
+  }
+
+  // ---- 인식기 시작/정지 ----
+  function voiceRestoreTTS() {
+    if (!V73.speechMuted) return;
+    audio.voiceOn = V73.prevVoiceOn;
+    const cb = document.getElementById('chk-voice');
+    if (cb) cb.checked = !!V73.prevVoiceOn;
+    V73.speechMuted = false;
+  }
+  function voiceStart() {
+    if (V73.on) return true;
+    try { audio.init(); } catch (_) {}
+    const SR = voiceSR();
+    if (!SR) {
+      V73.denied = false;
+      voiceBadge('err', '음성 인식 미지원', '이 브라우저는 음성 인식을 지원하지 않습니다');
+      showBanner('음성 인식이 지원되지 않거나 마이크 권한이 필요합니다', '#fb7185', 'warn');
+      pushRadioLog('음성', '이 브라우저는 음성 인식을 지원하지 않습니다 — Chrome·삼성 인터넷을 권장합니다', false);
+      voiceBtnUI();
+      return false;
+    }
+    let rec = null;
+    try { rec = new SR(); } catch (err) {
+      voiceBadge('err', '음성 인식 시작 실패', String(err && err.message || err));
+      showBanner('음성 인식이 지원되지 않거나 마이크 권한이 필요합니다', '#fb7185', 'warn');
+      return false;
+    }
+    rec.lang = 'ko-KR';
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.maxAlternatives = 3;
+    rec.onstart = () => {
+      V73.listening = true;
+      if (V73.on) voiceBadge('listen', '듣는 중…', '');
+      voiceBtnUI();
+    };
+    rec.onresult = (e) => {
+      let interim = '', final = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const r = e.results[i];
+        const txt = r[0] ? r[0].transcript : '';
+        if (r.isFinal) final += txt + ' '; else interim += txt;
+      }
+      if (interim.trim()) voiceHandle(interim.trim(), false);
+      if (final.trim()) voiceHandle(final.trim(), true);
+    };
+    rec.onerror = (e) => {
+      const err = (e && e.error) || '';
+      if (err === 'not-allowed' || err === 'service-not-allowed' || err === 'audio-capture') {
+        V73.denied = true; V73.on = false; V73.manualStop = true; V73.listening = false;
+        voiceRestoreTTS(); voiceBtnUI();
+        voiceBadge('err', '마이크 권한 필요', '브라우저에서 마이크를 허용해 주십시오');
+        showBanner('음성 인식이 지원되지 않거나 마이크 권한이 필요합니다', '#fb7185', 'warn');
+        pushRadioLog('음성', '마이크 권한이 거부되었습니다 — 주소창 자물쇠에서 마이크 허용 후 [음성]을 다시 누르십시오', false);
+      } else if (err === 'network') {
+        voiceBadge('err', '음성 서비스 연결 실패', '잠시 후 자동 재시도');
+      } else if (err === 'no-speech' || err === 'aborted') {
+        /* 무시 — onend가 자동 재시작한다 */
+      } else {
+        voiceBadge('err', `음성 인식 오류(${err || 'unknown'})`, '다시 시도합니다');
+      }
+    };
+    rec.onend = () => {
+      V73.listening = false;
+      if (V73.on && !V73.manualStop && !V73.denied) {
+        clearTimeout(V73.restartT);
+        V73.restartT = setTimeout(() => {
+          if (V73.on && !V73.listening) { try { V73.rec.start(); } catch (_) {} }
+        }, 320);
+      } else if (!V73.on) {
+        voiceBadgeOff();
+      }
+    };
+    V73.rec = rec; V73.on = true; V73.manualStop = false; V73.denied = false;
+    // 게임 무전 TTS가 마이크로 되먹임되어 명령을 오인하는 것을 막는다 (음성 OFF 시 원복)
+    V73.prevVoiceOn = audio.voiceOn !== false;
+    if (audio.voiceOn !== false) {
+      audio.voiceOn = false; V73.speechMuted = true;
+      const cb = document.getElementById('chk-voice');
+      if (cb) cb.checked = false;
+    }
+    try {
+      rec.start();
+    } catch (err) {
+      V73.on = false; V73.manualStop = true; V73.listening = false;
+      voiceRestoreTTS(); voiceBtnUI();
+      voiceBadge('err', '음성 인식 시작 실패', String(err && err.message || err));
+      showBanner('음성 인식이 지원되지 않거나 마이크 권한이 필요합니다', '#fb7185', 'warn');
+      return false;
+    }
+    voiceBtnUI();
+    voiceBadge('listen', '듣는 중…', '');
+    showBanner('음성 지시 ON — "발사" · "교란 전파" · "1중대 우측 우회" 처럼 말하십시오', '#22d3ee', 'mic');
+    comms.say('본부', '음성 지휘 체계 접속. 대장님 육성 명령을 직접 수신합니다.', { voice: false });
+    return true;
+  }
+  function voiceStop() {
+    V73.on = false; V73.manualStop = true; V73.listening = false; V73.interim = '';
+    clearTimeout(V73.restartT); clearTimeout(V73.badgeT);
+    try { if (V73.rec) V73.rec.stop(); } catch (_) {}
+    try { if (V73.rec && V73.rec.abort) V73.rec.abort(); } catch (_) {}
+    V73.rec = null;
+    voiceRestoreTTS();
+    voiceBtnUI();
+    voiceBadgeOff();
+    if (state.running) comms.say('본부', '음성 지휘 체계 해제. 무전 음성 복귀.', { voice: false });
+    return false;
+  }
+  window._toggleVoice = (force) => {
+    const want = typeof force === 'boolean' ? force : !V73.on;
+    return want ? voiceStart() : voiceStop();
+  };
+  // ---- 검증 훅 (읽기 전용 + 직접 명령 주입) ----
+  window.__v73 = () => {
+    const b = document.getElementById('voice-badge');
+    const btn = document.getElementById('btn-voice');
+    const br = b ? b.getBoundingClientRect() : null;
+    const tr = btn ? btn.getBoundingClientRect() : null;
+    return {
+      supported: !!voiceSR(), on: V73.on, listening: V73.listening, denied: V73.denied,
+      lastHeard: V73.lastHeard, lastExec: V73.lastExec, ttsVoiceOn: audio.voiceOn,
+      history: V73.history.slice(-14),
+      badge: b ? { on: b.classList.contains('on'), display: getComputedStyle(b).display, text: b.textContent.trim(),
+                   rect: { x: +br.x.toFixed(1), y: +br.y.toFixed(1), w: +br.width.toFixed(1), h: +br.height.toFixed(1) } } : null,
+      btn: btn ? { voiceOn: btn.classList.contains('voice-on'),
+                   rect: { x: +tr.x.toFixed(1), y: +tr.y.toFixed(1), w: +tr.width.toFixed(1), h: +tr.height.toFixed(1) } } : null,
+      hudActionsCols: getComputedStyle(document.getElementById('hud-actions')).gridTemplateColumns,
+      commsRadio: [].slice.call(document.querySelectorAll('#radio-log .rl')).map(r => r.textContent)
+    };
+  };
+  window.__voiceSay = (text, isFinal = true) => voiceHandle(text, isFinal);
+  window.__voiceParse = (text) => { const r = voiceParse(voiceNorm(text)); return r ? { id: r.id, label: r.label } : null; };
 
   window.__emojiScan = () => {
     const hits = [];
