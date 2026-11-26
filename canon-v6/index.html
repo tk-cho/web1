@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>PROJECT CANON V7.0 — PBR 전장 · 파티클 이펙트 · 관제 HUD · 연구 4호</title>
+<title>PROJECT CANON V7.1 — 실전 전차전 호흡 · 다단계 전선 · 연구 4호</title>
 <style>
   * { box-sizing: border-box; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
   html, body {
@@ -152,6 +152,9 @@
   .cb.atk:hover { background: rgba(90, 26, 38, 0.92); }
   .cb:disabled { opacity: 0.42; cursor: not-allowed; }
   .cb.locked { opacity: 0.5; }
+  .hud-btn.reloading { filter: grayscale(0.55); opacity: 0.66; }
+  #reload-ring { transition: opacity 0.15s; }
+  #reload-txt { paint-order: stroke; stroke: rgba(2, 10, 20, 0.88); stroke-width: 3px; stroke-linejoin: round; }
   body.cmd-view #reticle-wrap, body.cmd-view #beat-feedback { display: none; }
   #minimap-canvas { width: 210px; height: 210px; display: block; background: rgba(2,10,20,0.93); border: 1.5px solid rgba(56,189,248,0.6); border-radius: 7px; }
 
@@ -517,7 +520,7 @@
   }
 
   /* ============================================================================
-     V7.0 — 관제기 스타일 다크 글래스 HUD · 모바일 컨트롤 리디자인
+     V7.1 — 다단계 전선(선봉→본대→역습) · 부위별 장갑/도탄 · 재장전 링
      ============================================================================ */
   #hud-frame { position: fixed; inset: 0; pointer-events: none; z-index: 6; }
   #hud-frame .c { position: absolute; width: 30px; height: 30px; }
@@ -726,6 +729,12 @@
     <circle cx="0" cy="0" r="98" fill="none" stroke="rgba(56,189,248,0.3)" stroke-width="1.5" stroke-dasharray="10 6"/>
     <circle id="rhythm-ring" cx="0" cy="0" r="88" fill="none" stroke="#fbbf24" stroke-width="3.2" opacity="0"/>
     <circle id="lock-ring" cx="0" cy="0" r="32" fill="none" stroke="#22d3ee" stroke-width="2"/>
+    <!-- V7.1 주포 재장전 진행 링 (12시 방향부터 채워진다) -->
+    <circle id="reload-ring" cx="0" cy="0" r="110" fill="none" stroke="#fbbf24" stroke-width="6.5"
+            stroke-linecap="round" stroke-dasharray="691.2" stroke-dashoffset="691.2"
+            transform="rotate(-90)" opacity="0"/>
+    <text id="reload-txt" x="0" y="82" text-anchor="middle" fill="#fcd34d" font-size="14" font-weight="bold"
+          font-family="Consolas, monospace" opacity="0">장전 3.4s</text>
     <line x1="-110" y1="0" x2="-40" y2="0" stroke="#38bdf8" stroke-width="1.5"/>
     <line x1="40" y1="0" x2="110" y2="0" stroke="#38bdf8" stroke-width="1.5"/>
     <line x1="0" y1="-110" x2="0" y2="-40" stroke="#38bdf8" stroke-width="1.5"/>
@@ -806,7 +815,7 @@
 <div id="hud">
   <!-- 1. Unit status -->
   <div id="hud-status" class="panel">
-    <div class="tag" id="hud-mode-tag">CANON V7.0 · 대대장 · 3개 중대</div>
+    <div class="tag" id="hud-mode-tag">CANON V7.1 · 대대장 · 3개 중대</div>
     <div class="row">
       <span>아군 <strong id="hud-allies" class="cyan">0</strong></span>
       <span>적전차 <strong id="hud-etanks" class="red">0</strong></span>
@@ -916,7 +925,7 @@
 
   <!-- 7. Keyboard hints -->
   <div id="hud-controls" class="panel controls">
-    <div class="tag" style="margin-bottom:3px;">V7.0 조종 — 차체·포탑 분리 제어 · 전술 지도 · 계급·태세 지시</div>
+    <div class="tag" style="margin-bottom:3px;">V7.1 조종 — 차체·포탑 분리 제어 · 다단계 전선 · 계급·태세 지시</div>
     • <b>차체</b> <kbd>W/A/S/D</kbd>·<kbd>↑←↓→</kbd> 주행·선회 · <kbd>Y</kbd> 터보 · <kbd>P</kbd> 자율기동<br>
     • <b>포탑</b> 마우스 이동(락온 후) 또는 드래그 · <kbd>Q</kbd><kbd>E</kbd> 선회 · <kbd>R</kbd><kbd>F</kbd> 고저 · <kbd>U</kbd> 안정화 · <kbd>Tab</kbd> 락온<br>
     • <kbd>Z</kbd> 쐐기 · <kbd>X</kbd> 횡대 · <kbd>B</kbd> 측면 · <kbd>N</kbd> 집중 화력 · <kbd>H</kbd> 공격 개시<br>
@@ -965,8 +974,8 @@
 <div id="overlay" class="modal-bg">
   <div class="modal">
     <div id="gift-banner" class="gift-ribbon"></div>
-    <div class="tag">대장님 연구 4호 · V7.0 PBR 전장 · 파티클 이펙트 · 관제 HUD 에디션</div>
-    <h1 style="margin:6px 0 8px;">PROJECT CANON V7.0 : 리얼 PBR 전장 &amp; 관제 HUD</h1>
+    <div class="tag">대장님 연구 4호 · V7.1 실전 전차전 호흡 · 다단계 전선 에디션</div>
+    <h1 style="margin:6px 0 8px;">PROJECT CANON V7.1 : 실전 전차전 호흡 &amp; 다단계 전선</h1>
     <p style="font-size:13px; color:#cbd5e1; line-height:1.55; margin:0 0 8px;">
       V7.0은 전장을 <strong>절차적 PBR 텍스처와 파티클 이펙트</strong>로 다시 지었습니다. 흙·마른풀·자갈이 섞인 지형, 균열과 흙먼지가 밴 전술 도로,
       완만한 다중 능선과 대기 원근의 산맥, 위장막 막사·콘크리트 벙커·레이더 돔, K2식 위장 도장과 금속 반사까지 실제 기갑 전장의 질감입니다.
@@ -3185,11 +3194,13 @@
       strafeTimer: 2.5 + Math.random() * 4,
       dustTimer: Math.random() * 0.3,
       baseFreq: (12 * (cfg.rpm || 1350)) / 120,
-      hp: cfg.isBoss ? 240 : (isAlly ? 135 : 105),
-      maxHp: cfg.isBoss ? 240 : (isAlly ? 135 : 105),
+      hp: cfg.isBoss ? V71.hp.boss : (isAlly ? V71.hp.ally : V71.hp.enemy),
+      maxHp: cfg.isBoss ? V71.hp.boss : (isAlly ? V71.hp.ally : V71.hp.enemy),
       stress: 0, onFire: false, state: 'active',
       fireCd: 1.4 + Math.random() * 4.5, isBoss: !!cfg.isBoss,
-      recoil: 0, recoilDir: fwd, gunElev: 0, speed: 0, talkTimer: 3 + Math.random() * 8
+      recoil: 0, recoilDir: fwd, gunElev: 0, speed: 0, talkTimer: 3 + Math.random() * 8,
+      aiMode: 'advance', aiTimer: 2 + Math.random() * 4, turretAim: isAlly ? 0 : Math.PI,
+      holdTimer: 0, smokePuff: false, lastZone: null
     };
     hitbox.userData = { unit: u, isEnemyTank: !isAlly };
     if (isAlly) { u.company = cfg.company || 1; allies.push(u); } else enemies.push(u);
@@ -3244,10 +3255,10 @@
       isAlly: true, isSupport: true, role: kind, name: cfg.name || '기계화 지원 차량',
       root, hullGrp, turretGrp, gunGrp, muzzleTip, antennas, hitbox, armorMat, beacon, wheels,
       hullYaw: 0, strafeDir: 1, strafeTimer: 2, dustTimer: 0, baseFreq: 120,
-      hp: 95, maxHp: 95, stress: 0, onFire: false, state: 'active',
+      hp: V71.hp.support, maxHp: V71.hp.support, stress: 0, onFire: false, state: 'active',
       fireCd: 1.2 + Math.random() * 2, isBoss: false, recoil: 0, recoilDir: -1, gunElev: 0,
       speed: 0, talkTimer: 6 + Math.random() * 8, company: cfg.company || 1,
-      fireCdBase: 1.15, dmg: 17, fireRange: 150, maxSpeed: kind === 'ifv' ? 11.5 : 9.0
+      fireCdBase: 1.15, dmg: 18, fireRange: 150, maxSpeed: kind === 'ifv' ? 11.5 : 9.0
     };
     hitbox.userData = { unit: u, isEnemyTank: false };
     allies.push(u);
@@ -3319,9 +3330,21 @@
       if (Math.random() < 0.6) spawnParticle(s.mesh.position.clone(), new THREE.Vector3(0, 0.4, 0), 0xd6d3c4, 0.3, 0.5, 1.4, 0.2, 0.4);
       if (k >= 1) {
         spawnExplosion(s.mesh.position.clone(), true);
-        enemies.forEach(e => { if (e.state === 'active' && e.root.position.distanceTo(s.to) < 12) damageTank(e, 46, 16, false); });
-        drones.forEach(d => { if (d.state === 'active' && d.root.position.distanceTo(s.to) < 12) destroyDrone(d, false); });
+        if (s.hostile) {
+          // 적 포병 집중포화 — 아군 대형과 지휘전차에 피해
+          allies.forEach(al => { if (al.state === 'active' && al.root.position.distanceTo(s.to) < 15) damageTank(al, 62, 0, false); });
+          if (playerRoot.position.distanceTo(s.to) < 15 && state.shieldActive <= 0) damagePlayer(10, null, s.to.clone());
+          spawnExplosion(s.to.clone(), false);
+        } else {
+          enemies.forEach(e => { if (e.state === 'active' && e.root.position.distanceTo(s.to) < 12) damageTank(e, 46, 16, false); });
+          drones.forEach(d => { if (d.state === 'active' && d.root.position.distanceTo(s.to) < 12) destroyDrone(d, false); });
+        }
+        if (s.ring) { scene.remove(s.ring); if (s.ring.geometry) s.ring.geometry.dispose(); if (s.ring.material) s.ring.material.dispose(); }
         scene.remove(s.mesh); artyShells.splice(i, 1);
+      } else if (s.ring) {
+        const pulse = 1 + Math.sin(k * Math.PI * 6) * 0.12;
+        s.ring.scale.setScalar(pulse);
+        s.ring.material.opacity = 0.28 + 0.4 * Math.abs(Math.sin(k * Math.PI * 4));
       }
     }
   }
@@ -3472,17 +3495,20 @@
     tank: {
       key: 'tank', label: '전차장', companies: 1, tanks: 2, ifv: 0, arty: 0,
       minEnemy: 5, waves: 0, artyCd: 75, casCd: 0, cas: false, artyShots: 2, artySpread: 9,
-      viewH: 120, desc: '지휘전차 1개 소대 — 직접 기동·사격'
+      viewH: 120, desc: '지휘전차 1개 소대 — 직접 기동·사격',
+      phases: [{ n: 3 }, { n: 3 }, { boss: 1, esc: 1 }]
     },
     battalion: {
       key: 'battalion', label: '대대장', companies: 3, tanks: 8, ifv: 0, arty: 3,
       minEnemy: 12, waves: 1, artyCd: 26, casCd: 0, cas: false, artyShots: 3, artySpread: 14,
-      viewH: 152, desc: '3개 전차중대 + 포병지원 — 다중 제대 지휘'
+      viewH: 152, desc: '3개 전차중대 + 포병지원 — 다중 제대 지휘',
+      phases: [{ n: 5 }, { n: 6 }, { boss: 1, esc: 3 }]
     },
     division: {
       key: 'division', label: '사단장', companies: 3, tanks: 11, ifv: 3, arty: 4,
       minEnemy: 18, waves: 2, artyCd: 19, casCd: 28, cas: true, artyShots: 5, artySpread: 21,
-      viewH: 195, desc: '전차대대 + 기계화지원 + 포병대대 + 항공 CAS'
+      viewH: 195, desc: '전차대대 + 기계화지원 + 포병대대 + 항공 CAS',
+      phases: [{ n: 9 }, { n: 12 }, { boss: 1, esc: 5 }]
     },
   };
   const STANCES = {
@@ -3491,6 +3517,23 @@
     flank: { key: 'flank', label: '측면 포위', icon: 'flank', dist: 42, spacing: 22, range: 126, cd: 3.2, speed: 10.8, prio: 'heavy' },
     focus: { key: 'focus', label: '집중 화력', icon: 'focus', dist: 104, spacing: 11, range: 176, cd: 2.4, speed: 3.8, prio: 'marked' },
   };
+  // ---------------------------------------------------------------------------
+  // V7.1 실전 전투 밸런스 — 장갑 판정·재장전·부위별 피해
+  //  실제 전차전처럼 1~2방에 터지지 않고, 정면은 버티고 측면·후면은 무너진다.
+  // ---------------------------------------------------------------------------
+  const V71 = {
+    hp: { enemy: 900, boss: 2400, ally: 360, support: 280 },
+    reload: { he: 3.4, missile: 4.6, sonic: 2.8, sonicBurst: 3, mg: 0.125 },
+    armor: { front: 0.52, side: 1.62, rear: 1.85 },
+    playerDmgScale: 0.72,      // 지휘전차 장갑 내구도 100% 기준 피해 환산
+    repair: { phase: 20, ally: 0.32, smoke: 25 }
+  };
+  const PHASE_NAMES = ['적 선봉대', '적 기갑 본대', '적 지휘전차 역습'];
+  const PHASE_BANNER = [
+    ['1단계 · 적 선봉대 접촉', '#fb923c'],
+    ['2단계 · 적 기갑 본대 / 포병선', '#fb7185'],
+    ['3단계 · 적 지휘전차 역습', '#f43f5e']
+  ];
   // V6.4 밀리터리 SVG 아이콘 헬퍼 (이모지 대체) — <defs> 스프라이트를 참조한다.
   const ICO = (name, cls = 'ic') => `<svg class="${cls}"><use href="#i-${name}"/></svg>`;
   const deg = (r) => Math.round(((r * 180 / Math.PI) % 360 + 360) % 360);
@@ -3503,6 +3546,8 @@
     rank: 'battalion', stance: 'wedge', objective: null, markedUnit: null,
     markMode: false, attackOrder: false, attackTimer: 0,
     artyCd: 0, casCd: 0, wavesLeft: 0, enemyTotal: 0, endQueued: false, waveCd: 0,
+    phase: 0, phaseName: '', phaseGap: 0, battleT: 0, phaseLog: [], ricochets: 0, hitsTaken: 0,
+    sonicCd: 0, sonicBurst: 0, hostileArtyCd: 0, artyQueue: [], lastHitMsg: 0, allyLosses: 0,
     cmdFolded: false, cmdUiTimer: 0,
     hullYaw: 0, hullSpeed: 0, hullPitch: 0, hullRoll: 0,
     turretYaw: 0, gunPitch: 0,
@@ -3596,8 +3641,8 @@
   window._triggerSmoke = () => {
     if (!state.running || state.smokeCd > 0) return;
     audio.init(); audio.playMissile();
-    state.smokeActive = 4.5; state.smokeCd = 11.0; state.hp = Math.min(100, state.hp + 25);
-    document.getElementById('hud-hp').textContent = `${state.hp}%`; document.getElementById('hp-bar').style.width = `${state.hp}%`;
+    state.smokeActive = 4.5; state.smokeCd = 11.0; state.hp = Math.min(100, state.hp + V71.repair.smoke);
+    setHpUI();
     for (let i = 0; i < 16; i++) { const a=(i/16)*Math.PI*2; spawnParticle(playerRoot.position.clone().add(new THREE.Vector3(Math.cos(a)*5.5, 1.5, Math.sin(a)*5.5)), new THREE.Vector3(Math.cos(a)*3, 1.8, Math.sin(a)*3), 0x94a3b8, 2.2, 3.8, 1.8, 0.2, 0.65); }
     comms.say('정비반', '전술 연막 살포, 나노봇 장갑 복구 완료. 내구도 25% 회복!', { voice: false });
   };
@@ -3683,7 +3728,7 @@
       if (key === 'battalion') setTimeout(() => comms.say('대대 포병지원반', '대대장 지휘 계통 접속. 155mm 화력 지원 대기.', { prio: true }), 2200);
       if (key === 'division') setTimeout(() => comms.say('사단 포병대대', '사단장 지휘 계통 접속. 포병대대·기계화·CAS 전력 배속 완료.', { prio: true }), 2200);
     } else {
-      document.getElementById('hud-mode-tag').textContent = `CANON V7.0 · ${R.label} 지휘`;
+      document.getElementById('hud-mode-tag').textContent = `CANON V7.1 · ${R.label} 지휘`;
     }
   };
 
@@ -4039,7 +4084,7 @@
       ctx.fillStyle = 'rgba(6,14,24,0.94)'; ctx.fillRect(12, state.tacH - 32, tw, 24);
       ctx.strokeStyle = 'rgba(56,189,248,0.32)'; ctx.strokeRect(12, state.tacH - 32, tw, 24);
       ctx.fillStyle = '#7dd3fc'; ctx.font = '800 9.5px Consolas, monospace'; ctx.textAlign = 'left';
-      ctx.fillText('PROJECT CANON V7.0 · 작전구역 380×350m · GRID 50m · 등고 0.75m', 19, state.tacH - 16);
+      ctx.fillText('PROJECT CANON V7.1 · 작전구역 380×350m · GRID 50m · 등고 0.75m', 19, state.tacH - 16);
     }
     ctx.restore();
     // 아군 포병 사거리 / CAS 범위
@@ -4441,6 +4486,115 @@
     state.artyCd = 0; state.casCd = 0;
   }
 
+  // ---------------------------------------------------------------------------
+  // V7.1 다단계 전선 페이즈 — 선봉 → 기갑 본대(+포병선) → 지휘전차 역습
+  // ---------------------------------------------------------------------------
+  const ENEMY_RPMS = [1200, 1350, 1440, 1500, 1620, 1740];
+  function phaseCfg() {
+    const R = RANKS[state.rank];
+    return (R.phases && R.phases.length) ? R.phases : [{ n: 5 }, { n: 5 }, { boss: 1, esc: 2 }];
+  }
+  function updatePhaseUI() {
+    const R = RANKS[state.rank];
+    const echelon = R.companies === 1 ? '1개 소대' : `${R.companies}개 중대`;
+    const tag = document.getElementById('hud-mode-tag');
+    if (tag) tag.textContent = `CANON V7.1 · ${R.label} · ${state.phase ? state.phase + '/3 ' + PHASE_NAMES[state.phase - 1] : echelon}`;
+  }
+  function spawnPhase(idx) {
+    const P = phaseCfg()[idx] || { n: 4 };
+    state.phase = idx + 1;
+    if (P.n) {
+      for (let i = 0; i < P.n; i++) {
+        const col = i % 5, row = Math.floor(i / 5);
+        const z = (idx === 0 ? -96 : idx === 1 ? -124 : -142) - row * 30 - Math.random() * 9;
+        const x = (col - 2) * 46 + (Math.random() - 0.5) * 16 + (idx === 1 ? (row % 2 ? 20 : -20) : 0);
+        const label = idx === 0 ? '선봉' : (idx === 1 ? '본대' : '역습');
+        createTankUnit(false, {
+          name: `적 T-90M ${label} #${i + 1}`, x: Math.max(-152, Math.min(152, x)), z,
+          rpm: ENEMY_RPMS[i % 6]
+        });
+      }
+    }
+    if (P.boss) {
+      // 지휘전차 역습 제대 — 측면에서 붙는다 (플레이어가 포탑을 돌려야 한다)
+      const side = Math.random() < 0.5 ? -1 : 1;
+      createTankUnit(false, { name: '적 T-90M 지휘전차', x: side * 150, z: -34, rpm: 1740, isBoss: true });
+      for (let i = 0; i < (P.esc || 0); i++) {
+        createTankUnit(false, { name: `적 호위전차 #${i + 1}`, x: side * (128 - i * 14), z: -58 - i * 22, rpm: ENEMY_RPMS[(i + 2) % 6] });
+      }
+    }
+    state.enemyTotal += (P.n || 0) + (P.boss ? 1 + (P.esc || 0) : 0);
+    const [title, col] = PHASE_BANNER[idx] || PHASE_BANNER[0];
+    showBanner(`전투 ${title} — ${idx === 0 ? '전차대, 기동 사격 개시' : idx === 1 ? '포병선 돌파, 측면 포위하라' : '지휘전차 사살'}`,
+      col, idx === 2 ? 'attack' : 'warn');
+    updatePhaseUI();
+    if (idx === 0) {
+      comms.say('전방관측', '적 선봉대 전방 2km 접근! T-90M 다수, 전차포 열상 포착!', { prio: true });
+      setTimeout(() => comms.say('본부', '선봉대만 상대한다. 정면 장갑은 튕긴다 — 측면을 돌려라!', { prio: true }), 2400);
+    } else if (idx === 1) {
+      state.hostileArtyCd = 13;
+      comms.say('항공정찰', '경고! 적 기갑 본대와 포병선이 북측 능선에 전개 중!', { prio: true });
+      setTimeout(() => comms.say('본부', '적 포병 위협! 방어선을 뚫고 측면 포위로 속도를 살려라!', { prio: true }), 2200);
+      setTimeout(() => comms.say('정비반', '장갑 손상 부위 긴급 복구 완료. 계속 간다!', { voice: false }), 3600);
+    } else {
+      state.hostileArtyCd = 17;
+      comms.say('방공관제소', '지휘전차 확인! 적 지휘전차가 예비대를 끌고 역습한다!', { prio: true });
+      setTimeout(() => comms.say('본부', '마지막이다. 전 부대, 지휘전차를 사살하라!', { prio: true }), 2100);
+    }
+  }
+  function phaseRepair() {
+    state.hp = Math.min(100, state.hp + V71.repair.phase);
+    setHpUI();
+    allies.forEach(a => {
+      if (a.state === 'active') a.hp = Math.min(a.maxHp, a.hp + a.maxHp * V71.repair.ally);
+    });
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * Math.PI * 2;
+      spawnParticle(playerRoot.position.clone().add(new THREE.Vector3(Math.cos(a) * 4.4, 1.2 + Math.random(), Math.sin(a) * 4.4)),
+        new THREE.Vector3(Math.cos(a) * 2.2, 1.4, Math.sin(a) * 2.2), 0x7dd3fc, 1.5, 2.4, 1.6, 0.3, 0.5);
+    }
+  }
+  function phaseClear() {
+    state.phaseLog.push({ phase: state.phase, t: +state.battleT.toFixed(1), hp: Math.round(state.hp), kills: state.kills });
+    if (state.phase >= 3) {
+      if (!state.endQueued) { state.endQueued = true; setTimeout(() => { if (state.running) endBattle(true); }, 2200); }
+      return;
+    }
+    state.phaseGap = 7.5;
+    state.artyQueue.length = 0;
+    showBanner(`${state.phase}단계 격파 — 적 ${PHASE_NAMES[state.phase - 1]} 와해! 정비 후 다음 단계`, '#34d399', 'objective');
+    comms.say('본부', `${state.phase}단계 제압 완료! 정비반 장갑 복구, 다음 제대 대비!`, { prio: true });
+    phaseRepair();
+  }
+  function queueEnemyBarrage() {
+    const aliveA = allies.filter(a => a.state === 'active');
+    const base = (!aliveA.length || Math.random() < 0.5) ? playerRoot.position.clone()
+      : aliveA[Math.floor(Math.random() * aliveA.length)].root.position.clone();
+    const shots = state.phase >= 3 ? 4 : 3;
+    for (let i = 0; i < shots; i++) {
+      state.artyQueue.push({
+        t: 0.9 + i * 0.85,
+        x: base.x + (Math.random() - 0.5) * 36,
+        z: base.z + (Math.random() - 0.5) * 36
+      });
+    }
+    showBanner('적 포병 관측 — 낙하 예고! 산개·엄폐 기동', '#fb7185', 'warn');
+    comms.say('관측반', '적 포병 관측 중! 곧 낙하한다, 산개!', { prio: true });
+  }
+  function fireHostileShell(x, z) {
+    const from = new THREE.Vector3(Math.max(-170, Math.min(170, x + (Math.random() - 0.5) * 30)), 0, -188);
+    from.y = terrainHeight(from.x, from.z) + 2;
+    const to = new THREE.Vector3(x, 0.5, z);
+    to.y = terrainHeight(to.x, to.z) + 0.5;
+    const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.5, 6, 6), new THREE.MeshBasicMaterial({ color: 0xff7a45 }));
+    mesh.position.copy(from); scene.add(mesh);
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0xff5252, transparent: true, opacity: 0.55, side: THREE.DoubleSide });
+    const ring = new THREE.Mesh(new THREE.RingGeometry(2.0, 3.0, 26), ringMat);
+    ring.rotation.x = -Math.PI / 2; ring.position.set(to.x, to.y + 0.08, to.z); scene.add(ring);
+    artyShells.push({ mesh, from, to, t: 0, dur: 1.7, hostile: true, ring });
+    audio.playMissile();
+  }
+
   function buildForces(rebuild) {
     const R = RANKS[state.rank], cfg = SCALES[state.scaleKey];
     clearBattlefield();
@@ -4452,21 +4606,18 @@
     for (let i = 0; i < R.ifv; i++) {
       createSupportUnit('ifv', { name: `기계화 ${i + 1}호차`, x: -36 - i * 12, z: 88 + (i % 2) * 8, company: 3 });
     }
-    buildArtillery(R.arty);
-    const eCount = Math.max(cfg.enemies, R.minEnemy);
-    const rpms = [1200, 1350, 1440, 1500, 1620, 1740];
-    for (let i = 0; i < eCount; i++) {
-      createTankUnit(false, { name: i === 0 ? '적 T-90M 지휘전차' : `적 T-90M #${i + 1}`, x: ((i % 6) - 2.5) * 36 + (Math.random() - 0.5) * 14, z: -64 - Math.floor(i / 6) * 34, rpm: rpms[i % 6], isBoss: i === 0 });
-    }
-    state.enemyTotal = eCount;
-    state.wavesLeft = R.waves;
+    // V7.1: 전 적 전차를 한꺼번에 쏟지 않고 1단계 선봉대만 먼저 투입한다
+    state.phase = 0; state.phaseGap = 0; state.battleT = 0; state.phaseLog = [];
+    state.ricochets = 0; state.hitsTaken = 0; state.artyQueue = []; state.hostileArtyCd = 0;
+    state.enemyTotal = 0; state.wavesLeft = 0;
     state.jetSpawnTimer = 5.5; state.droneSpawnTimer = 3.5;
     const echelon = R.companies === 1 ? '1개 소대' : `${R.companies}개 중대`;
-    document.getElementById('hud-mode-tag').textContent = `CANON V7.0 · ${R.label} · ${echelon}`;
+    document.getElementById('hud-mode-tag').textContent = `CANON V7.1 · ${R.label} · ${echelon}`;
     document.getElementById('hud-echelon').textContent = echelon + (R.ifv ? ' + 기계화' : '');
     updateDriveUI();
     updateCmdUI();
     comms.queue.length = 0; comms.said.clear(); comms.timer = 1.2;
+    spawnPhase(0);
     if (rebuild) return;
     comms.say('본부', `연구 4호 ${R.label} 지휘 계통 가동! ${R.desc}.`, { prio: true });
     setTimeout(() => comms.say('1중대', '본부, 1중대. 전방 열상 접촉! 적 전차 다수 확인!', { prio: true }), 2400);
@@ -4474,18 +4625,8 @@
   }
 
   function spawnEnemyWave() {
-    if (state.wavesLeft <= 0) return;
-    state.wavesLeft--;
-    const n = state.rank === 'division' ? 6 : 4;
-    const rpms = [1200, 1350, 1440, 1500];
-    for (let i = 0; i < n; i++) {
-      createTankUnit(false, { name: `적 T-90M 증원 #${i + 1}`, x: ((i % 6) - 2.5) * 34 + (Math.random() - 0.5) * 10, z: -132 - Math.random() * 16, rpm: rpms[i % 4] });
-    }
-    showBanner(`적 증원 웨이브 투입 (잔여 ${state.wavesLeft}회)`, '#fb7185', 'warn');
-    state.waveCd = 9;
-    comms.say('항공정찰', `경고! 적 증원 전차 ${n}대 북측에서 접근 중!`, { prio: true });
-    setTimeout(() => comms.say('본부', '전 부대, 증원 대비! 좌우 측방 경계 유지!', { prio: true }), 1900);
-    setTimeout(() => comms.say(companyLabels()[0] || '1중대', '증원 접촉! 예비 탄약 전개!', { voice: false }), 3400);
+    // V7.1: 증원 웨이브 폐지 — 전투 페이즈(spawnPhase)가 단계별로 적을 투입한다
+    return;
   }
 
   function startBattle() { buildForces(false); }
@@ -4510,6 +4651,128 @@
     }
     echoLineGeo.setFromPoints(pts); state.lockedObj = locked;
     return { origin, dir, pts, locked };
+  }
+
+  // ---------------------------------------------------------------------------
+  // V7.1 장갑 관통·도탄 판정 (입사각 / 부위별 장갑)
+  //   정면 0.52배 · 측면 1.62배 · 후면 1.85배, 얇은 각도로 스치는 탄은 도탄
+  // ---------------------------------------------------------------------------
+  const _frontV = new THREE.Vector2();
+  function unitFrontVec(u, out) {
+    if (u.isAlly) out.set(-Math.sin(u.hullYaw), -Math.cos(u.hullYaw));
+    else out.set(Math.sin(u.hullYaw), Math.cos(u.hullYaw));
+    return out;
+  }
+  function armorCheck(u, dir) {
+    unitFrontVec(u, _frontV);
+    const dx = dir ? dir.x : 0, dz = dir ? dir.z : 0;
+    const dl = Math.hypot(dx, dz) || 1;
+    // 탄이 날아온 방향(표적 → 사수)과 차체 정면이 이루는 각
+    const c = _frontV.x * (-dx / dl) + _frontV.y * (-dz / dl);
+    const ang = Math.acos(Math.max(-1, Math.min(1, c)));
+    const zone = ang < 1.05 ? 'front' : (ang > 2.15 ? 'rear' : 'side');
+    const mult = zone === 'front' ? V71.armor.front : (zone === 'rear' ? V71.armor.rear : V71.armor.side);
+    // 도탄: 정면 경사장갑을 비스듬히 스치는 탄, 측면 상판을 얕게 스치는 탄
+    const flat = Math.abs(dir ? dir.y : 0) < 0.14;
+    let pR = 0;
+    if (zone === 'front') pR = 0.08 + 0.34 * Math.max(0, (ang - 0.60) / 0.45) + (flat ? 0.10 : 0);
+    else if (zone === 'side') pR = flat ? 0.10 : 0;
+    else pR = 0.02;
+    return { zone, mult, ricochet: Math.random() < Math.min(0.46, pR), ang: ang * 180 / Math.PI };
+  }
+  function ricochetFX(pos, dir) {
+    if (!pos) return;
+    for (let i = 0; i < 16; i++) {
+      const vx = -(dir ? dir.x : 0) * (5 + Math.random() * 8) + (Math.random() - 0.5) * 12;
+      const vz = -(dir ? dir.z : 0) * (5 + Math.random() * 8) + (Math.random() - 0.5) * 12;
+      emitSpark(pos.x, pos.y, pos.z, vx, 3.5 + Math.random() * 7, vz,
+        i % 3 === 0 ? 0xfff3c4 : 0xffb03a, 0.62, 0.14, 0.45 + Math.random() * 0.25, 0.95, -5.0, 0.35);
+    }
+    emitSmoke(pos.x, pos.y, pos.z, 0, 0.8, 0, 0x9c9487, 0.5, 1.6, 0.7, 0.22, 0.4, 1.6, 1.2);
+  }
+  function applyHitToTank(u, dmg, dir, stress, byPlayer, pos) {
+    const ar = armorCheck(u, dir);
+    u.lastZone = ar.zone;
+    if (ar.ricochet) {
+      state.ricochets++;
+      ricochetFX(pos || u.root.position.clone().add(new THREE.Vector3(0, 1.6, 0)), dir);
+      const nowMs = performance.now();
+      if (byPlayer && nowMs - state.lastHitMsg > 1500) {
+        state.lastHitMsg = nowMs;
+        showBeat(`도탄! ${ar.zone === 'front' ? '정면 경사장갑' : '상판 장갑'}에 튕겼다`, 'cyan');
+        if (Math.random() < 0.55) comms.say(comms.randomAllyCs(), '도탄! 각도를 줄여라, 측면을 노려!', { voice: false });
+      }
+      damageTank(u, dmg * 0.10, 0, byPlayer);
+      return ar;
+    }
+    damageTank(u, dmg * ar.mult, stress, byPlayer);
+    if (byPlayer && ar.zone !== 'front' && Math.random() < 0.35) {
+      const nowMs = performance.now();
+      if (nowMs - state.lastHitMsg > 2200) {
+        state.lastHitMsg = nowMs;
+        showBeat(ar.zone === 'rear' ? '후면 관통! 화력 1.85배' : '측면 관통! 화력 1.62배', 'orange');
+      }
+    }
+    return ar;
+  }
+  function setHpUI() {
+    const el = document.getElementById('hud-hp'), bar = document.getElementById('hp-bar');
+    if (el) el.textContent = `${Math.max(0, Math.round(state.hp))}%`;
+    if (bar) bar.style.width = `${Math.max(0, Math.min(100, state.hp))}%`;
+  }
+  // ---------------------------------------------------------------------------
+  // V7.1 재장전 호흡 — 조준경 주변 진행 링/게이지 (기관포는 연사 유지)
+  // ---------------------------------------------------------------------------
+  const reloadRingEl = document.getElementById('reload-ring');
+  const reloadTxtEl = document.getElementById('reload-txt');
+  function reloadInfo() {
+    if (state.weapon === 'he') return { p: 1 - state.heCd / V71.reload.he, left: state.heCd, label: '철갑탄' };
+    if (state.weapon === 'missile') return { p: 1 - state.missileCd / V71.reload.missile, left: state.missileCd, label: '유도탄' };
+    if (state.weapon === 'sonic') return { p: 1 - state.sonicCd / V71.reload.sonic, left: state.sonicCd, label: '공진포' };
+    return null;
+  }
+  function updateReloadRing() {
+    const info = reloadInfo();
+    const p = info ? Math.max(0, Math.min(1, info.p)) : 1;
+    const ready = !info || p >= 1;
+    const show = state.running && !!info && state.camMode !== 'cmd' && !state.bigMapOpen;
+    if (reloadRingEl) {
+      reloadRingEl.setAttribute('opacity', show ? (ready ? '0.42' : '0.94') : '0');
+      if (show) {
+        reloadRingEl.setAttribute('stroke-dashoffset', (691.2 * (1 - p)).toFixed(1));
+        reloadRingEl.setAttribute('stroke', ready ? '#34d399' : '#fbbf24');
+      }
+    }
+    if (reloadTxtEl) {
+      // 장전 완료 상태에서는 링만 옅게 남기고 글자는 지운다 (조준 시야 확보)
+      reloadTxtEl.setAttribute('opacity', (show && !ready) ? '0.96' : '0');
+      if (show && !ready) {
+        reloadTxtEl.textContent = `${info.label} 장전 ${Math.max(0, info.left).toFixed(1)}s`;
+        reloadTxtEl.setAttribute('fill', '#fcd34d');
+      }
+    }
+    const map = { sonic: 'btn-wpn-sonic', he: 'btn-wpn-he', missile: 'btn-wpn-msl' };
+    for (const k in map) {
+      const b = document.getElementById(map[k]);
+      if (b) b.classList.toggle('reloading', k === state.weapon && !ready);
+    }
+  }
+  function damagePlayer(dmg, dir, pos) {
+    let mult = 1, zone = 'side', ric = false;
+    if (dir) { const ar = armorCheck({ isAlly: true, hullYaw: state.hullYaw }, dir); mult = ar.mult; zone = ar.zone; ric = ar.ricochet; }
+    if (ric) {
+      state.ricochets++; mult = 0.10;
+      ricochetFX(pos || playerRoot.position.clone().add(new THREE.Vector3(0, 2.0, 0)), dir);
+      const nowMs = performance.now();
+      if (nowMs - state.lastHitMsg > 1400) { state.lastHitMsg = nowMs; showBeat('도탄! 정면 장갑이 막아냈다', 'cyan'); }
+    }
+    const dmgPct = Math.max(0.35, dmg * mult * V71.playerDmgScale);
+    state.hitsTaken++;
+    state.hp = Math.max(0, state.hp - dmgPct);
+    setHpUI();
+    if (dmgPct >= 3.2) { const df = document.getElementById('damage-flash'); if (df) { df.style.opacity = '1'; setTimeout(() => { df.style.opacity = '0'; }, 240); } }
+    if (state.hp <= 0) endBattle(false);
+    return { zone, mult, ric };
   }
 
   function damageTank(u, dmg, stressGain = 0, byPlayer = false) {
@@ -4538,10 +4801,6 @@
         } else if (Math.random() < 0.4) {
           comms.say(comms.randomAllyCs(), '협조 사격 격파 확인! 표적 소멸!');
         }
-        if (enemies.every(e => e.state !== 'active')) {
-          if (state.wavesLeft > 0) { /* animate에서 증원 웨이브 투입 */ }
-          else if (!state.endQueued) { state.endQueued = true; setTimeout(() => { if (state.running) endBattle(true); }, 2000); }
-        }
       } else {
         const cs = u.name || '아군 전차';
         comms.say(cs, '차체 관통! 전투불능!', { prio: true });
@@ -4563,9 +4822,11 @@
   function endBattle(win) {
     state.running = false; if (document.pointerLockElement) document.exitPointerLock();
     state.attackOrder = false;
+    if (reloadRingEl) reloadRingEl.setAttribute('opacity', '0');
+    if (reloadTxtEl) reloadTxtEl.setAttribute('opacity', '0');
     document.body.classList.remove('cmd-view');
     const res = document.getElementById('modal-result'); res.style.display = 'block'; res.style.color = win ? '#34d399' : '#fb7185';
-    res.textContent = win ? `${SCALES[state.scaleKey].label} 완전 승리 — 격파·나포 ${state.kills} · 자동요격 ${state.intercepted} · 점수 ${state.score.toLocaleString()} PT` : `지휘전차 전투불능 — 격파 ${state.kills} · 점수 ${state.score.toLocaleString()} PT`;
+    res.textContent = win ? `${SCALES[state.scaleKey].label} 완전 승리 — 3단계 전선 제압 · 격파·나포 ${state.kills} · 자동요격 ${state.intercepted} · 점수 ${state.score.toLocaleString()} PT` : `지휘전차 전투불능 — ${state.phase}/3단계에서 격파 ${state.kills} · 점수 ${state.score.toLocaleString()} PT`;
     document.getElementById('btn-start').innerHTML = `${ICO('engine', 'ic lg')} 다시 기동전투 출격`;
     document.getElementById('overlay').style.display = 'flex';
     comms.say('본부', win ? '전 전선 기동 제압 완료! 대장님의 지휘로 대승을 거두었습니다!' : '지휘전차 긴급 철수! 재정비 후 반격하십시오!', { prio: true });
@@ -4584,7 +4845,7 @@
       state.recoil = 0.08; state.screenShake = Math.max(state.screenShake, 0.05);
       audio.playCIWS();
       if (locked) {
-        if (locked.type === 'tank') damageTank(locked.obj, 6, 5, true);
+        if (locked.type === 'tank') applyHitToTank(locked.obj, 5, dir, 5, true, pts[1]);
         else if (locked.type === 'drone') destroyDrone(locked.obj, false);
         else if (locked.type === 'jet') { locked.obj.hp -= 4; if (locked.obj.hp <= 0) destroyJet(locked.obj, true); }
       }
@@ -4592,7 +4853,7 @@
     }
     if (state.weapon === 'missile') {
       if (state.missileCd > 0) return;
-      state.missileCd = 2.6;
+      state.missileCd = V71.reload.missile;
       const tgt = locked ? locked.obj : (aircrafts.find(a=>a.state==='active') || drones.find(d=>d.state==='active') || enemies.find(e=>e.state==='active'));
     showBeat('기동 지대지/지대공 유도미사일 3연발', 'gold');
       for (let m = 0; m < 3; m++) {
@@ -4602,22 +4863,23 @@
           const pPos = new THREE.Vector3(); missilePod.getWorldPosition(pPos);
           const mMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.13, 1.5, 8), new THREE.MeshBasicMaterial({ color: 0xf472b6 }));
           mMesh.position.copy(pPos); scene.add(mMesh);
-          projectiles.push({ mesh: mMesh, vel: dir.clone().multiplyScalar(38).add(new THREE.Vector3((m-1)*4, 20+m*3, 0)), life: 5.0, fromAlly: true, byPlayer: true, dmg: 55, homingObj: tgt, isMissile: true });
+          projectiles.push({ mesh: mMesh, vel: dir.clone().multiplyScalar(38).add(new THREE.Vector3((m-1)*4, 20+m*3, 0)), life: 5.0, fromAlly: true, byPlayer: true, dmg: 95, homingObj: tgt, isMissile: true });
         }, m * 150);
       }
       return;
     }
     if (state.weapon === 'he') {
       if (state.heCd > 0) return;
-      state.heCd = 0.85; state.recoil = 0.72; state.hullPitch += 0.055; state.screenShake = Math.max(state.screenShake, 0.34);
+      state.heCd = V71.reload.he; state.recoil = 0.72; state.hullPitch += 0.055; state.screenShake = Math.max(state.screenShake, 0.34);
       muzzleLight.intensity = 20; muzzleCone.material.opacity = 0.95;
       setTimeout(() => { muzzleLight.intensity = 0; muzzleCone.material.opacity = 0; }, 105);
       audio.play120mm();
       const sh = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 2.2, 8), new THREE.MeshBasicMaterial({ color: 0xffcc44 }));
       sh.position.copy(origin); sh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir); scene.add(sh);
-      projectiles.push({ mesh: sh, vel: dir.clone().multiplyScalar(172), life: 2.5, fromAlly: true, byPlayer: true, dmg: 68, trail: 0xffd08a });
+      projectiles.push({ mesh: sh, vel: dir.clone().multiplyScalar(172), life: 2.5, fromAlly: true, byPlayer: true, dmg: 96, trail: 0xffd08a });
       return;
     }
+    if (state.sonicCd > 0) return;
     state.recoil = 0.32; state.hullPitch += 0.022;
     let perf = false;
     if (state.beatStep === 0) { state.beatStep = 1; state.beatTimer = state.beatDuration; state.comboMult = 1.0; perf = true; showBeat('기동 공진 1/3', 'cyan'); }
@@ -4626,6 +4888,8 @@
       if (perf) { state.comboMult += (state.beatStep === 3 ? 2.0 : 1.0); showBeat(state.beatStep === 3 ? 'PERFECT x4.0' : 'BEAT 2/3', 'gold'); }
       if (state.beatStep >= 3) { state.beatStep = 0; state.beatTimer = 0; } else state.beatTimer = state.beatDuration;
     }
+    // 3연발 공진 버스트 후 주포 재장전 (묵직한 교전 호흡)
+    if (state.beatStep === 0) { state.sonicCd = V71.reload.sonic; state.sonicBurst = 0; }
     audio.playSonic(state.beamFreq, state.beatStep===0?3:state.beatStep, perf);
     for (let k = 0; k < 3; k++) {
       const r = new THREE.Mesh(geoRing, new THREE.MeshBasicMaterial({ color: state.comboMult>=3.5?0xfbbf24:0x22d3ee, transparent: true, opacity: 0.94 }));
@@ -4633,7 +4897,7 @@
       particles.push({ mesh: r, vel: dir.clone().multiplyScalar(138), life: 0.65, maxLife: 0.65, grow: 4.5, grav: 0 });
     }
     if (locked) {
-      if (locked.type === 'tank') { damageTank(locked.obj, 14, 28 * state.comboMult, true); if (Math.random() < 0.5) comms.say(comms.randomAllyCs(), '지휘전차 명중! 관통 확인!', { voice: false }); }
+      if (locked.type === 'tank') { applyHitToTank(locked.obj, 14, dir, 20 * state.comboMult, true, pts[1]); if (Math.random() < 0.5) comms.say(comms.randomAllyCs(), '지휘전차 명중! 공진 관통 확인!', { voice: false }); }
       else if (locked.type === 'jet') destroyJet(locked.obj, true);
       else if (locked.type === 'drone') destroyDrone(locked.obj, false);
     }
@@ -4646,6 +4910,8 @@
     audio.init();
     document.getElementById('overlay').style.display = 'none';
     state.hp = 100; state.score = 0; state.kills = 0; state.intercepted = 0;
+    state.sonicCd = 0; state.sonicBurst = 0; state.hitsTaken = 0; state.ricochets = 0;
+    state.phase = 0; state.phaseGap = 0; state.battleT = 0; state.phaseLog = []; state.artyQueue = [];
     playerRoot.position.set(0, 0, 82); state.hullYaw = 0; state.hullSpeed = 0; state.turretYaw = 0; state.gunPitch = 0;
     state.hullPitch = 0; state.hullRoll = 0; state.lastHullYaw = 0; state.turretTraverse = 0;
     document.getElementById('aim-zone').classList.add('on');
@@ -5117,6 +5383,7 @@
       state.recoil = Math.max(0, state.recoil - 2.8 * dt);
       barrelGrp.position.z = state.recoil;
       state.heCd = Math.max(0, state.heCd - dt); state.missileCd = Math.max(0, state.missileCd - dt);
+      state.sonicCd = Math.max(0, state.sonicCd - dt);
       state.mgCd = Math.max(0, state.mgCd - dt);
       state.shieldCd = Math.max(0, state.shieldCd - dt); state.smokeCd = Math.max(0, state.smokeCd - dt);
       state.smokeActive = Math.max(0, state.smokeActive - dt); state.ciwsCd = Math.max(0, state.ciwsCd - dt);
@@ -5190,7 +5457,27 @@
       }
       updateArtyShells(dt);
       updateCAS(dt);
-      if (state.wavesLeft > 0 && state.waveCd <= 0 && aliveE.length <= Math.max(2, Math.ceil(state.enemyTotal * 0.3))) spawnEnemyWave();
+      // V7.1 다단계 전선: 단계 격파 → 정비 → 다음 제대 투입
+      state.battleT += dt;
+      if (state.phase > 0 && state.phase <= 3) {
+        if (state.phaseGap > 0) {
+          state.phaseGap -= dt;
+          if (state.phaseGap <= 0) { state.phaseGap = 0; spawnPhase(state.phase); }
+        } else if (!aliveE.length && !state.endQueued) {
+          phaseClear();
+        }
+      }
+      // 적 포병선 (2단계 이후) — 낙하 예고 후 집중포화
+      state.hostileArtyCd = Math.max(0, state.hostileArtyCd - dt);
+      if (state.phase >= 2 && state.hostileArtyCd <= 0 && aliveE.length > 0) {
+        state.hostileArtyCd = state.phase >= 3 ? 25 : 29;
+        queueEnemyBarrage();
+      }
+      for (let qi = state.artyQueue.length - 1; qi >= 0; qi--) {
+        const q = state.artyQueue[qi]; q.t -= dt;
+        if (q.t <= 0) { fireHostileShell(q.x, q.z); state.artyQueue.splice(qi, 1); }
+      }
+      updateReloadRing();
 
       // AI Auto-Defense CIWS
       if (state.autoDefense && state.ciwsCd <= 0) {
@@ -5311,8 +5598,8 @@
           const wpA = new THREE.Vector3(); al.muzzleTip.getWorldPosition(wpA);
           sh.position.copy(wpA); scene.add(sh);
           const d = new THREE.Vector3().subVectors(tgt.root.position.clone().add(new THREE.Vector3(0, 1.35, 0)), wpA).normalize();
-          d.x += (Math.random() - 0.5) * 0.05; d.y += (Math.random() - 0.5) * 0.02;
-          projectiles.push({ mesh: sh, vel: d.multiplyScalar(118), life: 3.0, fromAlly: true, byPlayer: false, dmg: al.dmg || 36, trail: 0x9fe6ff });
+          d.x += (Math.random() - 0.5) * 0.09; d.y += (Math.random() - 0.5) * 0.03;
+          projectiles.push({ mesh: sh, vel: d.multiplyScalar(118), life: 3.0, fromAlly: true, byPlayer: false, dmg: al.dmg || 38, trail: 0x9fe6ff });
           al.talkTimer -= 3;
           if (al.talkTimer <= 0) {
             al.talkTimer = 12 + Math.random() * 10;
@@ -5329,51 +5616,116 @@
         }
       });
 
+      // --- V7.1 적 전차 전술 AI: 교전 거리 유지 · 엄폐/후퇴 · 측면 회피 ---
       enemies.forEach(en => {
         if (en.state !== 'active') return;
+        // 대부분은 가장 가까운 표적, 일부(지휘전차는 항상) 지휘전차를 노린다
         const cands = [playerRoot, ...aliveA.map(a=>a.root)];
         let near = playerRoot, minD = en.root.position.distanceTo(playerRoot.position);
         cands.forEach(c => { const d = en.root.position.distanceTo(c.position); if (d < minD) { minD = d; near = c; } });
+        if (!en.isBoss && near !== playerRoot && near !== null) {
+          const dP = en.root.position.distanceTo(playerRoot.position);
+          if (dP < minD * 1.45 && Math.random() < 0.35) { near = playerRoot; minD = dP; }
+        }
         const toT = new THREE.Vector3().subVectors(near.position, en.root.position).setY(0);
-        en.strafeTimer -= dt; if (en.strafeTimer <= 0) { en.strafeTimer = 4 + Math.random()*4; en.strafeDir *= -1; }
         const dirN = toT.clone().normalize();
+        en.strafeTimer -= dt;
+        if (en.strafeTimer <= 0) { en.strafeTimer = 5 + Math.random() * 5; en.strafeDir *= -1; }
         const tang = new THREE.Vector3(-dirN.z * en.strafeDir, 0, dirN.x * en.strafeDir);
-        const moveDir = minD > 58 ? dirN.clone().multiplyScalar(0.72).addScaledVector(tang, 0.45).normalize() : tang;
-        const spd = en.isBoss ? 5.2 : 6.2;
-        // Enemy T-90M faces +Z on chassis
-        const targetHullYaw = Math.atan2(moveDir.x, moveDir.z);
-        en.hullYaw += wrapAngle(targetHullYaw - en.hullYaw) * Math.min(1, dt * 2.8);
+
+        const hpFrac = en.hp / en.maxHp;
+        en.aiTimer -= dt;
+        if (en.aiTimer <= 0) {
+          en.aiTimer = 4.5 + Math.random() * 4.5;
+          const r = Math.random();
+          if (hpFrac < 0.42) en.aiMode = 'retreat';
+          else if (hpFrac < 0.72) en.aiMode = r < 0.45 ? 'hold' : (r < 0.80 ? 'flank' : 'retreat');
+          else en.aiMode = r < 0.38 ? 'advance' : (r < 0.82 ? 'hold' : 'flank');
+        }
+        const pref = en.isBoss ? 128 : 102;   // 교전 유지 거리 (m)
+        let moveDir = null, spd = 0;
+        if (minD > pref + 24) { moveDir = dirN.clone().multiplyScalar(0.86).addScaledVector(tang, 0.30); spd = en.isBoss ? 5.6 : 7.0; }
+        else if (minD < pref - 26 || (en.aiMode === 'retreat' && minD < 150)) { moveDir = dirN.clone().multiplyScalar(-0.85).addScaledVector(tang, 0.55); spd = en.isBoss ? 4.8 : 6.2; }
+        else if (en.aiMode === 'flank') { moveDir = tang.clone().addScaledVector(dirN, 0.10); spd = 5.4; }
+        else if (en.aiMode === 'hold') { spd = 0; }
+        else { moveDir = tang.clone().multiplyScalar(0.55); spd = 3.4; }
+        if (moveDir) {
+          // 차량 간 간격 유지 — 한 덩어리로 몰려 한꺼번에 녹지 않게
+          enemies.forEach(o => {
+            if (o === en || o.state !== 'active') return;
+            const dx = en.root.position.x - o.root.position.x, dz = en.root.position.z - o.root.position.z;
+            const d = Math.hypot(dx, dz);
+            if (d > 0.1 && d < 22) moveDir.addScaledVector(new THREE.Vector3(dx / d, 0, dz / d), (22 - d) / 22 * 0.9);
+          });
+          // 장애물(벙커·모래주머니) 회피 엄폐
+          for (const ob of obstacles) {
+            const dx = en.root.position.x - ob.position.x, dz = en.root.position.z - ob.position.z;
+            const d = Math.hypot(dx, dz), safeR = (ob.userData.radius || 6) + 8;
+            if (d < safeR && d > 0.1) moveDir.addScaledVector(new THREE.Vector3(dx / d, 0, dz / d), (safeR - d) / safeR * 1.2);
+          }
+          if (Math.abs(en.root.position.x) > 150) moveDir.x += en.root.position.x > 0 ? -0.8 : 0.8;
+          if (en.root.position.z < -158) moveDir.z += 0.9;
+          moveDir.y = 0;
+          if (moveDir.lengthSq() < 1e-4) moveDir = null; else moveDir.normalize();
+        }
+        const targetHullYaw = moveDir ? Math.atan2(moveDir.x, moveDir.z) : Math.atan2(dirN.x, dirN.z);
+        en.hullYaw += wrapAngle(targetHullYaw - en.hullYaw) * Math.min(1, dt * (spd > 1 ? 2.4 : 1.2));
         en.hullGrp.rotation.y = en.hullYaw + Math.PI;
-        en.root.position.addScaledVector(new THREE.Vector3(Math.sin(en.hullYaw), 0, Math.cos(en.hullYaw)), spd * dt);
-        resolveObstacleCollision(en.root.position, 3.2);
-        en.root.position.y = terrainHeight(en.root.position.x, en.root.position.z);
-        en.wheels.forEach(w => { w.rotation.x += spd * dt * 2.0; });
-        en.turretGrp.rotation.y = Math.atan2(toT.x, toT.z);
+        if (moveDir && spd > 0.05) {
+          en.root.position.addScaledVector(new THREE.Vector3(Math.sin(en.hullYaw), 0, Math.cos(en.hullYaw)), spd * dt);
+          resolveObstacleCollision(en.root.position, 3.2);
+          en.root.position.y = terrainHeight(en.root.position.x, en.root.position.z);
+          en.wheels.forEach(w => { w.rotation.x += spd * dt * 2.0; });
+          en.dustTimer -= dt;
+          if (spd > 1.6 && en.dustTimer <= 0) {
+            en.dustTimer = 0.2;
+            const efx = Math.sin(en.hullYaw), efz = Math.cos(en.hullYaw);
+            fxTrackDust(en.root.position.x, en.root.position.y, en.root.position.z, efx, efz, spd);
+          }
+        }
+        // 포탑은 급회전하지 않고 천천히 추종 (측면을 내주는 순간이 생긴다)
+        const aimYaw = Math.atan2(toT.x, toT.z);
+        en.turretAim = en.turretAim == null ? aimYaw : en.turretAim + wrapAngle(aimYaw - en.turretAim) * Math.min(1, dt * 3.0);
+        en.turretGrp.rotation.y = en.turretAim;
         const elE = Math.atan2(near.position.y + 1.4 - en.root.position.y, Math.max(6, minD));
         en.gunElev += (Math.max(-0.10, Math.min(0.16, -elE)) - en.gunElev) * Math.min(1, dt * 3.4);
         en.gunGrp.rotation.x = en.gunElev;
         en.recoil = Math.max(0, en.recoil - 2.4 * dt);
         en.gunGrp.position.z = -en.recoilDir * en.recoil;
         en.antennas.forEach((a, ai) => { a.rotation.z = Math.sin(tSec * 4 + ai) * 0.05; });
-        en.dustTimer -= dt;
-        if (en.dustTimer <= 0) {
-          en.dustTimer = 0.2;
-          const efx = Math.sin(en.hullYaw), efz = Math.cos(en.hullYaw);
-          fxTrackDust(en.root.position.x, en.root.position.y, en.root.position.z, efx, efz, spd);
+        // 큰 피해를 입으면 1회 연막 엄폐
+        if (!en.smokePuff && hpFrac < 0.4) {
+          en.smokePuff = true;
+          for (let sIdx = 0; sIdx < 12; sIdx++) {
+            const a2 = (sIdx / 12) * Math.PI * 2;
+            emitSmoke(en.root.position.x + Math.cos(a2) * 3.2, en.root.position.y + 1.4, en.root.position.z + Math.sin(a2) * 3.2,
+              Math.cos(a2) * 2.4, 1.2, Math.sin(a2) * 2.4, 0x9aa3ad, 2.0, 4.4, 1.8, 0.5, 0.15, 1.0, 1.3);
+          }
+          if (Math.random() < 0.5) comms.say('관측반', '적 전차 연막 전개! 후퇴 기동 중!', { voice: false });
         }
-
         en.fireCd -= dt;
-        if (en.fireCd <= 0 && minD < 175) {
-          en.fireCd = (en.isBoss?4.6:7.2) + Math.random()*3;
+        const aimed = Math.abs(wrapAngle(aimYaw - en.turretAim)) < 0.30;
+        if (en.fireCd <= 0 && minD < 185 && aimed) {
+          en.fireCd = (en.isBoss ? 4.0 : 5.4) + Math.random() * 2.2;
+          state.enemyShots = (state.enemyShots || 0) + 1;
           unitFire(en);
           const sh = new THREE.Mesh(new THREE.SphereGeometry(0.26,6,6), new THREE.MeshBasicMaterial({ color:0xff3b22 }));
           const wpE = new THREE.Vector3(); en.muzzleTip.getWorldPosition(wpE);
           sh.position.copy(wpE); scene.add(sh);
-          const d = new THREE.Vector3().subVectors(near.position.clone().add(new THREE.Vector3(0,1.3,0)), wpE).normalize();
-          // Moving fast makes enemy shots harder to hit!
-          const evadeSpread = (near === playerRoot && Math.abs(state.hullSpeed) > 10) ? 0.11 : 0.055;
-          d.x += (Math.random()-0.5)*((near===playerRoot && state.smokeActive>0)?0.35:evadeSpread);
-          projectiles.push({ mesh:sh, vel:d.multiplyScalar(78), life:3.5, fromAlly:false, dmg:en.isBoss?12:8, trail: 0xff9a78 });
+          // 지휘전차가 기동 중이면 사수가 속도를 미리 감안해 조준한다 (예측 사격)
+          const aimPt = near.position.clone().add(new THREE.Vector3(0,1.3,0));
+          if (near === playerRoot) {
+            const tof = minD / 78;
+            aimPt.x += -Math.sin(state.hullYaw) * state.hullSpeed * tof * 0.62;
+            aimPt.z += -Math.cos(state.hullYaw) * state.hullSpeed * tof * 0.62;
+          }
+          const d = new THREE.Vector3().subVectors(aimPt, wpE).normalize();
+          // 멀수록·빠르게 움직일수록 명중률이 떨어진다
+          const evadeSpread = (near === playerRoot && Math.abs(state.hullSpeed) > 10) ? 0.062 : 0.042;
+          const rangeErr = Math.min(0.075, minD * 0.00045);
+          d.x += (Math.random()-0.5)*((near===playerRoot && state.smokeActive>0)?0.30:evadeSpread + rangeErr);
+          d.y += (Math.random()-0.5)*0.02;
+          projectiles.push({ mesh:sh, vel:d.multiplyScalar(78), life:3.5, fromAlly:false, dmg:en.isBoss?16:11, trail: 0xff9a78 });
         }
       });
 
@@ -5390,11 +5742,9 @@
         if (b.mesh.position.y <= 0.3) {
           b.active = false; const imp = b.mesh.position.clone(); imp.y = 0.5; spawnExplosion(imp, true);
           if (imp.distanceTo(playerRoot.position) < 13 && state.shieldActive <= 0) {
-            state.hp = Math.max(0, state.hp - 14); document.getElementById('hud-hp').textContent = `${state.hp}%`; document.getElementById('hp-bar').style.width = `${state.hp}%`;
-            const df = document.getElementById('damage-flash'); df.style.opacity = '1'; setTimeout(() => { df.style.opacity = '0'; }, 240);
-            if (state.hp <= 0) endBattle(false);
+            damagePlayer(14, null, imp);
           }
-          allies.forEach(a => { if (a.state==='active' && imp.distanceTo(a.root.position)<14) damageTank(a, 35, 0, false); });
+          allies.forEach(a => { if (a.state==='active' && imp.distanceTo(a.root.position)<14) damageTank(a, 40, 0, false); });
           scene.remove(b.mesh); scene.remove(b.warnRing); bombs.splice(i,1);
         }
       }
@@ -5407,8 +5757,8 @@
         if (dist < 4.5) {
           if (dr.targetRoot === playerRoot) {
             if (state.shieldActive > 0) { audio.playShield(true); destroyDrone(dr, true); }
-            else { destroyDrone(dr, false); state.hp = Math.max(0, state.hp-12); document.getElementById('hud-hp').textContent=`${state.hp}%`; document.getElementById('hp-bar').style.width=`${state.hp}%`; if (state.hp<=0) endBattle(false); }
-          } else { const al = allies.find(a=>a.root===dr.targetRoot); if (al) damageTank(al, 28, 0, false); destroyDrone(dr, false); }
+            else { destroyDrone(dr, false); damagePlayer(12, null, dr.root.position.clone()); }
+          } else { const al = allies.find(a=>a.root===dr.targetRoot); if (al) damageTank(al, 34, 0, false); destroyDrone(dr, false); }
         }
       }
       for (let i = projectiles.length-1; i >= 0; i--) {
@@ -5430,15 +5780,15 @@
         }
         let hit = false;
         if (pr.fromAlly) {
-          for (const en of enemies) { if (en.state==='active' && pr.mesh.position.distanceTo(en.root.position.clone().add(new THREE.Vector3(0,1.5,0)))<4.5) { spawnExplosion(pr.mesh.position.clone(), pr.isMissile); damageTank(en, pr.dmg, pr.isMissile?14:10, pr.byPlayer); hit=true; break; } }
+          for (const en of enemies) { if (en.state==='active' && pr.mesh.position.distanceTo(en.root.position.clone().add(new THREE.Vector3(0,1.5,0)))<4.5) { spawnExplosion(pr.mesh.position.clone(), pr.isMissile); applyHitToTank(en, pr.dmg, pr.vel.clone().normalize(), pr.isMissile?14:10, pr.byPlayer, pr.mesh.position.clone()); hit=true; break; } }
           if (!hit) for (const j of aircrafts) { if (j.state==='active' && pr.mesh.position.distanceTo(j.root.position)<9) { destroyJet(j, pr.byPlayer); hit=true; break; } }
           if (!hit) for (const dr of drones) { if (dr.state==='active' && pr.mesh.position.distanceTo(dr.root.position)<4.5) { destroyDrone(dr, false); hit=true; break; } }
         } else {
           const dp = pr.mesh.position.distanceTo(playerRoot.position.clone().add(new THREE.Vector3(0,1.5,0)));
           if (dp < 14 && state.autoDefense && state.shieldCd <= 0) window._triggerShield(true);
           if (state.shieldActive > 0 && dp < 6.8) { audio.playShield(true); spawnExplosion(pr.mesh.position.clone(), false); state.intercepted++; state.score += 250; hit = true; }
-          else if (dp < 4.0) { spawnExplosion(pr.mesh.position.clone(), false); state.hp=Math.max(0,state.hp-pr.dmg); document.getElementById('hud-hp').textContent=`${state.hp}%`; document.getElementById('hp-bar').style.width=`${state.hp}%`; if (state.hp<=0) endBattle(false); hit=true; }
-          else for (const al of allies) { if (al.state==='active' && pr.mesh.position.distanceTo(al.root.position.clone().add(new THREE.Vector3(0,1.5,0)))<4.2) { spawnExplosion(pr.mesh.position.clone(), false); damageTank(al, pr.dmg, 0, false); hit=true; break; } }
+          else if (dp < 4.2) { spawnExplosion(pr.mesh.position.clone(), false); damagePlayer(pr.dmg, pr.vel.clone().normalize(), pr.mesh.position.clone()); hit=true; }
+          else for (const al of allies) { if (al.state==='active' && pr.mesh.position.distanceTo(al.root.position.clone().add(new THREE.Vector3(0,1.5,0)))<4.2) { spawnExplosion(pr.mesh.position.clone(), false); applyHitToTank(al, pr.dmg, pr.vel.clone().normalize(), 0, false, pr.mesh.position.clone()); hit=true; break; } }
         }
         if (pr.mesh.position.y <= 0.2) { spawnExplosion(pr.mesh.position.clone(), false); hit = true; }
         if (hit || pr.life <= 0) { scene.remove(pr.mesh); projectiles.splice(i,1); }
@@ -5559,6 +5909,27 @@
       },
       emojiCount: (document.body.innerText.match(EMOJI_RE) || []).length,
       iconCount: document.querySelectorAll('svg.ic use').length
+    };
+  };
+  // V7.1 읽기 전용 검증 훅: 페이즈·장갑/도탄·재장전·적 AI 기동 상태
+  window.__v71 = () => {
+    const ri = reloadInfo();
+    return {
+      running: state.running, phase: state.phase, phaseName: PHASE_NAMES[state.phase - 1] || '',
+      phaseGap: +state.phaseGap.toFixed(2), battleT: +state.battleT.toFixed(1),
+      hp: +state.hp.toFixed(1), hitsTaken: state.hitsTaken, ricochets: state.ricochets,
+      kills: state.kills, score: state.score, phaseLog: state.phaseLog.slice(-5),
+      reload: ri ? { label: ri.label, left: +Math.max(0, ri.left).toFixed(2), pct: Math.round(Math.max(0, Math.min(1, ri.p)) * 100) } : null,
+      reloadRing: reloadRingEl ? { dash: reloadRingEl.getAttribute('stroke-dashoffset'), opacity: reloadRingEl.getAttribute('opacity'), stroke: reloadRingEl.getAttribute('stroke') } : null,
+      reloadTxt: reloadTxtEl ? { text: reloadTxtEl.textContent, opacity: reloadTxtEl.getAttribute('opacity') } : null,
+      enemies: enemies.filter(e => e.state === 'active').map(e => ({
+        name: e.name, hp: Math.round(e.hp), maxHp: e.maxHp, mode: e.aiMode, boss: !!e.isBoss,
+        x: +e.root.position.x.toFixed(1), z: +e.root.position.z.toFixed(1), d: +e.root.position.distanceTo(playerRoot.position).toFixed(1)
+      })),
+      allyHp: allies.filter(a => a.state === 'active').map(a => Math.round(a.hp)),
+      allyLosses: allies.filter(a => a.state !== 'active').length,
+      artyQueue: state.artyQueue.length, hostileArtyCd: +state.hostileArtyCd.toFixed(1), enemyShots: state.enemyShots || 0,
+      playerPos: [Math.round(playerRoot.position.x), Math.round(playerRoot.position.z)]
     };
   };
   window.__emojiScan = () => {
