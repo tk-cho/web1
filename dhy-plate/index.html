@@ -898,7 +898,7 @@ table.fields td.dim{color:#7d8896;font-weight:600}
         잘못 읽어도 <b>읽은 숫자를 눌러</b> 칸을 채워 검색할 수 있습니다.</p>
       <div class="aibar">
         <button type="button" id="aiBtnPhoto" class="aipill">🤖 AI 인식 <b>OFF</b></button>
-        <span class="aibar-tx">무료 Gemini 키를 넣으면 사진을 AI가 더 정확하게 읽습니다</span>
+        <span class="aibar-tx" id="aiTxPhoto">무료 Gemini 키를 넣으면 사진을 AI가 더 정확하게 읽습니다</span>
       </div>
       <div class="photoacts" id="photoActs">
         <button id="photoCam" class="pact cam">📷 카메라로 찍기</button>
@@ -960,7 +960,7 @@ table.fields td.dim{color:#7d8896;font-weight:600}
         확인한 뒤 <b>✅ 입고 확정</b>을 누르면 이 폰에 <b>현장 입고</b>로 저장됩니다.</p>
       <div class="aibar">
         <button type="button" id="aiBtnInv" class="aipill">🤖 AI 인식 <b>OFF</b></button>
-        <span class="aibar-tx">무료 Gemini 키를 넣으면 명세서 품목·수량을 AI가 읽습니다</span>
+        <span class="aibar-tx" id="aiTxInv">무료 Gemini 키를 넣으면 명세서 품목·수량을 AI가 읽습니다</span>
       </div>
       <div class="photoacts" id="invActs">
         <button id="invCam" class="pact cam">📷 카메라로 찍기</button>
@@ -5167,6 +5167,12 @@ function gemBadge(){
     if (s) s.textContent = on ? 'ON' : 'OFF';
     e.className = 'aipill' + (on ? ' on' : '');
   }
+  var tx = document.getElementById('aiTxPhoto');
+  if (tx) tx.textContent = on ? 'Gemini AI가 먼저 읽고, 안 되면 기기 인식으로 넘어갑니다'
+                              : '무료 Gemini 키를 넣으면 사진을 AI가 더 정확하게 읽습니다';
+  tx = document.getElementById('aiTxInv');
+  if (tx) tx.textContent = on ? 'Gemini AI가 먼저 읽고, 안 되면 기기 인식으로 넘어갑니다'
+                              : '무료 Gemini 키를 넣으면 명세서 품목·수량을 AI가 읽습니다';
 }
 
 /* ---------- 화면 안내줄 ---------- */
