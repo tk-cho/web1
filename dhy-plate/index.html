@@ -1506,21 +1506,27 @@ function codeGroups(){
   return out;
 }
 
-/* ================= 📷 사진으로 찾기 (스텐실 치수 OCR v8.1) =================
-   ① 사진 정규화 — 긴 변 1600px, 회전 후보(0°·90°·270°·180°)
-   ② 다중 전처리 — 고대비 스트레치 / 오츠 이진화 / 적응형(국소평균) 이진화,
-      어두운 글씨·밝은 글씨(스텐실) 양쪽 대응
-   ③ 전체 글자 인식(psm 11·6) → 글자 줄(band) 집중 인식 순서로 시도
-   ④ 숫자 문맥 보정(O→0, I→1, S→5, B→8, Z→2) + 구분자(X · * - / 공백) 규격 파싱
-   ⑤ 규격 후보 칩 + 읽은 숫자 칩 + 사진 미리보기(확대·회전·다시 읽기)
-   결과가 자료와 정확히 맞지 않아도 숫자 칩만 눌러 두께·폭·길이를 채워 검색할 수 있다. */
+/* ================= 📷 사진으로 찾기 (스텐실·라벨 치수 OCR v8.4) =================
+   실물 사진 3종으로 검증한 파이프라인.
+   ① 사진을 원본 해상도(긴 변 2200px)로 쓰고, 회전 후보(0·90·270·180)를 차례로 본다.
+   ② 두 갈래로 읽는다.
+      A) '밝은 띠(라벨) 패스' — 철판 위 흰 라벨·종이처럼 밝은 가로/세로 띠를 찾아
+         그 띠만 잘라내고, 띠의 위·아래 경계 기울기로 비스듬함을 펴서(shear) 읽는다.
+      B) '어두운 바탕 + 밝은 글씨(도트 스텐실) 패스' — 배경 그라데이션을 빼고(top-hat)
+         도트 점들을 블러로 이어 붙인 뒤, 글자 줄마다 잘라 크게 키워 읽는다.
+   ③ 도트 글씨는 0·6이 서로 바뀌어 읽히므로(실측), '6을 뺀 화이트리스트'로 한 번 더 읽어
+      두 판독이 0/6에서만 갈리면 둘 다 후보로 남기고 화면에 '0/6 갈림'이라고 알린다.
+   ④ 숫자 보정(O→0·I→1·S→5·B→8·Z→2) + 구분자(X · * - / 공백) 규격 파싱 + 자료 대조.
+   ⑤ 규격 후보 칩 + 읽은 숫자 칩 + 미리보기(확대·회전·다시 읽기). */
 var PHOTO_CDN = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
-var PHOTO_MAXSIDE = 1600;         /* 분석에 쓰는 최대 긴 변(px) */
+var PHOTO_MAXSIDE = 2200;         /* 분석에 쓰는 최대 긴 변(px) — 실물 사진은 원본 그대로 */
 var PHOTO_MAXBAND = 3;            /* 회전당 살펴볼 글자 줄 수 */
-var PHOTO_WHITE = '0123456789XxTt.-/ ';
+var PHOTO_WHITE = '0123456789Xx -/.';
+var PHOTO_WHITE_N6 = '012345789Xx -/.';   /* 6을 뺀 화이트리스트 — 0/6 갈림 확인용 */
 var PHOTO_TESS_P = null, PHOTO_W_P = null;
 var PHOTO_BUSY = false, PHOTO_CANDS = {}, PHOTO_HITS = 0, PHOTO_DBG = [];
 var PHOTO_NUMS = {};              /* 읽은 숫자 후보 {값: {n:횟수, kind:'t'|'w'|'l'|''}} */
+var PHOTO_AMB = {};               /* 0/6 갈림 정보 { '40x2015x16850': {alt:'40x2015x10850'} } */
 var PHOTO_OBJURL = null, PHOTO_IMG = null, PHOTO_ROT_VIEW = 0, PHOTO_START_ROT = 0;
 try { window.__PHOTO_DEBUG = PHOTO_DBG; } catch(e){}
 
@@ -1562,7 +1568,7 @@ function photoViewRot(rot){
   if (rr) rr.classList.toggle('hidden', !PHOTO_ROT_VIEW);
 }
 function photoReset(){
-  PHOTO_CANDS = {}; PHOTO_HITS = 0; PHOTO_NUMS = {};
+  PHOTO_CANDS = {}; PHOTO_HITS = 0; PHOTO_NUMS = {}; PHOTO_AMB = {};
   while (PHOTO_DBG.length) PHOTO_DBG.pop();
   photoProgOn(false); photoFail('');
   $p('photoRes').classList.add('hidden');
@@ -1609,12 +1615,12 @@ function photoWorker(){
   return PHOTO_W_P;
 }
 
-/* ---------- 이미지 → 캔버스(회전·해상도 정규화) ---------- */
+/* ---------- 이미지 → 캔버스(회전·해상도) ---------- */
 function photoRotated(img, rot, maxSide){
   var sw = img.naturalWidth || img.width, sh = img.naturalHeight || img.height;
   var k = (maxSide || PHOTO_MAXSIDE) / Math.max(sw, sh);
   if (!isFinite(k) || k <= 0) k = 1;
-  if (k > 2) k = 2;                 /* 작은 사진은 2배까지만 키운다 */
+  if (k > 2.5) k = 2.5;             /* 작은 사진은 2.5배까지만 키운다 */
   var iw = Math.max(1, Math.round(sw * k)), ih = Math.max(1, Math.round(sh * k));
   var rw = (rot % 180 === 0) ? iw : ih, rh = (rot % 180 === 0) ? ih : iw;
   var cv = document.createElement('canvas');
@@ -1633,11 +1639,32 @@ function photoClone(cv){
   o.getContext('2d').drawImage(cv, 0, 0);
   return o;
 }
+function photoCrop(cv, x, y, w, h, scale){
+  scale = scale || 1;
+  var ow = Math.max(1, Math.round(w * scale)), oh = Math.max(1, Math.round(h * scale));
+  var o = document.createElement('canvas');
+  o.width = ow; o.height = oh;
+  var c = o.getContext('2d');
+  c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
+  c.drawImage(cv, x, y, w, h, 0, 0, ow, oh);
+  return o;
+}
+/* 이진(1=글자) 배열을 흰 여백을 두고 키워 캔버스로 */
+function photoBinCanvas(bin, w, h, scale, margin){
+  scale = scale || 1;
+  margin = margin === undefined ? 0.12 : margin;
+  var ow = Math.max(1, Math.round(w * scale)), oh = Math.max(1, Math.round(h * scale));
+  var mm = Math.round(margin * oh);
+  var o = document.createElement('canvas');
+  o.width = ow + mm * 2; o.height = oh + mm * 2;
+  var c = o.getContext('2d');
+  c.fillStyle = '#fff'; c.fillRect(0, 0, o.width, o.height);
+  c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
+  c.drawImage(photoFromBin(bin, w, h), 0, 0, w, h, mm, mm, ow, oh);
+  return o;
+}
 
-/* ---------- 전처리 (밝기 정규화 · 오츠 · 적응형 이진화) ----------
-   kind: stretch(고대비 회색) / stretchInv / otsu / otsuBright / adapt / adaptBright
-   - otsu·adapt: 어두운 글씨를 검정으로 (밝은 종이·자재표)
-   - *Bright   : 밝은 글씨를 검정으로 (어두운 철판 위 흰·노란 스텐실) */
+/* ---------- 회색조 / 전처리 도구 ---------- */
 function photoGray(cv){
   var c = cv.getContext('2d'), w = cv.width, h = cv.height, id, d, n, i, g;
   try { id = c.getImageData(0, 0, w, h); } catch(e){ return null; }
@@ -1645,32 +1672,118 @@ function photoGray(cv){
   for (i = 0; i < n; i++) g[i] = d[i*4] * 0.299 + d[i*4+1] * 0.587 + d[i*4+2] * 0.114;
   return { ctx: c, id: id, d: d, w: w, h: h, g: g };
 }
-function photoStretch(g){
-  var n = g.length, hist = new Uint32Array(256), i, v, acc, lo = 0, hi = 255;
-  for (i = 0; i < n; i++) hist[g[i] | 0]++;
-  for (acc = 0, v = 0; v < 256; v++){ acc += hist[v]; if (acc >= n * 0.02){ lo = v; break; } }
-  for (acc = 0, v = 0; v < 256; v++){ acc += hist[v]; if (acc >= n * 0.985){ hi = v; break; } }
-  var span = Math.max(1, hi - lo);
-  for (i = 0; i < n; i++){
-    var q = (g[i] - lo) * 255 / span;
-    g[i] = q < 0 ? 0 : (q > 255 ? 255 : q);
+function photoFromGray(g, w, h){
+  var cv = document.createElement('canvas');
+  cv.width = w; cv.height = h;
+  var c = cv.getContext('2d'), id = c.createImageData(w, h), d = id.data, i, v;
+  for (i = 0; i < w*h; i++){
+    v = g[i]; v = v < 0 ? 0 : (v > 255 ? 255 : v);
+    d[i*4] = d[i*4+1] = d[i*4+2] = v; d[i*4+3] = 255;
   }
-  return g;
+  c.putImageData(id, 0, 0);
+  return cv;
+}
+function photoFromBin(bin, w, h){
+  var cv = document.createElement('canvas');
+  cv.width = w; cv.height = h;
+  var c = cv.getContext('2d'), id = c.createImageData(w, h), d = id.data, i, v;
+  for (i = 0; i < w*h; i++){
+    v = bin[i] ? 0 : 255;
+    d[i*4] = d[i*4+1] = d[i*4+2] = v; d[i*4+3] = 255;
+  }
+  c.putImageData(id, 0, 0);
+  return cv;
+}
+function photoBoxBlur(g, w, h, r){
+  if (r < 1) return g.slice ? g.slice() : new Float32Array(g);
+  var ii = new Float64Array((w+1)*(h+1)), x, y, rs;
+  for (y = 0; y < h; y++){
+    rs = 0;
+    for (x = 0; x < w; x++){ rs += g[y*w+x]; ii[(y+1)*(w+1) + (x+1)] = ii[y*(w+1) + (x+1)] + rs; }
+  }
+  var out = new Float32Array(w*h);
+  for (y = 0; y < h; y++){
+    var y0 = y - r < 0 ? 0 : y - r, y1 = y + r + 1 > h ? h : y + r + 1;
+    for (x = 0; x < w; x++){
+      var x0 = x - r < 0 ? 0 : x - r, x1 = x + r + 1 > w ? w : x + r + 1;
+      var s = ii[y1*(w+1)+x1] - ii[y0*(w+1)+x1] - ii[y1*(w+1)+x0] + ii[y0*(w+1)+x0];
+      out[y*w+x] = s / ((y1-y0) * (x1-x0));
+    }
+  }
+  return out;
+}
+function photoDilate(bin, w, h, r){
+  if (r < 1) return bin.slice ? bin.slice() : bin;
+  var tmp = new Uint8Array(w*h), out = new Uint8Array(w*h), x, y, k, v, xx, yy;
+  for (y = 0; y < h; y++) for (x = 0; x < w; x++){
+    v = 0;
+    for (k = -r; k <= r; k++){ xx = x + k; if (xx >= 0 && xx < w && bin[y*w+xx]){ v = 1; break; } }
+    tmp[y*w+x] = v;
+  }
+  for (y = 0; y < h; y++) for (x = 0; x < w; x++){
+    v = 0;
+    for (k = -r; k <= r; k++){ yy = y + k; if (yy >= 0 && yy < h && tmp[yy*w+x]){ v = 1; break; } }
+    out[y*w+x] = v;
+  }
+  return out;
+}
+function photoErode(bin, w, h, r){
+  if (r < 1) return bin.slice ? bin.slice() : bin;
+  var tmp = new Uint8Array(w*h), out = new Uint8Array(w*h), x, y, k, v, xx, yy;
+  for (y = 0; y < h; y++) for (x = 0; x < w; x++){
+    v = 1;
+    for (k = -r; k <= r; k++){ xx = x + k; if (xx < 0 || xx >= w || !bin[y*w+xx]){ v = 0; break; } }
+    tmp[y*w+x] = v;
+  }
+  for (y = 0; y < h; y++) for (x = 0; x < w; x++){
+    v = 1;
+    for (k = -r; k <= r; k++){ yy = y + k; if (yy < 0 || yy >= h || !tmp[yy*w+x]){ v = 0; break; } }
+    out[y*w+x] = v;
+  }
+  return out;
 }
 function photoOtsuThr(g){
   var n = g.length, hist = new Uint32Array(256), i, v;
-  for (i = 0; i < n; i++) hist[g[i] | 0]++;
+  for (i = 0; i < n; i++){ v = g[i]; if (v < 0) v = 0; if (v > 255) v = 255; hist[v|0]++; }
   var sum = 0; for (v = 0; v < 256; v++) sum += v * hist[v];
-  var sumB = 0, wB = 0, best = 0, thr = 128;
+  var sumB = 0, wB = 0, best = -1, thr = 128;
   for (v = 0; v < 256; v++){
     wB += hist[v]; if (!wB) continue;
     var wF = n - wB; if (!wF) break;
     sumB += v * hist[v];
     var mB = sumB / wB, mF = (sum - sumB) / wF;
-    var between = wB * wF * (mB - mF) * (mB - mF);
-    if (between > best){ best = between; thr = v; }
+    var bt = wB * wF * (mB - mF) * (mB - mF);
+    if (bt > best){ best = bt; thr = v; }
   }
   return thr;
+}
+function photoPct(g, p){
+  var hist = new Uint32Array(256), n = g.length, i, acc = 0, v;
+  for (i = 0; i < n; i++){ v = g[i]; if (v < 0) v = 0; if (v > 255) v = 255; hist[v|0]++; }
+  var want = n * p;
+  for (v = 0; v < 256; v++){ acc += hist[v]; if (acc >= want) return v; }
+  return 255;
+}
+function photoStretch(g, lo, hi){
+  var out = new Float32Array(g.length), sp = Math.max(1, hi - lo), i, q;
+  for (i = 0; i < g.length; i++){
+    q = (g[i] - lo) * 255 / sp;
+    out[i] = q < 0 ? 0 : (q > 255 ? 255 : q);
+  }
+  return out;
+}
+function photoSharpen(g, w, h){
+  var out = new Float32Array(g.length), x, y, dx, dy, ss, kk, v, b;
+  for (y = 0; y < h; y++) for (x = 0; x < w; x++){
+    ss = 0; kk = 0;
+    for (dy = -1; dy <= 1; dy++){
+      var yy = y + dy; if (yy < 0 || yy >= h) continue;
+      for (dx = -1; dx <= 1; dx++){ var xx = x + dx; if (xx < 0 || xx >= w) continue; ss += g[yy*w + xx]; kk++; }
+    }
+    v = g[y*w + x]; b = ss / kk;
+    out[y*w+x] = v + 1.4 * (v - b);
+  }
+  return out;
 }
 function photoAdaptThr(g, w, h, bright){
   var R = Math.max(6, Math.round(Math.min(w, h) / 26));
@@ -1686,121 +1799,122 @@ function photoAdaptThr(g, w, h, bright){
       var x0 = Math.max(0, x - R), x1 = Math.min(w, x + R + 1);
       var s = ii[y1*(w+1) + x1] - ii[y0*(w+1) + x1] - ii[y1*(w+1) + x0] + ii[y0*(w+1) + x0];
       var m = s / (wy * (x1 - x0)), v = g[y*w + x];
-      out[y*w + x] = (bright ? (v > m + C) : (v < m - C)) ? 0 : 255;
+      out[y*w + x] = (bright ? (v > m + C) : (v < m - C)) ? 1 : 0;
     }
   }
   return out;
 }
-function photoSharpen(g, w, h){
-  var out = new Float32Array(g.length), x, y, dx, dy, ss, kk;
-  for (y = 0; y < h; y++) for (x = 0; x < w; x++){
-    ss = 0; kk = 0;
-    for (dy = -1; dy <= 1; dy++){
-      var yy = y + dy; if (yy < 0 || yy >= h) continue;
-      for (dx = -1; dx <= 1; dx++){ var xx = x + dx; if (xx < 0 || xx >= w) continue; ss += g[yy*w + xx]; kk++; }
-    }
-    var v = g[y*w + x], b = ss / kk;
-    out[y*w + x] = v + 1.4 * (v - b);
-  }
-  return out;
-}
-/* 캔버스를 전처리해 새 캔버스로 돌려준다 (원본은 그대로) */
+/* 예전 이름 유지 — 캔버스를 전처리해 새 캔버스로 */
 function photoPre(cv, kind){
   var S = photoGray(cv);
   if (!S) return cv;
-  var w = S.w, h = S.h, g = S.g, i, n = w * h, out = null;
-  if (kind === 'stretch' || kind === 'stretchInv') g = photoStretch(photoSharpen(g, w, h));
-  else if (kind === 'otsu' || kind === 'otsuBright'){
+  var w = S.w, h = S.h, n = w * h, g = S.g, bin = null, i, v;
+  if (kind === 'otsu' || kind === 'otsuBright'){
     var thr = photoOtsuThr(g);
-    out = new Uint8Array(n);
-    for (i = 0; i < n; i++) out[i] = (kind === 'otsuBright' ? (g[i] > thr) : (g[i] < thr)) ? 0 : 255;
-  } else if (kind === 'adapt' || kind === 'adaptBright'){
-    out = photoAdaptThr(g, w, h, kind === 'adaptBright');
-  } else { g = photoStretch(g); }
-  var d = S.d;
-  for (i = 0; i < n; i++){
-    var v = out ? out[i] : g[i];
-    if (kind === 'stretchInv') v = 255 - v;
-    d[i*4] = d[i*4+1] = d[i*4+2] = v; d[i*4+3] = 255;
+    bin = new Uint8Array(n);
+    for (i = 0; i < n; i++) bin[i] = (kind === 'otsuBright' ? (g[i] > thr) : (g[i] < thr)) ? 1 : 0;
+    return photoFromBin(bin, w, h);
   }
-  var o = document.createElement('canvas');
-  o.width = w; o.height = h;
-  o.getContext('2d').putImageData(S.id, 0, 0);
+  if (kind === 'adapt' || kind === 'adaptBright') return photoFromBin(photoAdaptThr(g, w, h, kind === 'adaptBright'), w, h);
+  if (kind === 'stretchInv') return photoFromGray(photoStretch(g, photoPct(g, 0.02), photoPct(g, 0.98)), w, h);
+  return photoFromGray(photoStretch(photoSharpen(g, w, h), photoPct(g, 0.02), photoPct(g, 0.985)), w, h);
+}
+function photoRowMeans(g, w, h){
+  var out = new Float64Array(h), x, y, s;
+  for (y = 0; y < h; y++){
+    s = 0;
+    for (x = 0; x < w; x++) s += g[y*w+x];
+    out[y] = s / w;
+  }
+  return out;
+}
+function photoColMeans(g, w, h){
+  var out = new Float64Array(w), x, y, s;
+  for (x = 0; x < w; x++){
+    s = 0;
+    for (y = 0; y < h; y++) s += g[y*w+x];
+    out[x] = s / h;
+  }
+  return out;
+}
+function photoSmooth(p, r){
+  var o = new Float64Array(p.length), i, k, j, s, c;
+  for (i = 0; i < p.length; i++){
+    s = 0; c = 0;
+    for (k = -r; k <= r; k++){ j = i + k; if (j >= 0 && j < p.length){ s += p[j]; c++; } }
+    o[i] = s / c;
+  }
   return o;
 }
-
-/* ---------- 글자 줄(band) 찾기: 이진화 캔버스의 행별 검은 픽셀 밀도 ---------- */
-function photoBands(cv){
-  var w = cv.width, h = cv.height;
-  if (w < 40 || h < 20) return [];
-  var S = photoGray(cv);
-  if (!S) return [];
-  var g = S.g, R = 0;                      /* 밝은 획(top-hat) 기준 */
-  var k = Math.min(1, 640 / w);
-  var sw = Math.max(1, Math.round(w * k)), sh = Math.max(1, Math.round(h * k));
-  var row = new Float32Array(h), x, y, i, j, d, mn, v;
-  for (y = 0; y < h; y++){
-    var s = 0;
-    for (x = 0; x < w; x++){
-      v = g[y*w + x]; mn = 255;
-      for (j = -3; j <= 3; j++){ var xx = x + j; if (xx >= 0 && xx < w){ d = g[y*w + xx]; if (d < mn) mn = d; } }
-      var t = v - mn;
-      if (t > 0) s += t;
-    }
-    row[y] = s / (w * 255);
+function photoStats(p){
+  var n = p.length, m = 0, v = 0, i, d, mx = 0;
+  for (i = 0; i < n; i++) m += p[i]; m /= n;
+  for (i = 0; i < n; i++){ d = p[i] - m; v += d*d; if (p[i] > mx) mx = p[i]; }
+  return { mean: m, sd: Math.sqrt(v / n), max: mx };
+}
+/* 밝기 프로파일에서 '밝은 띠' — [시작,끝,꼭대기,대비] */
+function photoBrightBands(prof, len, opts){
+  opts = opts || {};
+  var s = photoSmooth(prof, opts.smooth === undefined ? 3 : opts.smooth), st = photoStats(s);
+  var thr = st.mean + (opts.k === undefined ? 0.9 : opts.k) * st.sd;
+  var bands = [], start = -1, i, y, bh, mx;
+  for (i = 0; i <= s.length; i++){
+    if (i < s.length && s[i] >= thr){ if (start < 0) start = i; }
+    else if (start >= 0){ bands.push([start, i]); start = -1; }
   }
-  var sm = new Float32Array(h), n2;
-  for (y = 0; y < h; y++){
-    var s2 = 0, c2 = 0;
-    for (j = -3; j <= 3; j++){ var yy = y + j; if (yy >= 0 && yy < h){ s2 += row[yy]; c2++; } }
-    sm[y] = s2 / c2;
-  }
-  var mean = 0, sq = 0;
-  for (y = 0; y < h; y++){ mean += sm[y]; sq += sm[y]*sm[y]; }
-  mean /= h;
-  var sd = Math.sqrt(Math.max(0, sq/h - mean*mean));
-  var thr = mean + 0.85 * sd;
-  var bands = [], st = -1;
-  for (y = 0; y < h; y++){
-    if (sm[y] >= thr){ if (st < 0) st = y; }
-    else if (st >= 0){ bands.push([st, y]); st = -1; }
-  }
-  if (st >= 0) bands.push([st, h]);
   var out = [];
-  for (i = 0; i < bands.length; i++){
-    var bh = bands[i][1] - bands[i][0];
-    if (bh < Math.max(5, 0.006*h)) continue;
-    if (bh > 0.16*h) continue;
-    var mx = 0;
-    for (y = bands[i][0]; y < bands[i][1]; y++) if (sm[y] > mx) mx = sm[y];
-    out.push({ y0: Math.round(bands[i][0]), y1: Math.round(bands[i][1]), sc: mx });
+  for (var b = 0; b < bands.length; b++){
+    bh = bands[b][1] - bands[b][0];
+    if (bh < (opts.minPx || 10)) continue;
+    if (opts.maxFrac && bh > opts.maxFrac * s.length) continue;
+    mx = 0;
+    for (y = bands[b][0]; y < bands[b][1]; y++) if (s[y] > mx) mx = s[y];
+    out.push({ y0: bands[b][0], y1: bands[b][1], peak: mx, contrast: mx - st.mean, height: bh });
   }
-  out.sort(function(a, b){ return b.sc - a.sc; });
-  return out.slice(0, PHOTO_MAXBAND);
+  out.sort(function(a, b){ return b.contrast - a.contrast; });
+  return out.slice(0, len || 4);
 }
-/* 줄 하나를 잘라 확대 (여백·배율) */
-function photoBandCrop(rc, y0, y1, scale, pad){
-  var sy = Math.max(0, Math.round(y0 - pad)), ey = Math.min(rc.height, Math.round(y1 + pad));
-  var sh = ey - sy;
-  if (sh < 6) return null;
-  var sw = rc.width, w = Math.round(sw * scale), h = Math.round(sh * scale);
-  if (w > 6400){ scale = 6400 / sw; w = 6400; h = Math.round(sh * scale); }
-  if (h > 1600){ var s2 = 1600 / h; h = 1600; w = Math.round(w * s2); }
-  if (w < 60 || h < 12) return null;
-  var cv = document.createElement('canvas');
-  cv.width = w; cv.height = h;
-  var c = cv.getContext('2d');
-  c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
-  c.drawImage(rc, 0, sy, sw, sh, 0, 0, w, h);
-  return cv;
+/* 행/열 밀도(잉크 비율) 프로파일 */
+function photoInkProfile(bin, w, h, axis){
+  var out = new Float64Array(axis === 'col' ? w : h), i, j, s;
+  if (axis === 'col'){
+    for (i = 0; i < w; i++){ s = 0; for (j = 0; j < h; j++) s += bin[j*w+i]; out[i] = s; }
+  } else {
+    for (j = 0; j < h; j++){ s = 0; for (i = 0; i < w; i++) s += bin[j*w+i]; out[j] = s; }
+  }
+  return out;
 }
-
-function photoOcr(cv, psm, wl){
-  return photoWorker().then(function(w){
-    return w.setParameters({ tessedit_char_whitelist: wl || '', tessedit_pageseg_mode: String(psm) })
-      .then(function(){ return w.recognize(cv); })
-      .then(function(r){ return String((r && r.data && r.data.text) || ''); });
-  });
+/* 이진 잉크의 bbox (가장자리 잡음 무시) */
+function photoInkBBox(bin, w, h, frac){
+  var rows = photoInkProfile(bin, w, h, 'row'), cols = photoInkProfile(bin, w, h, 'col');
+  var rmax = 0, cmax = 0, i;
+  for (i = 0; i < rows.length; i++) if (rows[i] > rmax) rmax = rows[i];
+  for (i = 0; i < cols.length; i++) if (cols[i] > cmax) cmax = cols[i];
+  var f = frac === undefined ? 0.10 : frac, x0 = -1, x1 = -1, y0 = -1, y1 = -1;
+  for (i = 0; i < rows.length; i++) if (rows[i] > rmax * f){ if (y0 < 0) y0 = i; y1 = i; }
+  for (i = 0; i < cols.length; i++) if (cols[i] > cmax * f){ if (x0 < 0) x0 = i; x1 = i; }
+  if (x0 < 0 || y0 < 0) return null;
+  return { x0: x0, y0: y0, x1: x1, y1: y1, w: x1-x0+1, h: y1-y0+1 };
+}
+/* 이진 잉크의 글자 줄 — [y0,y1] 목록 */
+function photoLineBands(bin, w, h, minH){
+  var rows = photoInkProfile(bin, w, h, 'row'), sm = photoSmooth(rows, 1);
+  var i, mx = 0, bands = [], st = -1;
+  for (i = 0; i < sm.length; i++) if (sm[i] > mx) mx = sm[i];
+  for (i = 0; i <= sm.length; i++){
+    var on = i < sm.length && sm[i] > mx * 0.18;
+    if (on && st < 0) st = i;
+    else if (!on && st >= 0){ if (i - st >= (minH || 12)) bands.push([st, i]); st = -1; }
+  }
+  return bands;
+}
+/* 각 줄의 잉크 x 범위 */
+function photoBandXRange(bin, w, h, a, b){
+  var x0 = w, x1 = -1, x, y;
+  for (y = a; y < b; y++) for (x = 0; x < w; x++){
+    if (bin[y*w+x]){ if (x < x0) x0 = x; if (x > x1) x1 = x; }
+  }
+  return x1 < 0 ? null : { x0: x0, x1: x1 };
 }
 
 /* ---------- 글자에서 치수 뽑기 ---------- */
@@ -1815,7 +1929,7 @@ function photoSpecIndex(){
     if (!exact[k]){ exact[k] = { t: t, w: w, l: l, count: 0, qty: 0, pend: 0 }; list.push(exact[k]); }
     exact[k].count++;
     exact[k].qty += (r[F.QTY] || 0);
-    if (isPendAt(i)) exact[k].pend++;
+    if (isPend(r)) exact[k].pend++;
     var k2 = w + 'x' + l;
     if (!wl[k2]) wl[k2] = [];
     if (wl[k2].indexOf(k) < 0) wl[k2].push(k);
@@ -1823,8 +1937,6 @@ function photoSpecIndex(){
   PHOTO_SPEC = { exact: exact, wl: wl, list: list };
   return PHOTO_SPEC;
 }
-
-/* 짧은 문자열 편집거리(상한 넘으면 99) */
 function photoEd(a, b, cap){
   a = String(a); b = String(b);
   if (a === b) return 0;
@@ -1846,9 +1958,6 @@ function photoEd(a, b, cap){
   }
   return prev[lb] > cap ? 99 : prev[lb];
 }
-
-/* 한 칸(두께·폭·길이) 글자 차이 — 같은 자릿수면 첫 글자가 같을 때만 2글자까지,
-   자릿수가 다르면 1글자까지(앞자리 누락·추가) 보정한다. 첫 숫자가 통째로 다르면 다른 규격으로 본다. */
 function photoFieldDist(a, b){
   a = String(a); b = String(b);
   if (a === b) return 0;
@@ -1858,8 +1967,6 @@ function photoFieldDist(a, b){
   }
   return photoEd(a, b, 1);
 }
-
-/* 읽은 숫자 → 실제 규격 (정확히 없으면 가까운 규격까지) */
 function photoResolve(t, w, l){
   var idx = photoSpecIndex();
   var k = t + 'x' + w + 'x' + l;
@@ -1871,8 +1978,6 @@ function photoResolve(t, w, l){
     var dt = photoFieldDist(t, o.t), dw = photoFieldDist(w, o.w), dl = photoFieldDist(l, o.l);
     if (dt > 2 || dw > 2 || dl > 2) continue;
     var nf = (dt ? 1 : 0) + (dw ? 1 : 0) + (dl ? 1 : 0), sum = dt + dw + dl;
-    /* 한 칸만 틀린 경우(2글자까지) 이거나, 여러 칸이 각각 1글자 틀린 경우만 보정한다.
-       두 칸이 동시에 1글자씩 틀리면(=2글자) 다른 규격일 가능성이 커서 보정하지 않는다. */
     if (!(nf <= 1 ? sum <= 2 : sum <= 1)) continue;
     if (!best || sum < best.dist || (sum === best.dist && o.count > best.info.count)){
       best = { t: o.t, w: o.w, l: o.l, info: o, dist: sum };
@@ -1880,8 +1985,6 @@ function photoResolve(t, w, l){
   }
   return best;
 }
-
-/* 숫자 문맥 보정: O→0, I·l·|→1, S→5, B→8, Z→2, G→6 */
 function photoFixDigits(s){
   return String(s)
     .replace(/[OoQ]/g, '0')
@@ -1891,17 +1994,17 @@ function photoFixDigits(s){
     .replace(/[Zz]/g, '2')
     .replace(/[Gg]/g, '6');
 }
-/* 구분자 통일: × * / · : — – - → X (공백은 그대로) */
 function photoNormSep(s){
   return String(s).replace(/[×✕✖╳ХхXx*＊\/\\·:;—–]/g, 'X');
 }
 function photoTokens(line){
-  var re = /(\d+(?:[.,]\d+)?)/g, m, out = [];
+  var re = /(\d+(?:[.,]\d+)?)/g, m, out = [], raw, v;
   while ((m = re.exec(line))){
-    var raw = m[1];
+    raw = m[1];
     if (/^\d{1,3}(,\d{3})+$/.test(raw)) raw = raw.replace(/,/g, '');
+    else if (/^\d{1,3}(\.\d{3})+$/.test(raw)) raw = raw.replace(/\./g, '');   /* 1.600 → 1600 */
     else raw = raw.replace(',', '.');
-    var v = parseFloat(raw);
+    v = parseFloat(raw);
     if (!isFinite(v)) continue;
     out.push({ v: v, raw: raw, i: m.index, j: m.index + m[1].length });
   }
@@ -1912,28 +2015,26 @@ function photoGapOk(a, b, gap){
   if (gap.length > 5) return false;
   return /^[X\s.·\-Tt]*$/.test(gap);
 }
-/* 한 줄에서 두께·폭·길이 3연속 후보 뽑기 */
 function photoTriples(line){
-  var tk = photoTokens(line), out = [], i;
+  var tk = photoTokens(line), out = [], i, A, B, C, g1, g2, t, w, l;
   for (i = 0; i + 2 < tk.length; i++){
-    var A = tk[i], B = tk[i+1], C = tk[i+2];
-    var g1 = line.slice(A.j, B.i), g2 = line.slice(B.j, C.i);
+    A = tk[i]; B = tk[i+1]; C = tk[i+2];
+    g1 = line.slice(A.j, B.i); g2 = line.slice(B.j, C.i);
     if (!photoGapOk(A, B, g1) || !photoGapOk(B, C, g2)) continue;
-    var t = A.v, w = B.v, l = C.v;
+    t = A.v; w = B.v; l = C.v;
     if (t < 0.8 || t > 79) continue;
     if (w < 120 || w > 4600) continue;
     if (l < 300 || l > 26000) continue;
-    if (w >= l) continue;                      /* 폭 < 길이 */
+    if (w >= l) continue;
     out.push({ t: A.raw, w: B.raw, l: C.raw, strong: (g1 + g2).replace(/[\s]/g, '').length > 0 });
   }
   return out;
 }
-/* 줄에서 폭×길이(두께는 따로) 뽑기 */
 function photoPairs(line){
-  var tk = photoTokens(line), out = [], i;
+  var tk = photoTokens(line), out = [], i, B, C, g;
   for (i = 0; i + 1 < tk.length; i++){
-    var B = tk[i], C = tk[i+1];
-    var g = line.slice(B.j, C.i);
+    B = tk[i]; C = tk[i+1];
+    g = line.slice(B.j, C.i);
     if (!photoGapOk(B, C, g)) continue;
     if (B.v < 120 || B.v > 4600) continue;
     if (C.v < 300 || C.v > 26000) continue;
@@ -1942,18 +2043,16 @@ function photoPairs(line){
   }
   return out;
 }
-/* 글자에서 치수 후보 모으기 (여러 줄·구분자·공백 3연속 모두) */
 function photoDims(text){
   var raw = String(text || '');
   var out = [], seen = {};
-  function add(r, src){
+  function add(r){
     if (!r) return;
     var k = r.t + 'x' + r.w + 'x' + r.l;
     if (seen[k]) return;
     if (!r.t) return;
     seen[k] = 1; out.push(r);
   }
-  /* 자료에 없는 규격 — 그래도 읽은 치수를 후보로 보여 준다(눌러서 칸에 채우기) */
   function addRaw(t, w, l){
     var nt = String(+t), nw = String(+w), nl = String(+l);
     var k = nt + 'x' + nw + 'x' + nl;
@@ -1967,38 +2066,34 @@ function photoDims(text){
       var line = lines[li];
       if (!line) continue;
       var L = photoNormSep(pass === 0 ? line : photoFixDigits(line));
-      var tri = photoTriples(L);
-      for (var a = 0; a < tri.length; a++){
-        /* 규격이 자료에 없어도 숫자 칩으로 쓸 수 있게 먼저 기록 */
+      var tri = photoTriples(L), a, rr;
+      for (a = 0; a < tri.length; a++){
         photoNumHint(tri[a].t, 't'); photoNumHint(tri[a].w, 'w'); photoNumHint(tri[a].l, 'l');
-        var rr = photoResolve(tri[a].t, tri[a].w, tri[a].l);
-        if (rr) add(rr, 'tri');
-        else if (tri[a].strong) addRaw(tri[a].t, tri[a].w, tri[a].l);   /* 구분자가 분명한 3연속 숫자 */
+        rr = photoResolve(tri[a].t, tri[a].w, tri[a].l);
+        if (rr) add(rr);
+        else if (tri[a].strong) addRaw(tri[a].t, tri[a].w, tri[a].l);
       }
       if (!tri.length){
-        /* 두께(T) 하나 + 폭·길이 쌍이 따로 있는 경우 (자재표·여러 줄 스텐실) */
         var tm = L.match(/(\d{1,2}(?:\.\d)?)\s*T\b/);
-        var pairs = photoPairs(L);
-        for (var b = 0; b < pairs.length; b++){ photoNumHint(pairs[b].w, 'w'); photoNumHint(pairs[b].l, 'l'); }
+        var pairs = photoPairs(L), b, b2;
+        for (b = 0; b < pairs.length; b++){ photoNumHint(pairs[b].w, 'w'); photoNumHint(pairs[b].l, 'l'); }
         if (tm && pairs.length){
           photoNumHint(tm[1], 't');
-          for (var b2 = 0; b2 < pairs.length; b2++) add(photoResolve(tm[1], pairs[b2].w, pairs[b2].l), 'tpair');
+          for (b2 = 0; b2 < pairs.length; b2++) add(photoResolve(tm[1], pairs[b2].w, pairs[b2].l));
         } else if (!tm && pairs.length){
-          /* 두께 없이 폭·길이만 — 두께는 모든 줄의 T 표기에서 찾아 본다 */
           var all = photoNormSep(pass === 0 ? raw : photoFixDigits(raw));
           var tm2 = all.match(/(\d{1,2}(?:\.\d)?)\s*T\b/);
-          if (tm2){ photoNumHint(tm2[1], 't'); for (var c = 0; c < pairs.length; c++) add(photoResolve(tm2[1], pairs[c].w, pairs[c].l), 'tpair2'); }
+          if (tm2){
+            photoNumHint(tm2[1], 't');
+            for (var c = 0; c < pairs.length; c++) add(photoResolve(tm2[1], pairs[c].w, pairs[c].l));
+          }
         }
       }
     }
-    if (!out.length && pass === 0){
-      /* 줄바꿈으로 끊긴 규격을 한 줄로 붙여서 한 번 더 */
-      lines = [raw.replace(/\r?\n/g, ' ')];
-    }
+    if (!out.length && pass === 0) lines = [raw.replace(/\r?\n/g, ' ')];
   }
   return out;
 }
-/* 읽은 숫자 후보(칩) 기록 — 값 크기로 두께/폭/길이 추정 */
 function photoNumHint(v, kind){
   var s = String(v);
   if (!/^\d+(\.\d+)?$/.test(s)) return;
@@ -2013,28 +2108,345 @@ function photoNumHint(v, kind){
   o.n++; o.kind = kind;
 }
 function photoNumChips(){
-  var arr = [];
-  for (var k in PHOTO_NUMS){
+  var arr = [], k;
+  for (k in PHOTO_NUMS){
     if (!PHOTO_NUMS.hasOwnProperty(k)) continue;
     arr.push({ v: k, n: PHOTO_NUMS[k].n, kind: PHOTO_NUMS[k].kind });
   }
   arr.sort(function(a, b){ return (b.n - a.n) || (parseFloat(a.v) - parseFloat(b.v)); });
   return arr.slice(0, 12);
 }
-
 function photoLookup(t, w, l){
   var idx = photoSpecIndex();
   var e = idx.exact[t + 'x' + w + 'x' + l] || null;
   if (e) return { exact: e, alts: null };
   var list = idx.wl[w + 'x' + l] || [];
   if (!list.length) return { exact: null, alts: null };
-  var alts = [];
-  for (var i = 0; i < list.length; i++){
-    var o = idx.exact[list[i]];
+  var alts = [], i, o;
+  for (i = 0; i < list.length; i++){
+    o = idx.exact[list[i]];
     alts.push({ t: o.t, w: o.w, l: o.l, count: o.count, qty: o.qty, pend: o.pend });
   }
   alts.sort(function(a, b){ return b.count - a.count; });
   return { exact: null, alts: alts };
+}
+
+/* ---------- OCR 한 번 ---------- */
+function photoOcr(cv, psm, wl){
+  return photoWorker().then(function(w){
+    return w.setParameters({ tessedit_char_whitelist: wl || '', tessedit_pageseg_mode: String(psm) })
+      .then(function(){ return w.recognize(cv); })
+      .then(function(r){ return String((r && r.data && r.data.text) || ''); });
+  });
+}
+/* 치수 줄 읽기 — 도트 글씨의 0/6 갈림까지 확인 */
+function photoReadSpecLine(cv, label){
+  var self = { text: '', alt: '', dims: [] };
+  return photoOcr(cv, 7, PHOTO_WHITE).then(function(t1){
+    self.text = String(t1 || '').replace(/\s+/g, ' ').trim();
+    var d1 = photoDims(self.text);
+    self.dims = d1;
+    var digs = (self.text.match(/\d/g) || []).length;
+    if (!/[6]/.test(self.text) || digs < 4) return self;
+    return photoOcr(cv, 7, PHOTO_WHITE_N6).then(function(t2){
+      t2 = String(t2 || '').replace(/\s+/g, ' ').trim();
+      self.alt = t2;
+      if (!t2 || t2 === self.text) return self;
+      var d2 = photoDims(t2);
+      /* 두 판독이 서로 다른 규격을 내면 둘 다 후보로 */
+      for (var i = 0; i < d2.length; i++){
+        var k2 = d2[i].t + 'x' + d2[i].w + 'x' + d2[i].l, dup = false;
+        for (var j = 0; j < self.dims.length; j++){
+          if ((self.dims[j].t + 'x' + self.dims[j].w + 'x' + self.dims[j].l) === k2){ dup = true; break; }
+        }
+        if (!dup && d2[i].t && d2[i].w && d2[i].l){
+          self.dims.push(d2[i]);
+          if (self.dims.length > 1){
+            var a = self.dims[0], b = self.dims[self.dims.length - 1];
+            PHOTO_AMB[a.t + 'x' + a.w + 'x' + a.l] = { alt: b.t + 'x' + b.w + 'x' + b.l };
+          }
+        }
+      }
+      return self;
+    });
+  }).catch(function(e){
+    PHOTO_DBG.push({ label: label, err: String(e && e.message || e) });
+    return self;
+  });
+}
+
+/* ---------- 패스 A: 밝은 띠(라벨·종이) ---------- */
+function photoBrightBandJobs(img, rot){
+  var out = [];
+  var cv;
+  try { cv = photoRotated(img, rot, PHOTO_MAXSIDE); } catch(e){ return out; }
+  var G = photoGray(cv);
+  if (!G) return out;
+  var w = G.w, h = G.h;
+  /* 가로 띠 */
+  var bands = photoBrightBands(photoRowMeans(G.g, w, h), 3, { k: 0.9, minPx: Math.max(8, h * 0.012), maxFrac: 0.45 });
+  for (var i = 0; i < bands.length; i++){
+    if (bands[i].contrast < 40 || bands[i].peak < 140) continue;
+    if (bands[i].height > h * 0.45) continue;
+    out.push({ rot: rot, axis: 'row', y0: bands[i].y0, y1: bands[i].y1, cv: cv, G: G });
+  }
+  /* 세로 띠(라벨이 세로로 붙은 경우) */
+  if (!out.length){
+    var vb = photoBrightBands(photoColMeans(G.g, w, h), 2, { k: 1.0, minPx: Math.max(8, w * 0.012), maxFrac: 0.40 });
+    for (var j = 0; j < vb.length; j++){
+      if (vb[j].contrast < 45 || vb[j].peak < 140) continue;
+      out.push({ rot: rot, axis: 'col', y0: vb[j].y0, y1: vb[j].y1, cv: cv, G: G });
+    }
+  }
+  return out;
+}
+/* 밝은 띠를 slope 만큼 shear 해서 띠만 오려낸다 (slope 는 밖에서 바꿔 가며 시도) */
+function photoLabelCrop(job, slope){
+  var G = job.G, w = G.w, h = G.h, g = G.g;
+  var vertical = job.axis === 'col';
+  var nAxis = vertical ? h : w, cAxis = vertical ? w : h;
+  var a0 = job.y0, a1 = job.y1, bandT = a1 - a0;
+  var prof0 = vertical ? photoColMeans(g, w, h) : photoRowMeans(g, w, h);
+  var st0 = photoStats(prof0), peak = 0, q;
+  for (q = Math.max(0, a0); q < Math.min(a1, prof0.length); q++) if (prof0[q] > peak) peak = prof0[q];
+  var thr = Math.round(st0.mean + (peak - st0.mean) * 0.55);
+  var win0 = Math.max(0, Math.round((a0 + a1) / 2 - bandT * 1.3));
+  var win1 = Math.min(cAxis, Math.round((a0 + a1) / 2 + bandT * 1.3));
+  slope = slope || 0;
+  var cw = vertical ? (win1 - win0) : w, chh = vertical ? h : (win1 - win0);
+  var sh = new Float32Array(cw * chh), mid = nAxis / 2, d2, src, x2, y2;
+  for (y2 = 0; y2 < chh; y2++){
+    for (x2 = 0; x2 < cw; x2++){
+      if (vertical){
+        d2 = Math.round(slope * (y2 - mid));
+        src = Math.max(0, Math.min(w - 1, (x2 + win0) + d2));
+        sh[y2*cw + x2] = g[y2*w + src];
+      } else {
+        d2 = Math.round(slope * (x2 - mid));
+        src = Math.max(0, Math.min(h - 1, (y2 + win0) + d2));
+        sh[y2*cw + x2] = g[src*w + x2];
+      }
+    }
+  }
+  /* 띠의 세로 범위 — 밝은 행이 이어지는 구간 */
+  var prof = vertical ? photoColMeans(sh, cw, chh) : photoRowMeans(sh, cw, chh);
+  var ps = photoSmooth(prof, 2), pk = 0, mn = 0, k;
+  for (k = 0; k < ps.length; k++){ if (ps[k] > pk) pk = ps[k]; mn += ps[k]; }
+  mn /= ps.length;
+  var cut = mn + (pk - mn) * 0.55;
+  var b0 = -1, b1 = -1;
+  for (k = 0; k < ps.length; k++){ if (ps[k] >= cut){ if (b0 < 0) b0 = k; b1 = k; } }
+  if (b0 < 0) return null;
+  var marg = Math.max(2, Math.round((b1 - b0) * 0.10));
+  var c0 = Math.max(0, b0 - marg), c1 = Math.min(vertical ? cw : chh, b1 + marg);
+  var bandLen = c1 - c0;
+  if (bandLen < 8) return null;
+  var target = 64;
+  var scale = Math.min(3, Math.max(1, target / Math.max(10, bandLen * 0.42)));
+  var outW = vertical ? bandLen : cw, outH = vertical ? chh : bandLen;
+  var sub = new Float32Array(outW * outH), i3, j3;
+  for (j3 = 0; j3 < outH; j3++) for (i3 = 0; i3 < outW; i3++){
+    sub[j3*outW + i3] = vertical ? sh[i3*cw + (c0 + j3)] : sh[(c0 + j3)*cw + i3];
+  }
+  var lo = photoPct(sub, 0.03), hi = photoPct(sub, 0.97);
+  var stx = photoStretch(sub, lo, hi);
+  return { gray: stx, w: outW, h: outH, scale: scale, slope: slope,
+           thr: thr, bandH: bandLen, win: [win0, win1], band: [b0, b1], crop2: [c0, c1],
+           label: vertical ? '세로 라벨 띠' : '가로 라벨 띠' };
+}
+
+/* ---------- 패스 B: 어두운 바탕 + 밝은 글씨(도트 스텐실) ---------- */
+function photoDotMask(cv){
+  var G = photoGray(cv);
+  if (!G) return null;
+  var w = G.w, h = G.h, g = G.g;
+  var bg = photoBoxBlur(g, w, h, Math.max(12, Math.round(Math.min(w, h) / 40)));
+  var th = new Float32Array(w*h), i, v;
+  for (i = 0; i < w*h; i++){ v = g[i] - bg[i] + 40; th[i] = v < 0 ? 0 : (v > 255 ? 255 : v); }
+  var lo = photoPct(th, 0.5), hi = photoPct(th, 0.995);
+  var st = photoStretch(th, lo, hi);
+  var bl = photoBoxBlur(st, w, h, 2), t = photoOtsuThr(bl);
+  var bin = new Uint8Array(w*h);
+  for (i = 0; i < w*h; i++) bin[i] = bl[i] > t ? 1 : 0;
+  return { bin: bin, w: w, h: h, gray: st };
+}
+
+/* 회전 후보 순위 — 도트 글씨 줄이 가장 잘 나뉘는 방향을 먼저 본다(OCR 없이) */
+function photoRotRank(img){
+  var cands = [0, 270, 90, 180], scores = {};
+  for (var i = 0; i < cands.length; i++){
+    var rot = cands[i], cv = null, M = null, sc = 0;
+    try { cv = photoRotated(img, rot, 1300); M = photoDotMask(cv); } catch(e){ M = null; }
+    if (M){
+      var bb = photoInkBBox(M.bin, M.w, M.h, 0.12);
+      if (bb && bb.w > 40 && bb.h > 20){
+        var sub = new Uint8Array(bb.w * bb.h), y, x;
+        for (y = 0; y < bb.h; y++) for (x = 0; x < bb.w; x++) sub[y*bb.w+x] = M.bin[(bb.y0+y)*M.w + (bb.x0+x)];
+        var bands = photoLineBands(sub, bb.w, bb.h, Math.max(8, bb.h * 0.015));
+        for (var b = 0; b < bands.length; b++){
+          var xr = photoBandXRange(sub, bb.w, bb.h, bands[b][0], bands[b][1]);
+          if (!xr) continue;
+          var wjob = xr.x1 - xr.x0, hjob = bands[b][1] - bands[b][0];
+          if (wjob > hjob * 2.2 && wjob > bb.w * 0.25) sc += wjob / Math.max(1, hjob);
+        }
+      }
+    }
+    scores[rot] = sc;
+  }
+  var order = cands.slice().sort(function(a, b){ return scores[b] - scores[a]; });
+  return { order: order, scores: scores };
+}
+
+/* ---------- 사진 한 장 분석 ---------- */
+function photoAnalyze(img){
+  var t0 = Date.now();
+  var done = false, calls = 0;
+  PHOTO_BUSY = true;
+  var found = false;
+
+  function finish(){
+    if (done) return;
+    done = true;
+    PHOTO_BUSY = false;
+    photoProgOn(false);
+    var arr = photoSorted();
+    if (!arr.length && !photoNumChips().length){
+      photoFail('<b>글자를 자동으로 읽지 못했습니다.</b><br>사진을 다시 찍어 보세요(글자가 화면에 크게 차도록, 그림자 없이). '
+        + '아래 칸에 두께·폭·길이를 직접 넣어 검색할 수도 있습니다.');
+      $p('photoRes').classList.remove('hidden');
+      return;
+    }
+    photoFail('');
+    photoRender();
+    var best = photoSorted()[0];
+    if (best && best.exact){
+      photoApply(best.t, best.w, best.l);
+    }
+  }
+
+  /* 회전 후보 — 라벨 패스는 기본(0°)부터, 도트 패스는 글자 줄이 잘 나뉘는 방향부터 */
+  function rotList(base){
+    var out = [], i, r;
+    for (i = 0; i < base.length; i++){
+      r = (base[i] + (PHOTO_START_ROT || 0)) % 360;
+      if (out.indexOf(r) < 0) out.push(r);
+    }
+    return out;
+  }
+  var rank = null;
+  try { rank = photoRotRank(img); } catch(e){ rank = null; }
+  if (rank) PHOTO_DBG.push({ path: 'rank', order: rank.order, scores: rank.scores });
+  var rots = rotList([0, 270, 90, 180]);
+  var rotsDot = rotList(rank ? rank.order.concat([0, 270, 90, 180]) : [0, 270, 90, 180]);
+
+  function collect(dims, label, text){
+    if (!dims || !dims.length) return false;
+    photoCollect(dims);
+    var exact = false;
+    for (var i2 = 0; i2 < dims.length; i2++){
+      var lk = photoLookup(dims[i2].t, dims[i2].w, dims[i2].l);
+      if (lk.exact) exact = true;
+    }
+    return exact;
+  }
+
+  /* 1) 밝은 띠(라벨) 패스 — 회전마다, 기울기 후보를 바꿔 가며 */
+  var LABEL_SLOPES = [0, -0.02, 0.02, -0.04, 0.04, -0.06, 0.06, -0.08, 0.08, -0.11, 0.11];
+  function labelJob(ri, si, cand){
+    if (done || found) return Promise.resolve();
+    if (Date.now() - t0 > 40000) return Promise.resolve();
+    if (calls >= 12) return Promise.resolve();
+    if (si >= LABEL_SLOPES.length) return labelStep(ri + 1);
+    var crop = null;
+    try { crop = photoLabelCrop(cand, LABEL_SLOPES[si]); } catch(e){ crop = null; }
+    if (!crop || crop.h < 10) return labelJob(ri, si + 1, cand);
+    photoProg('라벨 띠를 읽는 중 · ' + LABEL_SLOPES[si] + ' (' + (++calls) + ')', 0.34 + Math.min(0.2, calls * 0.02));
+    var cv = photoFromGray(crop.gray, crop.w, crop.h);
+    var big = photoCrop(cv, 0, 0, crop.w, crop.h, crop.scale);
+    return photoReadSpecLine(big, 'label-' + LABEL_SLOPES[si]).then(function(r){
+      PHOTO_DBG.push({ path: 'label', slope: LABEL_SLOPES[si], crop: [crop.w, crop.h],
+                       text: r.text, alt: r.alt,
+                       dims: r.dims.map(function(d){ return d.t + 'x' + d.w + 'x' + d.l; }) });
+      collect(r.dims);
+      /* 글자를 고치지 않고(자동 보정 없이) 자료와 정확히 맞을 때만 이 사진은 끝 */
+      for (var di = 0; di < r.dims.length; di++){
+        var dd = r.dims[di];
+        if (!dd.dist && photoLookup(dd.t, dd.w, dd.l).exact) found = true;
+      }
+      if (found) return;
+      /* 정확히 자료와 맞는 규격이 나올 때까지 기울기를 바꿔 한 번 더 (최대 6회) */
+      if (calls >= 6) return Promise.resolve();
+      if (si >= 2 && !r.text) return labelStep(ri + 1);
+      return labelJob(ri, si + 1, cand);
+    });
+  }
+  function labelStep(ri){
+    if (done || found) return Promise.resolve();
+    if (ri >= rots.length) return Promise.resolve();
+    if (Date.now() - t0 > 45000) return Promise.resolve();
+    var rot = rots[ri], jobs = [];
+    try { jobs = photoBrightBandJobs(img, rot); } catch(e){ jobs = []; }
+    if (!jobs.length) return labelStep(ri + 1);
+    return labelJob(ri, 0, jobs[0]);
+  }
+
+  /* 2) 도트(밝은 글씨) 패스 — 회전마다 */
+  function dotStep(ri){
+    if (done || found) return Promise.resolve();
+    if (ri >= rotsDot.length) return Promise.resolve();
+    if (Date.now() - t0 > 55000) return Promise.resolve();
+    var rot = rotsDot[ri], cv, M;
+    try { cv = photoRotated(img, rot, PHOTO_MAXSIDE); M = photoDotMask(cv); } catch(e){ M = null; }
+    if (!M) return dotStep(ri + 1);
+    var bb = null;
+    try { bb = photoInkBBox(M.bin, M.w, M.h, 0.12); } catch(e){ bb = null; }
+    if (!bb || bb.w < 40 || bb.h < 20) return dotStep(ri + 1);
+    var bands = [];
+    try {
+      var sub = new Uint8Array(bb.w * bb.h), y, x;
+      for (y = 0; y < bb.h; y++) for (x = 0; x < bb.w; x++) sub[y*bb.w+x] = M.bin[(bb.y0+y)*M.w + (bb.x0+x)];
+      bands = photoLineBands(sub, bb.w, bb.h, Math.max(12, bb.h * 0.02));
+      /* 도트 패스 캔버스는 줄마다 */
+      var jobs = [];
+      for (var i3 = 0; i3 < bands.length && i3 < 14; i3++){
+        var a = bands[i3][0], b = bands[i3][1];
+        var xr = photoBandXRange(sub, bb.w, bb.h, a, b);
+        if (!xr || xr.x1 - xr.x0 < 20) continue;
+        var wjob = xr.x1 - xr.x0, hjob = b - a;
+        if (wjob < hjob * 2.2) continue;          /* 숫자 줄은 가로로 길다 */
+        jobs.push({ a: a, b: b, x0: xr.x0, x1: xr.x1, w: wjob });
+      }
+      jobs.sort(function(x, y){ return y.w - x.w; });
+      if (jobs.length < 2) return dotStep(ri + 1);   /* 글자 줄이 하나뿐이면 이 방향은 아님 */
+      jobs = jobs.slice(0, 5);
+      if (!jobs.length) return dotStep(ri + 1);
+      var seq = Promise.resolve();
+      jobs.forEach(function(j){
+        seq = seq.then(function(){
+          if (found || done) return;
+          var lh = j.b - j.a;
+          var cw = j.x1 - j.x0 + 1, chh = lh;
+          var s2 = new Uint8Array(cw * chh), yy, xx;
+          for (yy = 0; yy < chh; yy++) for (xx = 0; xx < cw; xx++) s2[yy*cw+xx] = sub[(j.a+yy)*bb.w + (j.x0+xx)];
+          var scale = Math.min(5, Math.max(1.6, 70 / Math.max(10, lh)));
+          var oc = photoBinCanvas(s2, cw, chh, scale, 0.14);
+          photoProg('스텐실 글자를 읽는 중 · ' + rot + '° (' + (++calls) + ')', 0.4 + Math.min(0.5, calls * 0.03));
+          return photoReadSpecLine(oc, 'dot-' + rot).then(function(r){
+            PHOTO_DBG.push({ path: 'dot', rot: rot, band: [bb.y0 + j.a, bb.y0 + j.b], text: r.text, alt: r.alt,
+                             dims: r.dims.map(function(d){ return d.t + 'x' + d.w + 'x' + d.l; }) });
+            if (collect(r.dims, 'dot')) found = true;
+          });
+        });
+      });
+      return seq.then(function(){ if (!found) return dotStep(ri + 1); });
+    } catch(e){
+      PHOTO_DBG.push({ path: 'dot', rot: rot, err: String(e && e.message || e) });
+      return dotStep(ri + 1);
+    }
+  }
+
+  photoProg('사진 준비 중…', 0.28);
+  labelStep(0).then(function(){ return dotStep(0); }).then(function(){ return finish(); });
 }
 
 /* ---------- 결과 모으기 / 표시 ---------- */
@@ -2058,8 +2470,8 @@ function photoHasExact(){
   return false;
 }
 function photoSorted(){
-  var arr = [];
-  for (var k in PHOTO_CANDS){
+  var arr = [], k;
+  for (k in PHOTO_CANDS){
     if (!PHOTO_CANDS.hasOwnProperty(k)) continue;
     var c = PHOTO_CANDS[k], lk = photoLookup(c.t, c.w, c.l);
     c.exact = lk.exact; c.alts = lk.alts;
@@ -2088,20 +2500,24 @@ function photoRender(){
     return;
   }
   $p('photoRes').classList.remove('hidden');
-  var html = '', shown = 0, noteFuzzy = false, noteNone = false, noteFix = false;
-  for (var i = 0; i < arr.length && shown < 6; i++){
-    var c = arr[i];
+  var html = '', shown = 0, noteFuzzy = false, noteNone = false, noteFix = false, noteAmb = false;
+  var i, c, k, a;
+  for (i = 0; i < arr.length && shown < 6; i++){
+    c = arr[i];
+    k = c.t + 'x' + c.w + 'x' + c.l;
+    var amb = PHOTO_AMB[k];
+    if (amb) noteAmb = true;
     if (c.exact){
       if (c.dist > 0) noteFix = true;
       html += '<button class="pchip hit" data-t="' + c.t + '" data-w="' + c.w + '" data-l="' + c.l + '">'
             + '<span>' + photoChipSpec(c) + '<span class="sub">'
-            + (c.dist > 0 ? '자동 보정 · 눌러서 검색' : '읽은 그대로 · 눌러서 검색') + '</span></span>'
+            + (amb ? '0·6 갈림 · 눌러서 검색' : (c.dist > 0 ? '자동 보정 · 눌러서 검색' : '읽은 그대로 · 눌러서 검색')) + '</span></span>'
             + '<span class="cnt">' + photoCountTxt(c.exact) + '</span></button>';
       shown++;
     } else if (c.alts){
       noteFuzzy = true;
       for (var j = 0; j < c.alts.length && shown < 6; j++){
-        var a = c.alts[j];
+        a = c.alts[j];
         html += '<button class="pchip" data-t="' + a.t + '" data-w="' + a.w + '" data-l="' + a.l + '">'
               + '<span><b>' + a.t + 'T × ' + a.w + ' × ' + a.l + '</b><span class="sub">폭·길이가 같은 규격</span></span>'
               + '<span class="cnt">' + photoCountTxt(a) + '</span></button>';
@@ -2110,14 +2526,14 @@ function photoRender(){
     } else {
       noteNone = true;
       html += '<button class="pchip none" data-t="' + c.t + '" data-w="' + c.w + '" data-l="' + c.l + '">'
-            + '<span>' + photoChipSpec(c) + '<span class="sub">자료에 없는 치수 · 눌러서 칸에 채우기</span></span>'
-            + '<span class="cnt">자료 없음</span></button>';
+            + '<span>' + photoChipSpec(c) + '<span class="sub">'
+            + (amb ? '0·6 갈림 · 눌러서 칸에 채우기' : '자료에 없는 치수 · 눌러서 칸에 채우기') + '</span></span>'
+            + '<span class="cnt">' + (amb ? '0/6' : '자료 없음') + '</span></button>';
       shown++;
     }
   }
   chips.innerHTML = html;
 
-  /* 읽은 숫자 칩 — 두께/폭/길이 칸에 톡톡 넣어 검색 */
   var nums = photoNumChips(), nw = $p('photoNums');
   if (nw){
     var nh = '';
@@ -2133,7 +2549,11 @@ function photoRender(){
 
   var note = $p('photoNote');
   note.className = 'pnote';
-  if (noteFuzzy){
+  if (noteAmb){
+    note.innerHTML = '<b>0과 6이 갈려 읽혔습니다.</b> 도트 스텐실은 0과 6이 서로 바뀌어 찍히기도 합니다. '
+      + '위 후보의 <b>길이 숫자</b>를 철판과 한 번 맞춰 보고 골라 주세요.';
+    note.classList.remove('hidden');
+  } else if (noteFuzzy){
     var tRead2 = '';
     for (var nq = 0; nq < nums.length; nq++){ if (nums[nq].kind === 't'){ tRead2 = nums[nq].v; break; } }
     note.innerHTML = (tRead2 ? '<b>읽은 두께 ' + tRead2 + 'T 규격이 자료에 없습니다.</b> ' : '<b>두께 글자를 또렷하게 못 읽었습니다.</b> ')
@@ -2151,7 +2571,6 @@ function photoRender(){
   var best = arr[0];
   if (best && $p('pmW').value === ''){
     var bt = best.exact ? best.exact : (best.alts && best.alts[0] ? best.alts[0] : best);
-    /* 정확히 맞는 규격이 없으면, 사진에서 읽은 두께 숫자를 그대로 칸에 넣어 준다 */
     var tRead = null;
     if (!best.exact){
       var nc = photoNumChips();
@@ -2163,8 +2582,6 @@ function photoRender(){
     photoStat();
   }
 }
-
-/* 입력 칸 상태 문구 */
 function photoStat(){
   var t = $p('pmT') ? $p('pmT').value : '', w = $p('pmW') ? $p('pmW').value : '', l = $p('pmL') ? $p('pmL').value : '';
   var e = $p('pmStat');
@@ -2173,7 +2590,6 @@ function photoStat(){
   e.classList.remove('hidden');
   e.innerHTML = '두께 <b>' + (t || '—') + '</b> · 폭 <b>' + (w || '—') + '</b> · 길이 <b>' + (l || '—') + '</b>';
 }
-/* 숫자 칩 → 칸 채우기 */
 function photoFillNum(v, kind){
   var el = kind === 't' ? $p('pmT') : (kind === 'w' ? $p('pmW') : $p('pmL'));
   if (!el) return;
@@ -2183,8 +2599,6 @@ function photoFillNum(v, kind){
   photoStat();
   photoFail('');
 }
-
-/* ---------- 검색 적용 ---------- */
 function photoApply(t, w, l){
   $p('q').value = ''; state.q = '';
   state.code = '';
@@ -2204,156 +2618,11 @@ function photoSearch(t, w, l){
   } catch(e){}
 }
 
-/* ---------- 분석 실행 ---------- */
-function photoAnalyze(img){
-  var t0 = Date.now();
-  var done = false, calls = 0, jobs = [], ji = 0;
-  PHOTO_BUSY = true;
-
-  function finish(){
-    if (done) return;
-    done = true;
-    PHOTO_BUSY = false;
-    photoProgOn(false);
-    var arr = photoSorted();
-    if (!arr.length && !photoNumChips().length){
-      photoFail('<b>글자를 자동으로 읽지 못했습니다.</b><br>사진을 다시 찍어 보세요(스텐실 글자가 화면에 크게 차도록, 그림자 없이). '
-        + '아래 칸에 두께·폭·길이를 직접 넣어 검색할 수도 있습니다.');
-      $p('photoRes').classList.remove('hidden');
-      return;
-    }
-    photoFail('');
-    photoRender();
-    var best = photoSorted()[0];
-    if (best && best.exact){
-      photoApply(best.t, best.w, best.l);
-      var note = $p('photoNote');
-      note.className = 'pnote ok';
-      note.innerHTML = '✅ <b>' + best.t + 'T × ' + best.w + ' × ' + best.l + '</b> 로 검색했습니다. '
-        + '닫으면 목록에서 ' + intTxt(best.exact.count) + '건을 볼 수 있습니다.';
-      note.classList.remove('hidden');
-    }
-  }
-
-  /* 회전 후보: 사용자가 돌려 본 방향을 먼저 */
-  var rots = [];
-  var baseRots = [0, 90, 270, 180];
-  for (var i = 0; i < baseRots.length; i++){
-    var r = (baseRots[i] + (PHOTO_START_ROT || 0)) % 360;
-    if (rots.indexOf(r) < 0) rots.push(r);
-  }
-  var R0 = rots[0], R1 = rots[1], R2 = rots[2];
-  jobs = [
-    { rot: R0, kind: 'otsuBright',  psm: 11, band: false },
-    { rot: R0, kind: 'otsuBright',  psm: 6,  band: false },
-    { rot: R0, kind: 'stretch',     psm: 6,  band: false },
-    { rot: R0, kind: 'adaptBright', psm: 11, band: false },
-    { rot: R1, kind: 'otsuBright',  psm: 11, band: false },
-    { rot: R2, kind: 'otsuBright',  psm: 11, band: false },
-    { rot: R1, kind: 'stretch',     psm: 6,  band: false },
-    { rot: R2, kind: 'stretch',     psm: 6,  band: false },
-    { rot: R0, kind: 'otsu',        psm: 6,  band: false },
-    { rot: R0, kind: 'adapt',       psm: 6,  band: false }
-  ];
-  var KINDNAME = { otsuBright: '반전 이진화', adaptBright: '적응형 반전', stretch: '고대비', otsu: '이진화', adapt: '적응형' };
-  var rcCache = {};
-
-  function getRc(rot){
-    if (!rcCache[rot]){
-      try { rcCache[rot] = photoRotated(img, rot, PHOTO_MAXSIDE); } catch(e){ rcCache[rot] = null; }
-    }
-    return rcCache[rot];
-  }
-
-  function runJob(job, label, total){
-    return new Promise(function(res){
-      var rc = getRc(job.rot);
-      if (!rc) return res();
-      var cv = null;
-      try {
-        if (job.band){
-          cv = photoBandCrop(rc, job.y0, job.y1, job.scale, job.pad);
-          if (cv) cv = photoPre(cv, job.kind);
-        } else {
-          cv = photoPre(photoClone(rc), job.kind);
-        }
-      } catch(e){ cv = null; }
-      if (!cv) return res();
-      calls++;
-      photoProg(label + ' · ' + job.rot + '° (' + calls + '/' + total + ')', 0.3 + Math.min(0.62, calls * 0.045));
-      photoOcr(cv, job.psm, PHOTO_WHITE).then(function(txt){
-        try { cv.width = cv.height = 0; } catch(e){}
-        var dims = photoDims(txt);
-        PHOTO_DBG.push({ rot: job.rot, kind: job.kind, psm: job.psm, band: job.band ? [job.y0, job.y1] : null,
-                         calls: calls, text: String(txt).replace(/\s+/g, ' ').slice(0, 200),
-                         dims: dims.map(function(d){ return { t: d.t, w: d.w, l: d.l, dist: d.dist }; }) });
-        /* 규격이 하나도 안 잡혀도 숫자 후보는 남긴다 */
-        photoCollect(dims);
-        res();
-      }).catch(function(err){
-        PHOTO_DBG.push({ rot: job.rot, kind: job.kind, psm: job.psm, err: String(err && err.message || err) });
-        try { cv.width = cv.height = 0; } catch(e){}
-        res();
-      });
-    });
-  }
-
-  function bandJobs(){
-    var out = [];
-    var rot = R0;
-    try {
-      var rc = getRc(rot);
-      if (rc){
-        var bin = photoPre(photoClone(rc), 'otsuBright');
-        var bands = photoBands(bin);
-        try { bin.width = bin.height = 0; } catch(e){}
-        for (var i = 0; i < bands.length && i < PHOTO_MAXBAND; i++){
-          var h = Math.max(8, bands[i].y1 - bands[i].y0);
-          var scale = Math.min(3, Math.max(1.7, 300 / h));
-          var pad = Math.max(6, Math.round(h * 0.2));
-          out.push({ rot: rot, kind: 'otsuBright', psm: 7, band: true, y0: bands[i].y0, y1: bands[i].y1, scale: scale, pad: pad });
-          out.push({ rot: rot, kind: 'stretch', psm: 7, band: true, y0: bands[i].y0, y1: bands[i].y1, scale: scale, pad: pad });
-        }
-      }
-    } catch(e){}
-    return out;
-  }
-
-  function step(){
-    if (done) return;
-    if (photoHasExact()) return finish();
-    if (Date.now() - t0 > 60000) return finish();
-    if (ji >= jobs.length){
-      if (!jobs.bandDone){
-        jobs.bandDone = true;
-        /* 전체 사진에서 이미 규격 후보를 건졌으면 줄 확대는 생략(시간 절약) */
-        var have = false;
-        for (var kk in PHOTO_CANDS){ if (PHOTO_CANDS.hasOwnProperty(kk)){ have = true; break; } }
-        if (!have){
-          var bj = bandJobs();
-          for (var i = 0; i < bj.length && i < 6; i++) jobs.push(bj[i]);
-        }
-        if (ji >= jobs.length) return finish();
-      } else {
-        return finish();
-      }
-    }
-    var job = jobs[ji++];
-    var label = job.band ? '글자 줄 확대 인식' : KINDNAME[job.kind] || '글자 인식';
-    runJob(job, label, Math.min(20, jobs.length + 4)).then(function(){
-      /* 정확한 규격이 나왔거나 오래 걸리면 멈춘다 */
-      setTimeout(step, 0);
-    });
-  }
-  photoProg('사진 준비 중…', 0.28);
-  step();
-}
-
 function photoStart(file){
   if (!file) return;
   if (PHOTO_BUSY) return;
   PHOTO_BUSY = true;
-  PHOTO_CANDS = {}; PHOTO_HITS = 0; PHOTO_NUMS = {};
+  PHOTO_CANDS = {}; PHOTO_HITS = 0; PHOTO_NUMS = {}; PHOTO_AMB = {};
   while (PHOTO_DBG.length) PHOTO_DBG.pop();
   $p('photoRes').classList.add('hidden');
   $p('photoChips').innerHTML = '';
@@ -2383,7 +2652,7 @@ function photoStart(file){
 }
 
 try {
-  window.__PHOTO_FN = { rotated: photoRotated, bands: photoBands, pre: photoPre, ocr: photoOcr,
+  window.__PHOTO_FN = { rotated: photoRotated, bands: photoLineBands, pre: photoPre, ocr: photoOcr,
                         dims: photoDims, resolve: photoResolve, triples: photoTriples, nums: function(){ return photoNumChips(); } };
 } catch(e){}
 
@@ -2409,7 +2678,6 @@ function photoInit(){
     if (!b) return;
     var t = b.getAttribute('data-t'), w = b.getAttribute('data-w'), l = b.getAttribute('data-l');
     if (b.classList.contains('none')){
-      /* 자료에 없는 치수 — 검색해서 0건을 보여주기보다 칸에 채워 고칠 수 있게 */
       photoFillNum(t, 't'); photoFillNum(w, 'w'); photoFillNum(l, 'l');
       photoFail('<b>자료에 없는 규격입니다.</b> 숫자 칩으로 칸을 채우고 두께·폭·길이를 확인해 검색하세요.');
       return;
@@ -2434,7 +2702,6 @@ function photoInit(){
     var el = $p(id);
     if (el) el.addEventListener('input', function(){ this.value = this.value.replace(/[^0-9.]/g, ''); photoStat(); });
   });
-  /* 미리보기 확대 / 회전 / 이 방향으로 다시 읽기 */
   var z = $p('photoZoom');
   if (z) z.addEventListener('click', function(){
     var w = $p('photoPreviewWrap');
@@ -2447,7 +2714,7 @@ function photoInit(){
   if (rr) rr.addEventListener('click', function(){
     if (!PHOTO_IMG || PHOTO_BUSY) return;
     PHOTO_BUSY = false;
-    PHOTO_CANDS = {}; PHOTO_HITS = 0; PHOTO_NUMS = {}; PHOTO_DBG.length = 0;
+    PHOTO_CANDS = {}; PHOTO_HITS = 0; PHOTO_NUMS = {}; PHOTO_AMB = {}; PHOTO_DBG.length = 0;
     PHOTO_START_ROT = PHOTO_ROT_VIEW;
     $p('photoChips').innerHTML = '';
     $p('photoNote').classList.add('hidden');
@@ -2560,8 +2827,9 @@ function syncSheetCheck(i){
 }
 
 /* ================= 📥 현장 입고 (송장·거래명세서 사진 → 미입고 자재) =================
-   ① 입고 송장·거래명세서 사진을 v8.1 OCR 파이프라인(회전·전처리)으로 여러 번 읽어
-      발주번호(YD-016)·규격(20T 2438 6096)·수량(2EA)·날짜(2026-11-27)를 뽑는다.
+   ① 거래명세서·송장 사진에서 발주번호·규격(두께/폭/길이)·수량·LOT 을 읽는다.
+      v8.4 부터는 표를 통째로 읽지 않고  표 영역 → 글자 줄 → 칸  순서로 잘라
+      칸마다 확대해 읽는다(90도 회전·두께 소수점 60.00·천 단위 쉼표 1,600 모두 처리).
    ② 아직 미입고인 자재(전체 5,575건)와 맞춰 후보를 만든다.
       발주번호+규격이 맞으면 최상단, 발주번호만/규격만 맞으면 그 다음,
       그래도 없으면 지금 고른 공사의 미입고 순으로 보여 준다.
@@ -2570,7 +2838,7 @@ function syncSheetCheck(i){
       - 엑셀 값은 건드리지 않고, 화면 계산에서만 더한다(취소하면 원래대로).
    ④ 카드·상세 시트에서 📥 현장 입고 배지와 '입고 취소'로 되돌릴 수 있다.
    ※ 글자 인식기는 영어·숫자(eng)만 쓴다. 한글 공사명은 읽지 못하므로
-      발주번호로 공사를 판단하고, 아니면 지금 고른 공사를 기준으로 찾는다. */
+      발주번호(LOT)로 공사를 판단하고, 아니면 지금 고른 공사를 기준으로 찾는다. */
 
 var INB_KEY = 'dhy_plate_inbound_v1';
 var inbSet = {};                 /* 폰에 저장된 현장 입고: ROWKEY → {date, qty, note} */
@@ -2991,6 +3259,19 @@ function invMatchCandidates(){
     out.push(invCand(i, bestSc, bestSp, why, auto));
   }
   out.sort(invSortCands);
+  /* 명세서에 적힌 줄 수만큼만 자동 체크 (같은 규격이 여러 행일 때 과다 선택 방지) */
+  var need = {};
+  for (var m = 0; m < specs.length; m++){
+    var mk = (+specs[m].t) + 'x' + (+specs[m].w) + 'x' + (+specs[m].l);
+    need[mk] = (need[mk] || 0) + Math.max(1, +(specs[m].qty || 1));
+  }
+  var picked = {};
+  for (var n = 0; n < out.length; n++){
+    if (!out[n].on) continue;
+    var nk = out[n].sp ? ((+out[n].sp.t) + 'x' + (+out[n].sp.w) + 'x' + (+out[n].sp.l)) : '';
+    picked[nk] = (picked[nk] || 0) + 1;
+    if (nk && need[nk] && picked[nk] > need[nk]) out[n].on = false;
+  }
   if(out.length > 40) out = out.slice(0, 40);
   return out;
 }
@@ -3156,69 +3437,493 @@ function invClose(){
   if($('sheetWrap').classList.contains('hidden')) document.body.style.overflow = '';
 }
 
-/* ---------- 사진 읽기 ---------- */
-function invAnalyze(img){
-  var acc = invNewAcc();
-  var jobs = [
-    { rot: 0,   kind: 'stretch', psm: 6 },
-    { rot: 0,   kind: 'stretch', psm: 4 },
-    { rot: 0,   kind: 'otsu',    psm: 6 },
-    { rot: 0,   kind: 'otsu',    psm: 4 },
-    { rot: 0,   kind: 'adapt',   psm: 6 },
-    { rot: 90,  kind: 'stretch', psm: 6 },
-    { rot: 270, kind: 'stretch', psm: 6 },
-    { rot: 90,  kind: 'otsu',    psm: 6 }
-  ];
-  var ji = 0, t0 = Date.now(), done = false, rcs = {};
-  INV_BUSY = true;
-  invProgOn(true);
+/* ---------- 사진 읽기 (v8.4 · 표 칸 단위 인식) ----------
+   거래명세서 사진은 ① 대개 90도 돌아가 있고 ② 두께에 소수점(60.00), 폭·길이에 천 단위 쉼표(1,600)가
+   있으며 ③ 표 격자선이 숫자에 붙어 있다. 그래서 통째로 읽지 않고:
+     1) 사진 방향을 글자 줄 주기로 골라 바로 세우고
+     2) 표(격자) 영역을 찾아 격자선을 지운 뒤
+     3) 글자 줄마다, 다시 칸마다 잘라 6배로 키워 읽는다. (칸 단위가 가장 정확했다)
+     4) 칸에서 읽은 숫자는 천 단위 쉼표·소수점(.00)을 정리해 규격으로 만든다. */
 
-  function getRc(rot){
-    if(!rcs[rot]){ try{ rcs[rot] = photoRotated(img, rot, 2000); }catch(e){ rcs[rot] = null; } }
-    return rcs[rot];
+function invGrayOf(cv){
+  var c = cv.getContext('2d'), w = cv.width, h = cv.height, id, d, n, i, g;
+  try { id = c.getImageData(0, 0, w, h); } catch(e){ return null; }
+  d = id.data; n = w * h; g = new Float32Array(n);
+  for (i = 0; i < n; i++) g[i] = d[i*4] * 0.299 + d[i*4+1] * 0.587 + d[i*4+2] * 0.114;
+  return { w: w, h: h, g: g };
+}
+/* 바로 선 방향 고르기 — 가운데 띠를 실제로 읽어 '숫자가 몇 자 나오는지'로 판단.
+   회전한 사진은 글자가 세로로 서 있어 숫자가 거의 나오지 않는다. */
+function invStripDigits(img, rot){
+  var cv = photoRotated(img, rot, 1400);
+  var G = invGrayOf(cv);
+  if (!G) return Promise.resolve(0);
+  var w = G.w, h = G.h;
+  var y0 = Math.round(h * 0.30), y1 = Math.round(h * 0.70);
+  var hh = y1 - y0;
+  if (hh < 20) return Promise.resolve(0);
+  var sub = new Float32Array(w * hh), x, y;
+  for (y = 0; y < hh; y++) for (x = 0; x < w; x++) sub[y*w+x] = G.g[(y0+y)*w + x];
+  var lo = photoPct(sub, 0.02), hi = photoPct(sub, 0.98);
+  var st = photoStretch(sub, lo, hi);
+  var oc = photoFromGray(st, w, hh);
+  return photoOcr(oc, 6, '0123456789.,').then(function(t){
+    var txt = String(t || '');
+    var m = txt.match(/\d{4,}/g);
+    var sc = m ? m.length : 0;
+    if (/20\d\d[.\-/]\d\d/.test(txt)) sc += 4;      /* 날짜가 읽히면 확실히 바로 선 방향 */
+    return sc;
+  }).catch(function(){ return 0; });
+}
+function invRotOrder(img){
+  var rots = [0, 90, 180, 270], sc = {};
+  var p = Promise.resolve();
+  rots.forEach(function(r){
+    p = p.then(function(){ return invStripDigits(img, r).then(function(n){ sc[r] = n; }); });
+  });
+  return p.then(function(){
+    var order = rots.slice().sort(function(a, b){ return (sc[b] || 0) - (sc[a] || 0); });
+    return { order: order, scores: [sc[0], sc[90], sc[180], sc[270]] };
+  });
+}
+/* 행/열의 가장 긴 검은 런 — 격자선 찾기 */
+function invLongRunRows(bin, w, h, from, to){
+  var out = [], y, x, run, best;
+  for (y = from; y <= to; y++){
+    run = 0; best = 0;
+    for (x = 0; x < w; x++){
+      if (bin[y*w+x]){ run++; if (run > best) best = run; }
+      else run = 0;
+    }
+    out.push(best);
+  }
+  return out;
+}
+function invLongRunCols(bin, w, h, from, to){
+  var out = [], x, y, run, best;
+  for (x = from; x <= to; x++){
+    run = 0; best = 0;
+    for (y = 0; y < h; y++){
+      if (bin[y*w+x]){ run++; if (run > best) best = run; }
+      else run = 0;
+    }
+    out.push(best);
+  }
+  return out;
+}
+/* 표 영역 — 긴 가로선이 이어지는 덩어리 */
+function invFindTable(bin, w, h){
+  var thr = 0.16 * w;
+  var rows = invLongRunRows(bin, w, h, 0, h - 1), y, i;
+  var lr = [];
+  for (y = 0; y < h; y++) if (rows[y] > thr) lr.push(y);
+  if (lr.length < 2) return null;
+  /* 잡음(가장자리) 제외 */
+  lr = lr.filter(function(v){ return v > h * 0.02 && v < h * 0.98; });
+  if (lr.length < 2) return null;
+  /* 가장 긴 연속 덩어리 */
+  var groups = [], cur = [lr[0]];
+  for (i = 1; i < lr.length; i++){
+    if (lr[i] - cur[cur.length-1] <= Math.max(6, 0.22 * h)) cur.push(lr[i]);
+    else { groups.push(cur); cur = [lr[i]]; }
+  }
+  groups.push(cur);
+  var best = groups[0];
+  for (i = 1; i < groups.length; i++) if (groups[i].length > best.length) best = groups[i];
+  var y0 = best[0], y1 = best[best.length-1];
+  /* 표 안 세로선 범위 */
+  var cols = invLongRunCols(bin, w, h, 0, w - 1), x0 = -1, x1 = -1, cmax = 0;
+  for (var x = 0; x < w; x++) if (cols[x] > cmax) cmax = cols[x];
+  for (x = 0; x < w; x++){
+    if (cols[x] < Math.max(0.06 * (y1 - y0), cmax * 0.25)) continue;
+    if (x0 < 0) x0 = x;
+    x1 = x;
+  }
+  if (x0 < 0){ x0 = 0; x1 = w - 1; }
+  return { x0: Math.max(0, x0 - Math.round(w*0.01)), y0: Math.max(0, y0 - Math.round(h*0.01)),
+           x1: Math.min(w-1, x1 + Math.round(w*0.01)), y1: Math.min(h-1, y1 + Math.round(h*0.01)) };
+}
+/* 긴 런(격자선) 지우기 */
+function invKillLines(bin, w, h, rowFrac, colFrac){
+  var o = bin.slice(), x, y, run, st, k, t;
+  for (y = 0; y < h; y++){
+    run = 0; st = 0;
+    for (x = 0; x <= w; x++){
+      var d = x < w && bin[y*w+x];
+      if (d){ if (!run) st = x; run++; }
+      else {
+        if (run >= rowFrac * w){
+          for (k = st; k < st + run; k++){
+            o[y*w+k] = 0;
+            if (y+1 < h) o[(y+1)*w+k] = 0;
+            if (y > 0) o[(y-1)*w+k] = 0;
+          }
+        }
+        run = 0;
+      }
+    }
+  }
+  var o2 = o.slice();
+  for (x = 0; x < w; x++){
+    run = 0; st = 0;
+    for (y = 0; y <= h; y++){
+      var d2 = y < h && o[y*w+x];
+      if (d2){ if (!run) st = y; run++; }
+      else {
+        if (run >= colFrac * h){
+          for (k = st; k < st + run; k++){
+            o2[k*w+x] = 0;
+            if (x+1 < w) o2[k*w+x+1] = 0;
+            if (x > 0) o2[k*w+x-1] = 0;
+          }
+        }
+        run = 0;
+      }
+    }
+  }
+  return o2;
+}
+/* 숫자 토큰 정리 — 1.600→1600, 60.00→60, 5,600→5600 */
+function invNum(str){
+  var s = String(str).replace(/\s/g, '');
+  if (!s) return NaN;
+  if (/^\d{1,3}([.,]\d{3})+$/.test(s)) s = s.replace(/[.,]/g, '');
+  else s = s.replace(',', '.');
+  var v = parseFloat(s);
+  if (!isFinite(v)) return NaN;
+  if (Math.abs(v - Math.round(v)) < 0.011) return Math.round(v);
+  return v;
+}
+function invCellTriple(texts){
+  /* 칸 글자들을 훑어 두께·폭·길이 3연속을 찾는다 */
+  var nums = [], i, v;
+  for (i = 0; i < texts.length; i++){
+    var t = String(texts[i] || '').trim();
+    if (!t) { nums.push(null); continue; }
+    v = invNum(t);
+    nums.push(isFinite(v) ? v : null);
+  }
+  for (i = 0; i + 2 < nums.length; i++){
+    var A = nums[i], B = nums[i+1], C = nums[i+2];
+    if (A === null || B === null || C === null) continue;
+    if (!(A > 0.8 && A < 80)) continue;
+    if (!(B >= 120 && B <= 4600)) continue;
+    if (!(C >= 300 && C <= 26000)) continue;
+    if (B >= C) continue;
+    /* 규격 뒤 수량(1~3칸 뒤의 작은 정수) */
+    var q = null, k;
+    for (k = i + 3; k <= i + 4 && k < nums.length; k++){
+      var vv = nums[k];
+      if (vv !== null && vv >= 1 && vv <= 500 && Math.abs(vv - Math.round(vv)) < 0.001 && vv < C){ q = Math.round(vv); break; }
+    }
+    return { t: A, w: B, l: C, at: i, qty: q };
+  }
+  return null;
+}
+/* 표를 '격자선'으로 줄·칸으로 나눠 읽는다 — 칸마다 확대해 읽어 정확도를 올린다 */
+function invGridLines(bin, w, h){
+  var hs = [], vs = [], x, y, run, best;
+  for (y = 0; y < h; y++){
+    run = 0; best = 0;
+    for (x = 0; x < w; x++){ if (bin[y*w+x]){ run++; if (run > best) best = run; } else run = 0; }
+    if (best > w * 0.28) hs.push(y);
+  }
+  for (x = 0; x < w; x++){
+    run = 0; best = 0;
+    for (y = 0; y < h; y++){ if (bin[y*w+x]){ run++; if (run > best) best = run; } else run = 0; }
+    if (best > h * 0.12) vs.push(x);
+  }
+  function grp(a){
+    var o = [], i;
+    for (i = 0; i < a.length; i++){
+      if (o.length && a[i] - o[o.length-1][1] <= 3) o[o.length-1][1] = a[i];
+      else o.push([a[i], a[i]]);
+    }
+    return o.map(function(t){ return Math.round((t[0] + t[1]) / 2); });
+  }
+  return { h: grp(hs), v: grp(vs) };
+}
+function invReadTable(img, rot){
+  var cv = photoRotated(img, rot, 2400);
+  var G = invGrayOf(cv);
+  if (!G) return Promise.resolve([]);
+  var w = G.w, h = G.h, g = G.g;
+  var thr = photoOtsuThr(g);
+  var bin = new Uint8Array(w*h), i, x, y;
+  for (i = 0; i < w*h; i++) bin[i] = g[i] < thr ? 1 : 0;
+  var lines = invGridLines(bin, w, h);
+  var dbg = { stage: 'start', size: [w, h], hlines: lines.h.length, vlines: lines.v.length, rows: [] };
+  try { window.__INV_TABLE_DBG = dbg; } catch(e){}
+  if (lines.h.length < 3 || lines.v.length < 2) { dbg.stage = 'no-grid'; return Promise.resolve([]); }
+
+  /* 글자 줄: 이웃한 가로선 사이 (높이 25~120px) */
+  var rowBands = [], k;
+  for (k = 0; k + 1 < lines.h.length; k++){
+    var hh = lines.h[k+1] - lines.h[k];
+    if (hh >= 20 && hh <= Math.max(140, h * 0.22)) rowBands.push([lines.h[k], lines.h[k+1]]);
+  }
+  /* 칸: 이웃한 세로선 사이 (너비 20~700px) */
+  var cells = [];
+  for (k = 0; k + 1 < lines.v.length; k++){
+    var cw = lines.v[k+1] - lines.v[k];
+    if (cw >= 18 && cw <= 700) cells.push([lines.v[k], lines.v[k+1]]);
+  }
+  dbg.stage = 'grid'; dbg.rowsN = rowBands.length; dbg.cellsN = cells.length;
+  if (!rowBands.length) { dbg.stage = 'no-cells'; return Promise.resolve([]); }
+  /* 표의 가로 범위 밖(여백) 셀 제거 */
+  var minX = lines.v[0], maxX = lines.v[lines.v.length-1];
+  cells = cells.filter(function(c){ return c[0] >= minX && c[1] <= maxX; });
+  var wideRow = false;
+  if (cells.length < 3){                       /* 세로선이 거의 없는 표 — 줄 전체를 한 칸으로 */
+    cells = [[minX, maxX]];
+    wideRow = true;
+  }
+
+  var gray2 = photoStretch(g, photoPct(g, 0.02), photoPct(g, 0.98));
+  var out = [], used = 0, seq = Promise.resolve();
+  rowBands.forEach(function(bd){
+    if (used >= 10) return;
+    var lh = bd[1] - bd[0];
+    if (lh > h * 0.22) return;
+    used++;
+    var texts = [], rowSeq = Promise.resolve();
+    cells.forEach(function(cl){
+      rowSeq = rowSeq.then(function(){
+        var cw2 = cl[1] - cl[0];
+        if (cw2 < 12) { texts.push(''); return; }
+        var padY = Math.max(2, Math.round(lh * 0.10));
+        var x0 = Math.max(0, cl[0] + 1), x1 = Math.min(w, cl[1] - 1);
+        var y0 = Math.max(0, bd[0] + padY), y1 = Math.min(h, bd[1] - padY);
+        var cw3 = x1 - x0, ch3 = y1 - y0;
+        if (cw3 < 8 || ch3 < 6) { texts.push(''); return; }
+        var ink = 0, xx, yy;
+        for (yy = 0; yy < ch3; yy++) for (xx = 0; xx < cw3; xx++) if (bin[(y0+yy)*w + x0+xx]) ink++;
+        if (ink < cw3 * ch3 * 0.01) { texts.push(''); return; }
+        var cellGray = new Float32Array(cw3*ch3);
+        for (yy = 0; yy < ch3; yy++) for (xx = 0; xx < cw3; xx++) cellGray[yy*cw3+xx] = gray2[(y0+yy)*w + x0+xx];
+        var scale = Math.min(8, Math.max(2, 40 / Math.max(8, ch3 * 0.55)));
+        var oc = photoCrop(photoFromGray(cellGray, cw3, ch3), 0, 0, cw3, ch3, scale);
+        return photoOcr(oc, wideRow ? 7 : 8, wideRow ? '' : '0123456789.,').then(function(txt){
+          texts.push(String(txt || '').replace(/\s+/g, ' ').trim());
+        }).catch(function(){ texts.push(''); });
+      });
+    });
+    seq = seq.then(function(){ return rowSeq; }).then(function(){
+      var trip = wideRow ? invRowTriple(texts[0]) : invCellTriple(texts);
+      dbg.rows.push({ band: bd, texts: texts.slice(0, 14), trip: trip });
+      if (!trip) return;
+      out.push({ t: trip.t, w: trip.w, l: trip.l, qty: trip.qty,
+                 lot: wideRow ? (texts[0] || '') : '', cells: texts.slice(0, 14), _at: trip.at });
+    });
+  });
+  return seq.then(function(){
+    /* LOT·발주번호 글자는 날짜/LOT 칸에서 따로 읽는다 (숫자 화이트리스트 밖) */
+    return invReadLots(img, rot, rowBands, cells, out);
+  }).then(function(){
+    dbg.stage = 'done';
+    return out;
+  });
+}
+/* 각 줄의 글자 칸(영문·숫자)을 읽어 LOT/발주번호 후보를 붙인다 */
+function invReadLots(img, rot, rowBands, cells, out){
+  if (!out.length) return Promise.resolve();
+  var cv = photoRotated(img, rot, 2400);
+  var G = invGrayOf(cv);
+  if (!G) return Promise.resolve();
+  var w = G.w, g = G.g;
+  var gray2 = photoStretch(g, photoPct(g, 0.02), photoPct(g, 0.98));
+  var seq = Promise.resolve(), idx = 0;
+  rowBands.forEach(function(bd){
+    if (idx >= 8) return;
+    var slot = null, j;
+    /* 이 줄에서 글자가 있을 만한 오른쪽 칸 하나만 (LOT NO 열) */
+    var at = (out[idx] && out[idx].cells && out[idx]._at >= 0) ? out[idx]._at : -1;
+    var from = at >= 0 ? at + 5 : Math.max(0, cells.length - 4);
+    for (j = from; j < cells.length; j++){
+      if (cells[j] && cells[j][1] - cells[j][0] > 50) { slot = cells[j]; break; }
+    }
+    if (!slot) return;
+    var ri = idx++;
+    seq = seq.then(function(){
+      var x0 = Math.max(0, slot[0] + 2), x1 = Math.min(w, slot[1] - 2);
+      var y0 = Math.max(0, bd[0] + 3), y1 = Math.min(G.h, bd[1] - 3);
+      var cw = x1 - x0, ch = y1 - y0;
+      if (cw < 20 || ch < 8) return;
+      var cellGray = new Float32Array(cw*ch), xx, yy;
+      for (yy = 0; yy < ch; yy++) for (xx = 0; xx < cw; xx++) cellGray[yy*cw+xx] = gray2[(y0+yy)*w + x0+xx];
+      var sc = Math.min(6, Math.max(2.5, 36 / Math.max(8, ch * 0.55)));
+      var oc = photoCrop(photoFromGray(cellGray, cw, ch), 0, 0, cw, ch, sc);
+      return photoOcr(oc, 7, '').then(function(t){
+        t = String(t || '').replace(/\s+/g, ' ').trim();
+        /* 글자+숫자가 섞인 코드 모양일 때만 LOT 로 인정한다(엉뚱한 글자 방지) */
+        if (t && /[A-Za-z]{2,}/.test(t) && /\d{2,}/.test(t) && out[ri]) out[ri].lot = t;
+      }).catch(function(){});
+    });
+  });
+  return seq;
+}
+
+/* 한 줄 글자에서 규격·수량 뽑기 (칸 구분이 없는 표) */
+function invRowTriple(text){
+  var toks = String(text || '').match(/\d+(?:[.,]\d+)?/g);
+  if (!toks || toks.length < 3) return null;
+  var nums = [], i;
+  for (i = 0; i < toks.length; i++) nums.push(invNum(toks[i]));
+  for (i = 0; i + 2 < nums.length; i++){
+    var A = nums[i], B = nums[i+1], C = nums[i+2];
+    if (!(A > 0.8 && A < 80)) continue;
+    if (!(B >= 120 && B <= 4600)) continue;
+    if (!(C >= 300 && C <= 26000)) continue;
+    if (B >= C) continue;
+    var q = null;
+    for (var k = i + 3; k <= i + 4 && k < nums.length; k++){
+      var v = nums[k];
+      if (v >= 1 && v <= 500 && v < C){ q = Math.round(v); break; }
+    }
+    return { t: A, w: B, l: C, at: i, qty: q };
+  }
+  return null;
+}
+
+/* 격자선이 없는 송장(표 없이 글자만) — 글자 줄을 통째로 읽어 규격을 줍는다 */
+function invReadFallback(img, rot){
+  var cv = photoRotated(img, rot, 2200);
+  var G = invGrayOf(cv);
+  if (!G) return Promise.resolve([]);
+  var w = G.w, h = G.h, g = G.g;
+  var mx = Math.round(w * 0.02), my = Math.round(h * 0.02);
+  var cw = w - mx*2, chh = h - my*2;
+  if (cw < 100 || chh < 60) return Promise.resolve([]);
+  var sub = new Float32Array(cw*chh), x, y;
+  for (y = 0; y < chh; y++) for (x = 0; x < cw; x++) sub[y*cw+x] = g[(my+y)*w + (mx+x)];
+  var thr = photoOtsuThr(sub);
+  var bin = new Uint8Array(cw*chh), i;
+  for (i = 0; i < cw*chh; i++) bin[i] = sub[i] < thr ? 1 : 0;
+  var clean = invKillLines(bin, cw, chh, 0.30, 0.20);
+  var lo = photoPct(sub, 0.02), hi = photoPct(sub, 0.98);
+  var st = photoStretch(sub, lo, hi);
+  var grayClean = new Float32Array(cw*chh);
+  for (i = 0; i < cw*chh; i++) grayClean[i] = clean[i] ? 60 : st[i];
+  var sc = Math.min(2.2, Math.max(1, 2400 / cw));
+  var oc = photoCrop(photoFromGray(grayClean, cw, chh), 0, 0, cw, chh, sc);
+  return photoOcr(oc, 6, '0123456789.,').then(function(txt){
+    var rows = [], lines = String(txt || '').split(/\r?\n/), li;
+    for (li = 0; li < lines.length; li++){
+      var line = lines[li];
+      if (!line) continue;
+      var toks = line.match(/\d+(?:[.,]\d+)?/g);
+      if (!toks || toks.length < 3) continue;
+      var nums = toks.map(function(t){ return invNum(t); });
+      for (var k = 0; k + 2 < nums.length; k++){
+        var A = nums[k], B = nums[k+1], C = nums[k+2];
+        if (!(A > 0.8 && A < 80)) continue;
+        if (!(B >= 120 && B <= 4600)) continue;
+        if (!(C >= 300 && C <= 26000)) continue;
+        if (B >= C) continue;
+        var q = null;
+        for (var k2 = k + 3; k2 <= k + 4 && k2 < nums.length; k2++){
+          var vv = nums[k2];
+          if (vv >= 1 && vv <= 500 && vv < C) { q = Math.round(vv); break; }
+        }
+        rows.push({ t: A, w: B, l: C, qty: q, lot: '', rot: rot, cells: toks.slice(0, 12) });
+        break;
+      }
+    }
+    return rows;
+  }).catch(function(){ return []; });
+}
+
+/* 사진 한 장 → 규격 목록 (여러 방향 시도) */
+function invReadInvoice(img){
+  var t0 = Date.now(), idx = 0, all = [], fallbackDone = false;
+  var ro = { order: [0, 90, 180, 270], scores: null };
+  return invRotOrder(img).then(function(r){
+    if (r && r.order) ro = r;
+    return step();
+  }).catch(function(){ return step(); });
+
+  function step(){
+    if (idx >= ro.order.length) return finish();
+    if (Date.now() - t0 > 45000) return finish();
+    if (all.length >= 2) return finish();
+    if (all.length >= 1 && idx >= 2) return finish();
+    var rot = ro.order[idx++];
+    invProg('표를 읽는 중 · ' + rot + '° (' + idx + '/4)', 0.12 + idx * 0.18);
+    return invReadTable(img, rot).then(function(rows){
+      for (var i = 0; i < rows.length; i++) rows[i].rot = rot;
+      if (rows.length) all = all.concat(rows);
+      if (rows.length >= 2) return finish();
+      return step();
+    }).catch(function(){ return step(); });
   }
   function finish(){
-    if(done) return;
-    done = true;
+    if (!all.length && !fallbackDone){
+      fallbackDone = true;
+      var fr = ro.order[0];
+      invProg('표가 없어 글자 줄로 읽는 중…', 0.85);
+      return invReadFallback(img, fr).then(function(rows){
+        if (rows && rows.length) all = all.concat(rows);
+        return finish2();
+      }).catch(function(){ return finish2(); });
+    }
+    return finish2();
+  }
+  function finish2(){
+    var seen = {}, uniq = [];
+    for (var i = 0; i < all.length; i++){
+      var k = all[i].t + 'x' + all[i].w + 'x' + all[i].l;
+      if (seen[k]) { if (!seen[k].lot && all[i].lot) seen[k].lot = all[i].lot; continue; }
+      seen[k] = all[i]; uniq.push(all[i]);
+    }
+    try { window.__INV_DEBUG = { rot: ro, scores: ro.scores, rows: uniq }; } catch(e){}
+    return uniq;
+  }
+}
+
+
+/* ---------- 사진 읽기 (UI 연결) ---------- */
+function invAnalyze(img){
+  var acc = invNewAcc();
+  INV_BUSY = true;
+  invProgOn(true);
+  invProg('거래명세서 표를 찾는 중…', 0.08);
+  invReadInvoice(img).then(function(rows){
     INV_BUSY = false;
     invProgOn(false);
-    try{ window.__INV_DEBUG = acc; }catch(e){}
+    for (var i = 0; i < rows.length; i++){
+      var r = rows[i];
+      var key = (+r.t) + 'x' + (+r.w) + 'x' + (+r.l);
+      var codes = [];
+      if (r.lot) codes = invCodesInLine(r.lot, acc);
+      var spec = { t: +r.t, w: +r.w, l: +r.l, qty: (r.qty ? +r.qty : null), key: key };
+      acc.lines.push({ codes: codes, specs: [spec] });
+      if (!acc.map[key]) { acc.map[key] = { t: spec.t, w: spec.w, l: spec.l, qty: (spec.qty || null), key: key, lines: 0 }; acc.specs.push(acc.map[key]); }
+      else if (acc.map[key].qty === null && spec.qty) acc.map[key].qty = spec.qty;
+      if (acc.map[key]) acc.map[key].lines = (acc.map[key].lines || 0) + 1;
+      for (var c = 0; c < codes.length; c++){
+        var pk = String(codes[c]).toUpperCase() + '|' + key;
+        acc.pairs[pk] = (acc.pairs[pk] || 0) + 1;
+      }
+      /* 같은 규격이 여러 번 읽혔으면 표를 많이 받은 것으로 센다 */
+      acc.pairs[('|' + key)] = (acc.pairs[('|' + key)] || 0);
+    }
+    acc.passes = 1;                      /* 칸 단위 판독은 한 번에 확정된 결과다 */
     invSetParsed(acc);
     $iv('invRes').classList.remove('hidden');
-    if(!acc.codes.length && !acc.specs.length){
-      invFail('<b>송장 글자를 자동으로 읽지 못했습니다.</b><br>밝은 곳에서 표를 반듯하게 다시 찍어 보세요. '
+    if (!acc.codes.length && !acc.specs.length){
+      invFail('<b>송장 글자를 자동으로 읽지 못했습니다.</b><br>밝은 곳에서 표가 반듯하게 보이도록 다시 찍어 보세요. '
         + '아래 <b>직접 찾기</b>에 두께·폭·길이 또는 발주번호를 넣어도 미입고 자재를 찾을 수 있습니다.');
     } else {
       invFail('');
     }
     INV_CANDS = invMatchCandidates();
-    invRenderList(acc.codes.length ? ('발주번호 ' + acc.codes[0] + ' 미입고') : '규격이 맞는 미입고',
+    invRenderList(acc.specs.length ? ('읽은 규격 ' + acc.specs.length + '건 · 미입고') : '규격이 맞는 미입고',
       acc.specs.length ? null : '규격을 읽지 못했습니다. 아래 <b>직접 찾기</b>로 채워 주세요.');
-  }
-  function step(){
-    if(done) return;
-    if(Date.now() - t0 > 90000) return finish();
-    if(ji >= jobs.length) return finish();
-    /* 앞 5패스(정방향)에서 발주번호와 규격을 모두 읽었으면 회전 패스는 건너뛴다 */
-    if(ji === 5 && acc.codes.length && acc.specs.length) return finish();
-    var job = jobs[ji++];
-    var rc = getRc(job.rot);
-    if(!rc) return setTimeout(step, 0);
-    var cv = null;
-    try{ cv = photoPre(photoClone(rc), job.kind); }catch(e){ cv = null; }
-    if(!cv) return setTimeout(step, 0);
-    invProg('송장 읽는 중 · ' + job.rot + '° (' + ji + '/' + jobs.length + ')', 0.08 + ji * 0.1);
-    photoOcr(cv, job.psm, '').then(function(txt){
-      try{ cv.width = cv.height = 0; }catch(e){}
-      invParseText(txt, acc);
-      setTimeout(step, 0);
-    }).catch(function(){
-      try{ cv.width = cv.height = 0; }catch(e){}
-      setTimeout(step, 0);
-    });
-  }
-  invProg('사진 준비 중…', 0.05);
-  step();
+  }).catch(function(e){
+    INV_BUSY = false;
+    invProgOn(false);
+    invFail('<b>송장을 읽는 중 문제가 생겼습니다.</b><br>' + (String(e && e.message || e).slice(0, 120)));
+  });
 }
 function invStart(file){
   if(!file) return;
@@ -3350,7 +4055,6 @@ try{
   window.__INV_FN = { parse: function(t){ return invParseText(t); }, cands: function(){ return INV_CANDS; },
                       confirm: invConfirm, undo: invUndoInb, setInb: setInb, clearInb: clearInb, inbInfo: inbInfo };
 }catch(e){}
-
 
 /* ================= UI ================= */
 var PAGE=100;
