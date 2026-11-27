@@ -1528,6 +1528,7 @@ var PHOTO_BUSY = false, PHOTO_CANDS = {}, PHOTO_HITS = 0, PHOTO_DBG = [];
 var PHOTO_NUMS = {};              /* 읽은 숫자 후보 {값: {n:횟수, kind:'t'|'w'|'l'|''}} */
 var PHOTO_AMB = {};               /* 0/6 갈림 정보 { '40x2015x16850': {alt:'40x2015x10850'} } */
 var PHOTO_OBJURL = null, PHOTO_IMG = null, PHOTO_ROT_VIEW = 0, PHOTO_START_ROT = 0;
+var PHOTO_PM_AUTO = true;         /* 치수 칸을 자동으로 채우는 중인지(사용자가 고치면 멈춤) */
 try { window.__PHOTO_DEBUG = PHOTO_DBG; } catch(e){}
 
 function $p(id){ return document.getElementById(id); }
@@ -1584,6 +1585,7 @@ function photoReset(){
   photoStat();
   $p('photoActs').classList.remove('hidden');
   PHOTO_BUSY = false;
+  PHOTO_PM_AUTO = true;
 }
 
 /* ---------- 라이브러리 / 인식기 준비 ---------- */
@@ -1987,8 +1989,9 @@ function photoResolve(t, w, l){
 }
 function photoFixDigits(s){
   return String(s)
-    .replace(/[OoQ]/g, '0')
+    .replace(/[OoQØø]/g, '0')
     .replace(/[Il|!\]\[]/g, '1')
+    .replace(/[il]/g, '1')
     .replace(/[Ss]/g, '5')
     .replace(/[Bb]/g, '8')
     .replace(/[Zz]/g, '2')
@@ -2297,14 +2300,238 @@ function photoRotRank(img){
   return { order: order, scores: scores };
 }
 
+/* ---------- v8.6 · 라벨 띠를 '국소 어둡기'로 읽기 ----------
+   햇빛·그림자가 글씨 위를 지나가도, 띠 가장자리·바코드·철판 무늬가 있어도
+   배경(큰 블러)보다 어두운 화소만 남겨 글씨를 살린다. 그다음 띠를 줄로 나눠 줄마다 읽는다. */
+function photoKillLongRuns(bin, w, h, frac){
+  var o = bin.slice(), x, y, run, st, k, ya, yb, yy;
+  for (y = 0; y < h; y++){
+    run = 0; st = 0;
+    for (x = 0; x <= w; x++){
+      var d = x < w && bin[y*w+x];
+      if (d){ if (!run) st = x; run++; }
+      else {
+        if (run >= frac * w){
+          ya = y > 0 ? y - 1 : 0; yb = y + 1 < h ? y + 1 : h - 1;
+          for (k = st; k < st + run; k++) for (yy = ya; yy <= yb; yy++) o[yy*w+k] = 0;
+        }
+        run = 0;
+      }
+    }
+  }
+  return o;
+}
+/* 회색 띠(y0~y1, slope 만큼 기울여) → 국소 어둡기 이진 마스크 */
+function photoStripMask(G, y0, y1, R, slope){
+  var w = G.w, h = G.h, x, y, i, q;
+  y0 = Math.round(y0); y1 = Math.round(y1);
+  if (y0 < 0) y0 = 0;
+  if (y1 > h) y1 = h;
+  if (y1 - y0 < 8) return null;
+  var cw = w, ch = y1 - y0, mid = cw / 2;
+  var sub = new Float32Array(cw*ch), sy;
+  for (y = 0; y < ch; y++){
+    for (x = 0; x < cw; x++){
+      if (slope){ sy = (y0 + y) + Math.round(slope * (x - mid)); if (sy < 0) sy = 0; if (sy >= h) sy = h - 1; }
+      else sy = y0 + y;
+      sub[y*cw+x] = G.g[sy*w+x];
+    }
+  }
+  var bg = photoBoxBlur(sub, cw, ch, R);
+  var dk = new Float32Array(cw*ch), v;
+  for (i = 0; i < cw*ch; i++){ v = bg[i] - sub[i]; dk[i] = v < 0 ? 0 : (v > 255 ? 255 : v); }
+  var st = photoStretch(dk, photoPct(dk, 0.35), photoPct(dk, 0.995));
+  var bl = photoBoxBlur(st, cw, ch, 1);
+  var thr = photoOtsuThr(bl);
+  var bin = new Uint8Array(cw*ch);
+  for (i = 0; i < cw*ch; i++) bin[i] = (bl[i] > thr) ? 1 : 0;
+  return { w: cw, h: ch, bin: photoKillLongRuns(bin, cw, ch, 0.35), st: st, thr: thr };
+}
+/* 마스크의 a~b줄을 '그 안의 잉크' 범위로 잘라 키운 캔버스(검은 글씨·흰 바탕) */
+function photoMaskLine(M, a, b){
+  var w = M.w, x0 = w, x1 = -1, x, y, ya = -1, yb = -1;
+  for (y = a; y < b; y++){
+    var hit = false;
+    for (x = 0; x < w; x++){
+      if (M.bin[y*w+x]){
+        hit = true;
+        if (x < x0) x0 = x;
+        if (x > x1) x1 = x;
+      }
+    }
+    if (hit){ if (ya < 0) ya = y; yb = y; }
+  }
+  if (x1 < 0 || x1 - x0 < 30 || ya < 0) return null;
+  var y0 = Math.max(0, ya - 1), y1 = Math.min(M.h, yb + 2);
+  var ch0 = y1 - y0, k, xx2, yy2;
+  /* 바코드·오른쪽 잡음을 끊는다 — 잉크 없는 열이 10개 이상 이어지는 곳 */
+  var colInk = new Int32Array(x1 - x0 + 1);
+  for (x = x0; x <= x1; x++){
+    var c1 = 0;
+    for (y = y0; y < y1; y++) c1 += M.bin[y*w+x];
+    colInk[x - x0] = c1;
+  }
+  var run0 = -1, cutX = -1;
+  for (k = colInk.length - 1; k >= Math.floor(colInk.length * 0.35); k--){
+    if (colInk[k] <= Math.max(1, ch0 * 0.05)){
+      if (run0 < 0) run0 = k;
+      if (run0 - k >= 9){ cutX = x0 + k; break; }
+    } else run0 = -1;
+  }
+  if (cutX > x0 + 40) x1 = cutX - 1;
+  /* 잉크가 가장 많은 '한 줄'만 남기기 */
+  var rows = new Float64Array(y1 - y0), inner = 0;
+  for (yy2 = 0; yy2 < rows.length; yy2++){
+    var c2 = 0;
+    for (xx2 = x0; xx2 <= x1; xx2++) c2 += M.bin[(y0+yy2)*w + xx2];
+    rows[yy2] = c2;
+    if (c2 > inner) inner = c2;
+  }
+  if (inner > 0){
+    var th2 = inner * 0.22, bestA = -1, bestB = -1, curA = -1;
+    for (k = 0; k <= rows.length; k++){
+      var on2 = k < rows.length && rows[k] >= th2;
+      if (on2){ if (curA < 0) curA = k; }
+      else if (curA >= 0){
+        if (bestA < 0 || (k - curA) > (bestB - bestA)){ bestA = curA; bestB = k; }
+        curA = -1;
+      }
+    }
+    if (bestA >= 0 && bestB - bestA >= 6){
+      var ny0 = Math.max(0, y0 + bestA - 2);
+      var ny1 = Math.min(M.h, y0 + bestB + 2);
+      y0 = ny0; y1 = ny1;
+    }
+  }
+  var cw = x1 - x0 + 1, ch = y1 - y0, s, xx, yy;
+  if (cw < 30 || ch < 6) return null;
+  s = new Uint8Array(cw*ch);
+  for (yy = 0; yy < ch; yy++) for (xx = 0; xx < cw; xx++) s[yy*cw+xx] = M.bin[(y0+yy)*M.w + (x0+xx)];
+  var lh = Math.max(8, ch - 4);
+  var sc = Math.min(8, Math.max(2, 88 / (lh * 0.62)));
+  sc = Math.min(sc, 7000 / cw);
+  if (sc < 1.2) sc = 1.2;
+  var cv = photoCrop(photoFromBin(s, cw, ch), 0, 0, cw, ch, sc);
+  return { cv: cv, x0: x0, x1: x1, y0: y0, y1: y1, sc: sc, lh: lh, w: cw, h: ch };
+}
+
+/* 마스크의 글자 줄 나누기 — 행 프로파일의 봉우리 사이 '골'에서 자른다 */
+function photoMaskBands(M, maxBands){
+  var w = M.w, h = M.h, rows = new Float64Array(h), y, x, s;
+  for (y = 0; y < h; y++){ s = 0; for (x = 0; x < w; x++) s += M.bin[y*w+x]; rows[y] = s; }
+  var p = photoSmooth(photoSmooth(rows, 2), 2), mx = 0;
+  for (y = 0; y < h; y++) if (p[y] > mx) mx = p[y];
+  if (mx <= 0) return [];
+  var peaks = [], i;
+  for (y = 1; y < h - 1; y++) if (p[y] >= p[y-1] && p[y] >= p[y+1] && p[y] > mx * 0.35) peaks.push(y);
+  var mp = [];
+  for (i = 0; i < peaks.length; i++){
+    if (mp.length && peaks[i] - mp[mp.length-1] < 12){
+      if (p[peaks[i]] > p[mp[mp.length-1]]) mp[mp.length-1] = peaks[i];
+    } else mp.push(peaks[i]);
+  }
+  var cuts = [], k, mv, mi, lo;
+  for (i = 0; i + 1 < mp.length; i++){
+    mv = p[mp[i]]; mi = mp[i];
+    for (k = mp[i]; k <= mp[i+1]; k++) if (p[k] < mv){ mv = p[k]; mi = k; }
+    lo = Math.min(p[mp[i]], p[mp[i+1]]);
+    if (mv < lo * 0.75 && mi - mp[i] >= 8 && mp[i+1] - mi >= 8) cuts.push(mi);
+  }
+  if (!cuts.length) return [[0, h]];
+  var all = [0].concat(cuts).concat([h]), bands = [];
+  for (i = 0; i + 1 < all.length; i++){
+    if (all[i+1] - all[i] >= 8) bands.push([all[i], all[i+1]]);
+  }
+  /* 앞뒤 잡음 띠(높이 작고 잉크 적은 곳)는 버린다 */
+  bands = bands.filter(function(b){
+    var ink = 0, yy, xx;
+    for (yy = b[0]; yy < b[1]; yy++) for (xx = 0; xx < w; xx++) ink += M.bin[yy*w+xx];
+    return ink > w * 2 && (b[1] - b[0]) >= 10;
+  });
+  if (!bands.length) return [[0, h]];
+  return bands.slice(0, maxBands || 3);
+}
+
+/* v8.6 — 한 장에서 라벨(사이드 마킹) 치수만 조용히 뽑는다. 📥 송장 모드 호환용. */
+function photoMarkingDims(img, maxCalls){
+  var out = [], rots = [0, 90, 270, 180], calls = 0, cap = maxCalls || 6;
+  var seq = Promise.resolve();
+  rots.forEach(function(rot){
+    seq = seq.then(function(){
+      if (out.length || calls >= cap) return;
+      var jobs = [];
+      try { jobs = photoBrightBandJobs(img, rot); } catch(e){ jobs = []; }
+      if (!jobs.length) return;
+      var G = null;
+      try { G = photoGray(photoRotated(img, rot, PHOTO_MAXSIDE)); } catch(e){ G = null; }
+      if (!G) return;
+      var job = jobs[0], H = job.y1 - job.y0;
+      var pad = Math.max(4, Math.round(H * 0.30));
+      var R = Math.max(12, Math.min(34, Math.round(H * 0.22)));
+      var M = null;
+      try { M = photoStripMask(G, job.y0 - pad, job.y1 + pad, R, 0); } catch(e){ M = null; }
+      if (!M) return;
+      var views = [[0, M.h]];
+      if (M.h >= 105){ var half = Math.round(M.h * 0.55); views = [[0, half], [M.h - half, M.h], [0, M.h]]; }
+      var p = Promise.resolve();
+      views.forEach(function(v){
+        p = p.then(function(){
+          if (out.length || calls >= cap) return;
+          var L = null;
+          try { L = photoMaskLine(M, v[0], v[1]); } catch(e){ L = null; }
+          if (!L) return;
+          calls++;
+          return photoOcr(L.cv, 6, '').then(function(t){
+            var d = photoDims(String(t || ''));
+            if (d.length) return d;
+            return photoOcr(L.cv, 7, PHOTO_WHITE).then(function(t2){ return photoDims(String(t2 || '')); });
+          }).then(function(d){
+            if (!d || !d.length) return;
+            for (var i = 0; i < d.length; i++){
+              if (d[i].t && d[i].w && d[i].l) out.push({ t: d[i].t, w: d[i].w, l: d[i].l });
+            }
+          });
+        });
+      });
+      return p;
+    });
+  });
+  return seq.then(function(){ return out; });
+}
+
 /* ---------- 사진 한 장 분석 ---------- */
 function photoAnalyze(img){
   var t0 = Date.now();
   var done = false, calls = 0;
   PHOTO_BUSY = true;
-  var found = false;
+  var found = false, invoiceTried = false;
 
   function finish(){
+    if (done) return;
+    /* v8.6 — 사이드 마킹으로 못 읽었으면 거래명세표(표)로도 읽어 본다 */
+    if (!invoiceTried && !photoSorted().length && !photoNumChips().length
+        && typeof invReadInvoice === 'function'){
+      invoiceTried = true;
+      photoProg('거래명세표로 다시 읽는 중…', 0.88);
+      invReadInvoice(img).then(function(rows){
+        if (rows && rows.length){
+          var dims = [], i, r;
+          for (i = 0; i < rows.length; i++){
+            r = rows[i];
+            if (r && r.t && r.w && r.l) dims.push({ t: r.t, w: r.w, l: r.l });
+          }
+          if (dims.length){
+            photoCollect(dims);
+            PHOTO_DBG.push({ path: 'invoice', dims: dims.map(function(d){ return d.t + 'x' + d.w + 'x' + d.l; }) });
+          }
+        }
+        finish2();
+      }).catch(function(){ finish2(); });
+      return;
+    }
+    finish2();
+  }
+  function finish2(){
     if (done) return;
     done = true;
     PHOTO_BUSY = false;
@@ -2350,44 +2577,115 @@ function photoAnalyze(img){
     return exact;
   }
 
-  /* 1) 밝은 띠(라벨) 패스 — 회전마다, 기울기 후보를 바꿔 가며 */
-  var LABEL_SLOPES = [0, -0.02, 0.02, -0.04, 0.04, -0.06, 0.06, -0.08, 0.08, -0.11, 0.11];
-  function labelJob(ri, si, cand){
+  /* 1-a) v8.4 라벨 띠 읽기 (큰 글씨·기울어진 띠에 강함) — 먼저 가볍게 시도 */
+  var LEG_SLOPES = [0, -0.02, 0.02];
+  function labelLegacy(ri, si){
     if (done || found) return Promise.resolve();
-    if (Date.now() - t0 > 40000) return Promise.resolve();
-    if (calls >= 12) return Promise.resolve();
-    if (si >= LABEL_SLOPES.length) return labelStep(ri + 1);
+    if (ri >= rots.length) return Promise.resolve();
+    if (Date.now() - t0 > 22000) return Promise.resolve();
+    if (calls >= 5) return Promise.resolve();
+    if (si >= LEG_SLOPES.length) return labelLegacy(ri + 1, 0);
+    var rot = rots[ri], jobs = [];
+    try { jobs = photoBrightBandJobs(img, rot); } catch(e){ jobs = []; }
+    if (!jobs.length) return labelLegacy(ri + 1, 0);
     var crop = null;
-    try { crop = photoLabelCrop(cand, LABEL_SLOPES[si]); } catch(e){ crop = null; }
-    if (!crop || crop.h < 10) return labelJob(ri, si + 1, cand);
-    photoProg('라벨 띠를 읽는 중 · ' + LABEL_SLOPES[si] + ' (' + (++calls) + ')', 0.34 + Math.min(0.2, calls * 0.02));
+    try { crop = photoLabelCrop(jobs[0], LEG_SLOPES[si]); } catch(e){ crop = null; }
+    if (!crop || crop.h < 10) return labelLegacy(ri, si + 1);
+    calls++;
+    photoProg('라벨 띠를 읽는 중 (' + calls + ')', 0.3 + Math.min(0.16, calls * 0.02));
     var cv = photoFromGray(crop.gray, crop.w, crop.h);
     var big = photoCrop(cv, 0, 0, crop.w, crop.h, crop.scale);
-    return photoReadSpecLine(big, 'label-' + LABEL_SLOPES[si]).then(function(r){
-      PHOTO_DBG.push({ path: 'label', slope: LABEL_SLOPES[si], crop: [crop.w, crop.h],
+    return photoReadSpecLine(big, 'label-' + LEG_SLOPES[si]).then(function(r){
+      PHOTO_DBG.push({ path: 'label', rot: rot, slope: LEG_SLOPES[si], crop: [crop.w, crop.h],
                        text: r.text, alt: r.alt,
                        dims: r.dims.map(function(d){ return d.t + 'x' + d.w + 'x' + d.l; }) });
       collect(r.dims);
-      /* 글자를 고치지 않고(자동 보정 없이) 자료와 정확히 맞을 때만 이 사진은 끝 */
       for (var di = 0; di < r.dims.length; di++){
         var dd = r.dims[di];
         if (!dd.dist && photoLookup(dd.t, dd.w, dd.l).exact) found = true;
       }
-      if (found) return;
-      /* 정확히 자료와 맞는 규격이 나올 때까지 기울기를 바꿔 한 번 더 (최대 6회) */
-      if (calls >= 6) return Promise.resolve();
-      if (si >= 2 && !r.text) return labelStep(ri + 1);
-      return labelJob(ri, si + 1, cand);
+      if (found || r.dims.length) return;
+      if (si >= 1 && !r.text) return labelLegacy(ri + 1, 0);
+      return labelLegacy(ri, si + 1);
     });
   }
-  function labelStep(ri){
+
+  /* 1) 라벨(밝은 띠) 패스 v8.6 — 국소 어둡기 마스크 + 줄 나눔 + 줄별 OCR
+        한 띠에 두 줄이 겹친 마킹도 줄마다 따로 읽는다. */
+  var LABEL_SLOPES = [0, -0.02, 0.02, -0.04, 0.04];
+  var labelG = null;
+  function labelViewRead(M, a, b, rot, slope, got){
+    var line = null;
+    try { line = photoMaskLine(M, a, b); } catch(e){ line = null; }
+    if (!line) return Promise.resolve();
+    calls++;
+    photoProg('라벨 글자를 읽는 중 (' + calls + ')', 0.34 + Math.min(0.24, calls * 0.018));
+    var wl = PHOTO_WHITE;
+    return photoOcr(line.cv, 6, '').then(function(t1){
+      var txt = String(t1 || '').replace(/\s+/g, ' ').trim();
+      var dims = photoDims(txt);
+      PHOTO_DBG.push({ path: 'strip', rot: rot, slope: slope, band: [a, b], text: txt,
+                       dims: dims.map(function(d){ return d.t + 'x' + d.w + 'x' + d.l; }) });
+      if (dims.length){
+        collect(dims); got.hit = true;
+        for (var di = 0; di < dims.length; di++){
+          if (!dims[di].dist && photoLookup(dims[di].t, dims[di].w, dims[di].l).exact) found = true;
+        }
+      }
+      if (found || dims.length) return;
+      return photoOcr(line.cv, 7, wl).then(function(t2){
+        var tx2 = String(t2 || '').replace(/\s+/g, ' ').trim();
+        var d2 = photoDims(tx2);
+        PHOTO_DBG.push({ path: 'strip', rot: rot, slope: slope, band: [a, b], text: tx2, alt: '',
+                         dims: d2.map(function(d){ return d.t + 'x' + d.w + 'x' + d.l; }) });
+        if (d2.length){
+          collect(d2); got.hit = true;
+          for (var dj = 0; dj < d2.length; dj++){
+            if (!d2[dj].dist && photoLookup(d2[dj].t, d2[dj].w, d2[dj].l).exact) found = true;
+          }
+        }
+      });
+    }).catch(function(e){
+      PHOTO_DBG.push({ path: 'strip', rot: rot, err: String(e && e.message || e) });
+    });
+  }
+  function labelPass(ri, si){
     if (done || found) return Promise.resolve();
     if (ri >= rots.length) return Promise.resolve();
-    if (Date.now() - t0 > 45000) return Promise.resolve();
+    if (Date.now() - t0 > 34000) return Promise.resolve();
+    if (calls >= 9) return Promise.resolve();
+    if (si >= (ri === 0 ? LABEL_SLOPES.length : 1)) return labelPass(ri + 1, 0);
     var rot = rots[ri], jobs = [];
     try { jobs = photoBrightBandJobs(img, rot); } catch(e){ jobs = []; }
-    if (!jobs.length) return labelStep(ri + 1);
-    return labelJob(ri, 0, jobs[0]);
+    if (!jobs.length) return labelPass(ri + 1, 0);
+    var job = jobs[0];
+    var G = null;
+    if (labelG && labelG.rot === rot) G = labelG.G;
+    else { try { G = photoGray(photoRotated(img, rot, PHOTO_MAXSIDE)); } catch(e){ G = null; } labelG = { rot: rot, G: G }; }
+    if (!G) return labelPass(ri + 1, 0);
+    var H = job.y1 - job.y0;
+    var pad = Math.max(4, Math.round(H * 0.30));
+    var R = Math.max(12, Math.min(34, Math.round(H * 0.22)));
+    var M = null;
+    try { M = photoStripMask(G, job.y0 - pad, job.y1 + pad, R, LABEL_SLOPES[si]); } catch(e){ M = null; }
+    if (!M) return labelPass(ri + 1, 0);
+    var views = [[0, M.h]];
+    if (M.h >= 105){
+      var half = Math.round(M.h * 0.55);
+      views = [[0, half], [M.h - half, M.h], [0, M.h]];
+    }
+    var got = { hit: false }, seq = Promise.resolve();
+    views.forEach(function(v){
+      seq = seq.then(function(){
+        if (done || found || calls >= 9) return;
+        return labelViewRead(M, v[0], v[1], rot, LABEL_SLOPES[si], got);
+      });
+    });
+    return seq.then(function(){
+      if (done || found) return;
+      if (got.hit) return;                          /* 이 방향에서 읽었으면 거기서 그만 */
+      return labelPass(ri, si + 1);
+    });
   }
 
   /* 2) 도트(밝은 글씨) 패스 — 회전마다 */
@@ -2446,7 +2744,10 @@ function photoAnalyze(img){
   }
 
   photoProg('사진 준비 중…', 0.28);
-  labelStep(0).then(function(){ return dotStep(0); }).then(function(){ return finish(); });
+  labelLegacy(0, 0)
+    .then(function(){ if (!photoSorted().length && !found) return labelPass(0, 0); })
+    .then(function(){ return dotStep(0); })
+    .then(function(){ return finish(); });
 }
 
 /* ---------- 결과 모으기 / 표시 ---------- */
@@ -2569,7 +2870,7 @@ function photoRender(){
     note.classList.add('hidden');
   }
   var best = arr[0];
-  if (best && $p('pmW').value === ''){
+  if (best && PHOTO_PM_AUTO){
     var bt = best.exact ? best.exact : (best.alts && best.alts[0] ? best.alts[0] : best);
     var tRead = null;
     if (!best.exact){
@@ -2593,6 +2894,7 @@ function photoStat(){
 function photoFillNum(v, kind){
   var el = kind === 't' ? $p('pmT') : (kind === 'w' ? $p('pmW') : $p('pmL'));
   if (!el) return;
+  PHOTO_PM_AUTO = false;
   el.value = String(v);
   el.classList.add('flash');
   setTimeout(function(){ el.classList.remove('flash'); }, 520);
@@ -2622,6 +2924,7 @@ function photoStart(file){
   if (!file) return;
   if (PHOTO_BUSY) return;
   PHOTO_BUSY = true;
+  PHOTO_PM_AUTO = true;
   PHOTO_CANDS = {}; PHOTO_HITS = 0; PHOTO_NUMS = {}; PHOTO_AMB = {};
   while (PHOTO_DBG.length) PHOTO_DBG.pop();
   $p('photoRes').classList.add('hidden');
@@ -2689,8 +2992,7 @@ function photoInit(){
     var b = e.target.closest ? e.target.closest('.nchip') : null;
     if (!b) return;
     photoFillNum(b.getAttribute('data-num'), b.getAttribute('data-kind'));
-  });
-  $p('pmGo').addEventListener('click', function(){
+  });  $p('pmGo').addEventListener('click', function(){
     var t = $p('pmT').value.replace(/[^0-9.]/g, '');
     var w = $p('pmW').value.replace(/[^0-9]/g, '');
     var l = $p('pmL').value.replace(/[^0-9]/g, '');
@@ -2700,7 +3002,7 @@ function photoInit(){
   });
   ['pmT', 'pmW', 'pmL'].forEach(function(id){
     var el = $p(id);
-    if (el) el.addEventListener('input', function(){ this.value = this.value.replace(/[^0-9.]/g, ''); photoStat(); });
+    if (el) el.addEventListener('input', function(){ PHOTO_PM_AUTO = false; this.value = this.value.replace(/[^0-9.]/g, ''); photoStat(); });
   });
   var z = $p('photoZoom');
   if (z) z.addEventListener('click', function(){
@@ -2830,7 +3132,7 @@ function syncSheetCheck(i){
    ① 거래명세서·송장 사진에서 발주번호·규격(두께/폭/길이)·수량·LOT 을 읽는다.
       v8.4 부터는 표를 통째로 읽지 않고  표 영역 → 글자 줄 → 칸  순서로 잘라
       칸마다 확대해 읽는다(90도 회전·두께 소수점 60.00·천 단위 쉼표 1,600 모두 처리).
-   ② 아직 미입고인 자재(전체 5,585건)와 맞춰 후보를 만든다.
+   ② 아직 미입고인 자재(전체 5,575건)와 맞춰 후보를 만든다.
       발주번호+규격이 맞으면 최상단, 발주번호만/규격만 맞으면 그 다음,
       그래도 없으면 지금 고른 공사의 미입고 순으로 보여 준다.
    ③ 체크한 자재를 '현장 입고'로 저장하면 화면의 입고·미입고·발주코드 집계에 바로 반영된다.
@@ -3888,6 +4190,17 @@ function invAnalyze(img){
   invProgOn(true);
   invProg('거래명세서 표를 찾는 중…', 0.08);
   invReadInvoice(img).then(function(rows){
+    if (!rows.length && typeof photoMarkingDims === 'function'){
+      /* v8.6 — 표가 없으면 사이드 마킹(라벨) 사진으로 보고 한 번 더 읽는다 */
+      invProg('표가 없어 라벨 마킹으로 읽는 중…', 0.6);
+      return photoMarkingDims(img, 6).then(function(dims){
+        var out = [];
+        for (var k = 0; k < dims.length; k++) out.push({ t: dims[k].t, w: dims[k].w, l: dims[k].l, qty: null, lot: '', cells: [] });
+        return out;
+      }).catch(function(){ return rows; });
+    }
+    return rows;
+  }).then(function(rows){
     INV_BUSY = false;
     invProgOn(false);
     for (var i = 0; i < rows.length; i++){
