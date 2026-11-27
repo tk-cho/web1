@@ -5142,7 +5142,8 @@ var GEM_MODEL_KEY = 'dhy_plate_gemini_model_v1';
 var GEM_API = 'https://generativelanguage.googleapis.com/v1beta/models/';
 var GEM_MAXSIDE = 1600;          /* 보내는 사진의 긴 변(px) */
 var GEM_QUALITY = 0.88;          /* JPEG 품질 */
-var GEM_TIMEOUT = 12000;         /* 한 번 호출 제한(ms) */
+var GEM_TIMEOUT = 10000;         /* 한 번 호출 제한(ms) */
+var GEM_BUDGET = 9000;           /* 모델 폴백까지 합친 전체 예산(ms) — 넘으면 바로 OCR 로 */
 var GEM_MAXTRY = 3;              /* 모델 폴백 횟수 */
 var GEM_PREF = ['gemini-2.5-flash', 'gemini-3.5-flash-lite', 'gemini-3.8-flash',
                 'gemini-3.6-flash', 'gemini-2.5-flash-lite', 'gemini-3.1-flash-lite'];
@@ -5444,7 +5445,7 @@ function gemVision(prep, mode){
         return { ok: true, kind: String(obj.kind || ''), items: items, model: model, ms: Date.now() - t0 };
       }).catch(function(e){
         lastErr = gemErrText(e);
-        if (Date.now() - t0 < GEM_TIMEOUT) return step();
+        if (idx < list.length && Date.now() - t0 < GEM_BUDGET) return step();
         return { ok: false, kind: '', items: [], err: lastErr, ms: Date.now() - t0 };
       });
     }
