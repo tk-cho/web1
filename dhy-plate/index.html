@@ -524,6 +524,70 @@ table.fields td.dim{color:#7d8896;font-weight:600}
 .note{background:#fff8e6;border:1px solid #f0d79a;border-radius:12px;padding:10px 12px;margin-top:8px}
 .note b{color:#8a5b00}
 .ok{background:#eef7f1;border:1px solid #b6dcc4;border-radius:12px;padding:10px 12px;margin-top:8px}
+
+/* ---------- 🤖 Gemini AI (v8.7) ---------- */
+#aiBtn{flex:0 0 auto;height:40px;padding:0 10px;border-radius:20px;border:1px solid rgba(255,255,255,.3);
+  background:rgba(255,255,255,.1);color:#c9dbf2;font-size:11.5px;font-weight:800;letter-spacing:-.3px;
+  white-space:nowrap;display:flex;align-items:center;line-height:1}
+#aiBtn .ai-s{margin-left:3px}
+#aiBtn.on{background:rgba(110,231,183,.18);border-color:rgba(110,231,183,.6);color:#c9ffe8}
+#aiBtn:active{background:rgba(255,255,255,.22)}
+.aibar{display:flex;align-items:center;gap:8px;margin:0 0 10px;flex-wrap:wrap}
+.aipill{flex:0 0 auto;height:34px;padding:0 12px;border-radius:17px;border:1.5px solid #a7bfe0;
+  background:#eef3fb;color:#0b2b57;font-size:12.5px;font-weight:900;letter-spacing:-.2px}
+.aipill.on{border-color:#12805a;background:#e7f8f0;color:#0b6b49}
+.aibar .aibar-tx{flex:1 1 120px;min-width:0;font-size:11.5px;font-weight:700;color:#7d8896;line-height:1.35}
+.ainote{margin:0 0 9px;background:#eef8f2;border:1px solid #a9d5b9;border-radius:10px;padding:8px 10px;
+  font-size:12.5px;font-weight:800;color:#14713c;line-height:1.45}
+.ainote.warn{background:#fff7e6;border-color:#f2d391;color:#8a5a00}
+#aiWrap{position:fixed;inset:0;z-index:97;background:rgba(11,20,32,.6);display:flex;align-items:flex-end}
+#aiModal{background:#fff;width:100%;max-width:560px;margin:0 auto;max-height:92vh;border-radius:18px 18px 0 0;
+  display:flex;flex-direction:column;box-shadow:0 -8px 30px rgba(11,20,32,.3)}
+.aibody{padding:0 16px 6px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.aihelp{margin:2px 0 10px;font-size:13px;font-weight:600;color:#4a5460;line-height:1.5}
+.aiget{display:flex;align-items:center;justify-content:center;gap:6px;height:46px;border-radius:11px;
+  border:1.5px solid #1d4ed8;background:#eff6ff;color:#1d4ed8;font-size:14px;font-weight:900;text-decoration:none}
+.aiget:active{background:#dbeafe}
+.aifield{display:flex;flex-direction:column;gap:5px;margin:12px 0 0;font-size:12.5px;font-weight:900;color:#33404f}
+.airow{display:flex;gap:7px}
+.airow input{flex:1 1 auto;min-width:0;height:50px;border:1.5px solid #cdd6e0;border-radius:11px;padding:0 12px;
+  font-size:15px;font-weight:700;background:#fbfcfe;color:#101418;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.airow input:focus{outline:0;border-color:#0b2b57;background:#fff}
+.airow button{flex:0 0 auto;width:52px;height:50px;border-radius:11px;border:1.5px solid #cdd6e0;background:#fff;font-size:17px}
+.aistat{min-height:20px;margin:9px 0 0;font-size:12.5px;font-weight:800;line-height:1.45;color:#5b6472}
+.aistat.ok{color:#14713c}
+.aistat.err{color:#c2410c}
+.aistat.wait{color:#1d4ed8}
+.aistat .spin2{display:inline-block;width:12px;height:12px;margin-right:6px;border-radius:50%;
+  border:2px solid #b9cdec;border-top-color:#1d4ed8;animation:pspin .8s linear infinite;vertical-align:-2px}
+.aiacts{display:flex;gap:7px;margin-top:6px}
+.aiacts button{flex:1 1 0;height:48px;border-radius:11px;border:1.5px solid #0b2b57;background:#fff;
+  color:#0b2b57;font-size:14px;font-weight:900}
+.aiacts button.primary{background:#0b2b57;color:#fff}
+.aiacts button.ghost{border-color:#dbe2ea;color:#7d8896;flex:0 0 30%}
+.aitip{margin-top:12px;font-size:11.5px;font-weight:700;color:#5b6472;background:#f4f7fb;border:1px solid #dbe2ea;
+  border-radius:10px;padding:9px 11px;line-height:1.55}
+.aitip b{color:#0b2b57}
+.aimodel{margin:9px 0 4px;font-size:11px;font-weight:700;color:#7d8896;line-height:1.4}
+@media (max-width:430px){
+  #aiBtn{font-size:10.5px;padding:0 8px}
+  .hdrbtns{gap:6px}
+}
+@media (max-width:470px){
+  /* 상단 단추 세 개가 되어도 제목이 한 줄에 들어가게: 자동열림은 아이콘만 */
+  #autoLockBtn{width:40px;padding:0;justify-content:center}
+  #autoLockBtn .al-tx{display:none}
+  .hdrbtns{gap:6px}
+  #aiBtn{font-size:11px;padding:0 9px}
+  #hdrCount{display:none}          /* 전체 건수는 위 요약에 크게 나온다 */
+}
+@media (max-width:372px){
+  #topbar{padding-left:12px;padding-right:12px}
+  #aiBtn{font-size:10px;padding:0 7px}
+  #aiBtn .ai-lb{letter-spacing:-.5px}
+  .aibar .aibar-tx{font-size:11px}
+}
 </style>
 <style>
 /* ---------- lock screen ---------- */
@@ -611,6 +675,7 @@ table.fields td.dim{color:#7d8896;font-weight:600}
   </div>
   <div class="hdrbtns">
     <button id="autoLockBtn" class="hidden" aria-label="이 기기 자동 열림 설정" aria-pressed="true">🔓<span class="al-tx">자동열림<span class="al-on"> ON</span></span></button>
+    <button id="aiBtn" aria-label="Gemini AI 설정" aria-pressed="false">🤖 AI<span class="ai-s">OFF</span></button>
     <button id="helpBtn" aria-label="도움말">?</button>
   </div>
 </div>
@@ -738,6 +803,38 @@ table.fields td.dim{color:#7d8896;font-weight:600}
 </main>
 
 <button id="toTop" class="hidden" aria-label="맨 위로">↑</button>
+
+<!-- ============ 🤖 Gemini AI 설정 ============ -->
+<div id="aiWrap" class="hidden">
+  <div id="aiModal" role="dialog" aria-modal="true" aria-label="Gemini AI 설정">
+    <div class="shiphead"><h2>🤖 Gemini AI 인식</h2><button id="aiClose" aria-label="닫기">✕</button></div>
+    <div class="aibody">
+      <p class="aihelp">사진에서 <b>철판 규격</b>과 <b>거래명세표 품목</b>을 구글 <b>Gemini</b>가 읽습니다.
+        아래에서 받은 <b>무료 API 키</b>를 붙여넣고 <b>저장</b>하면 <b>🤖 AI ON</b> 이 됩니다.
+        키가 없거나 호출이 실패하면 기존 <b>기기 인식(OCR)</b>으로 자동으로 넘어갑니다.</p>
+      <a class="aiget" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">🔑 Google AI Studio에서 무료 API 키 받기</a>
+      <label class="aifield">Gemini API 키
+        <div class="airow">
+          <input id="aiKey" type="password" autocomplete="off" autocorrect="off" autocapitalize="off"
+                 spellcheck="false" placeholder="복사한 키를 여기에 붙여넣기">
+          <button type="button" id="aiShow" aria-label="키 보기" aria-pressed="false">👁</button>
+        </div>
+      </label>
+      <div id="aiStat" class="aistat" role="status"></div>
+      <div class="aiacts">
+        <button type="button" id="aiTest">테스트</button>
+        <button type="button" id="aiSave" class="primary">저장</button>
+        <button type="button" id="aiDel" class="ghost">삭제</button>
+      </div>
+      <div class="aitip"><b>키는 이 폰 브라우저에만</b> 저장됩니다(localStorage). 앱 코드·GitHub·서버에는
+        남지 않고, 사진은 Google Gemini API 로만 전송됩니다(무료 등급).<br>
+        공용 폰에서는 쓰고 나서 <b>삭제</b>를 눌러 주세요.</div>
+      <div class="aimodel" id="aiModelNote">무료 등급 모델 자동 선택 · gemini-2.5-flash → gemini-3.5-flash-lite → gemini-3.8-flash</div>
+    </div>
+    <div class="shipfoot"><button id="aiDone" class="primary">닫기</button></div>
+  </div>
+</div>
+
 <div id="toast" class="hidden" role="status"></div>
 
 <nav id="tabbar">
@@ -799,6 +896,10 @@ table.fields td.dim{color:#7d8896;font-weight:600}
       <p class="photohelp">철판 옆면 스텐실의 <b>두께 × 폭 × 길이</b>(예: <code>16X2450X8050</code> · <code>10T 2440 6096</code>)를 읽어 찾아드립니다.
         글자가 화면에 크게 차도록 <b>가까이서, 그림자 없이</b> 찍으면 더 잘 읽습니다.
         잘못 읽어도 <b>읽은 숫자를 눌러</b> 칸을 채워 검색할 수 있습니다.</p>
+      <div class="aibar">
+        <button type="button" id="aiBtnPhoto" class="aipill">🤖 AI 인식 <b>OFF</b></button>
+        <span class="aibar-tx">무료 Gemini 키를 넣으면 사진을 AI가 더 정확하게 읽습니다</span>
+      </div>
       <div class="photoacts" id="photoActs">
         <button id="photoCam" class="pact cam">📷 카메라로 찍기</button>
         <button id="photoPick" class="pact">🖼️ 앨범에서 고르기</button>
@@ -821,6 +922,7 @@ table.fields td.dim{color:#7d8896;font-weight:600}
       </div>
 
       <div id="photoRes" class="hidden">
+        <div id="aiNotePhoto" class="ainote hidden"></div>
         <div class="plabel">인식된 치수 · 누르면 바로 검색</div>
         <div id="photoChips" class="photochips"></div>
         <div id="photoNote" class="pnote hidden"></div>
@@ -856,6 +958,10 @@ table.fields td.dim{color:#7d8896;font-weight:600}
     <div class="photobody">
       <p class="photohelp">입고 송장·거래명세서를 찍으면 <b>발주번호·규격·수량</b>을 읽어 <b>미입고 자재</b>를 찾아 줍니다.
         확인한 뒤 <b>✅ 입고 확정</b>을 누르면 이 폰에 <b>현장 입고</b>로 저장됩니다.</p>
+      <div class="aibar">
+        <button type="button" id="aiBtnInv" class="aipill">🤖 AI 인식 <b>OFF</b></button>
+        <span class="aibar-tx">무료 Gemini 키를 넣으면 명세서 품목·수량을 AI가 읽습니다</span>
+      </div>
       <div class="photoacts" id="invActs">
         <button id="invCam" class="pact cam">📷 카메라로 찍기</button>
         <button id="invPick" class="pact">🖼️ 앨범에서 고르기</button>
@@ -868,6 +974,7 @@ table.fields td.dim{color:#7d8896;font-weight:600}
         <div class="pbar"><i id="invProgBar"></i></div>
       </div>
       <div id="invRes" class="hidden">
+        <div id="aiNoteInv" class="ainote hidden"></div>
         <div class="plabel">읽은 내용</div>
         <div id="invRead" class="invread"></div>
         <div id="invSpecsWrap" class="hidden">
@@ -2500,7 +2607,7 @@ function photoMarkingDims(img, maxCalls){
 }
 
 /* ---------- 사진 한 장 분석 ---------- */
-function photoAnalyze(img){
+function photoAnalyzeOcr(img){
   var t0 = Date.now();
   var done = false, calls = 0;
   PHOTO_BUSY = true;
@@ -4184,7 +4291,7 @@ function invReadInvoice(img){
 
 
 /* ---------- 사진 읽기 (UI 연결) ---------- */
-function invAnalyze(img){
+function invAnalyzeOcr(img){
   var acc = invNewAcc();
   INV_BUSY = true;
   invProgOn(true);
@@ -5000,6 +5107,601 @@ function init(){
   syncChips();
   applyFilters();
 }
+
+/* ================= 🤖 Gemini 비전 AI (v8.7) ================= */
+/* ================= 🤖 Gemini 비전 AI (v8.7) =================
+   📷 사진 · 📥 송장에서 철판 규격·거래명세서 품목을 Gemini 비전 모델로 먼저 읽는다.
+   키가 없거나 호출이 실패하면(오프라인·할당량 초과·키 오류) 기존 v8.6 Tesseract OCR 로 자동 폴백한다.
+
+   보안 원칙
+   - API 키는 이 폰 브라우저 localStorage['dhy_plate_gemini_key_v1'] 에만 있다.
+     코드·JSON·저장소·로그·화면 어디에도 키를 남기지 않는다(요청 헤더 x-goog-api-key 로만 전달).
+   - 키를 지우면 localStorage 에서 즉시 사라지고 AI 는 OFF 로 돌아간다.
+   - 사진은 리사이즈한 JPEG 만 Google Gemini API 로 보낸다(무료 등급).
+
+   모델
+   - 무료 등급에서 실제로 쓸 수 있는 비전 모델을 목록 API(GET /v1beta/models)로 확인해
+     앞에서부터 시도한다. gemini-2.5-flash(2026-12-01 종료 예정·신규 키 미개방) 이 목록에 있으면
+     그것을 먼저 쓰고, 없으면 gemini-3.5-flash-lite → gemini-3.8-flash 순으로 내려간다.
+   - 성공한 모델은 이 폰에 기억해 다음부터 목록 조회 없이 바로 쓴다. */
+
+var GEM_KEY = 'dhy_plate_gemini_key_v1';
+var GEM_MODEL_KEY = 'dhy_plate_gemini_model_v1';
+var GEM_API = 'https://generativelanguage.googleapis.com/v1beta/models/';
+var GEM_MAXSIDE = 1600;          /* 보내는 사진의 긴 변(px) */
+var GEM_QUALITY = 0.88;          /* JPEG 품질 */
+var GEM_TIMEOUT = 12000;         /* 한 번 호출 제한(ms) */
+var GEM_MAXTRY = 3;              /* 모델 폴백 횟수 */
+var GEM_PREF = ['gemini-2.5-flash', 'gemini-3.5-flash-lite', 'gemini-3.8-flash',
+                'gemini-3.6-flash', 'gemini-2.5-flash-lite', 'gemini-3.1-flash-lite'];
+var GEM_MODELS = null, GEM_LAST = null, GEM_BUSY = false;
+
+/* ---------- 키 · 배지 ---------- */
+function gemKeyGet(){
+  try { return String(localStorage.getItem(GEM_KEY) || '').trim(); } catch(e){ return ''; }
+}
+function gemOn(){ return !!gemKeyGet(); }
+function gemKeySet(k){
+  try {
+    if (k) localStorage.setItem(GEM_KEY, k);
+    else localStorage.removeItem(GEM_KEY);
+    localStorage.removeItem(GEM_MODEL_KEY);       /* 키가 바뀌면 모델 기억도 지운다 */
+  } catch(e){}
+  GEM_MODELS = null;
+  gemBadge();
+}
+function gemBadge(){
+  var on = gemOn();
+  var b = document.getElementById('aiBtn');
+  if (b){
+    b.innerHTML = '<span class="ai-lb">🤖 ' + (on ? 'AI ON' : 'AI OFF') + '</span>';
+    b.className = on ? 'on' : '';
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    b.title = on ? 'Gemini AI 켜짐 — 눌러서 키 관리(테스트·삭제)' : 'Gemini AI 꺼짐 — 눌러서 무료 키 넣기';
+  }
+  var ids = ['aiBtnPhoto', 'aiBtnInv'], i, e, s;
+  for (i = 0; i < ids.length; i++){
+    e = document.getElementById(ids[i]);
+    if (!e) continue;
+    s = e.querySelector('b');
+    if (s) s.textContent = on ? 'ON' : 'OFF';
+    e.className = 'aipill' + (on ? ' on' : '');
+  }
+}
+
+/* ---------- 화면 안내줄 ---------- */
+function gemNote(where, html){
+  var el = document.getElementById(where === 'inv' ? 'aiNoteInv' : 'aiNotePhoto');
+  if (!el) return;
+  if (!html){ el.className = 'ainote hidden'; el.innerHTML = ''; return; }
+  var warn = false;
+  if (html.indexOf('warn:') === 0){ warn = true; html = html.slice(5); }
+  el.innerHTML = html;
+  el.className = 'ainote' + (warn ? ' warn' : '');
+}
+
+/* ---------- 사진 준비(긴 변 1600px JPEG) ---------- */
+function gemPrep(img){
+  var sw = img.naturalWidth || img.width, sh = img.naturalHeight || img.height;
+  if (!(sw > 0 && sh > 0)) throw new Error('사진을 읽지 못했습니다');
+  var k = Math.min(1, GEM_MAXSIDE / Math.max(sw, sh));
+  var w = Math.max(1, Math.round(sw * k)), h = Math.max(1, Math.round(sh * k));
+  var cv = document.createElement('canvas');
+  cv.width = w; cv.height = h;
+  var c = cv.getContext('2d');
+  c.fillStyle = '#ffffff'; c.fillRect(0, 0, w, h);
+  c.drawImage(img, 0, 0, w, h);
+  var url = cv.toDataURL('image/jpeg', GEM_QUALITY);
+  var at = url.indexOf(',');
+  if (at < 0) throw new Error('사진을 변환하지 못했습니다');
+  return { b64: url.slice(at + 1), w: w, h: h, sw: sw, sh: sh };
+}
+
+/* ---------- 프롬프트 · 응답 스키마 ---------- */
+function gemPrompt(mode){
+  var projs = '';
+  try { projs = (typeof projOrder === 'function') ? projOrder().join(' · ') : ''; } catch(e){ projs = ''; }
+  var head = (mode === 'invoice')
+    ? '이 사진은 철강 거래명세서·송장(표)일 수도 있고, 철판 표면·측면에 찍힌 스텐실·라벨 마킹일 수도 있다.'
+    : '이 사진은 철판 표면·측면에 찍힌 스텐실·라벨 마킹일 수도 있고, 거래명세서(표)일 수도 있다.';
+  return [
+    '너는 철강 자재 사진 판독기다. 사진에 보이는 모든 강재 규격을 읽어 JSON 으로만 답한다.',
+    head,
+    '- 사진이 90/180/270도 돌아가 있어도(글자가 세로로 서 있어도), 햇빛·그림자가 있어도,',
+    '  글자가 2줄 이상 겹쳐 있어도, 점(도트)으로 찍힌 스텐실이어도, 표(거래명세표)여도 그대로 읽는다.',
+    '- 규격 순서는 두께 T(mm) × 폭(mm) × 길이(mm). 예: "20X1640X19050" → t=20, w=1640, l=19050',
+    '- 두께 소수점은 숫자로(60.00 → 60, 5.8 → 5.8), 천 단위 쉼표는 지운다(1,960 → 1960, 13,650 → 13650).',
+    '- 수량(EA·매·장·수량)이 적혀 있으면 qty 에 넣고, 없으면 null. 같은 규격이 두 줄이면 두 항목으로 넣는다.',
+    '- 발주번호·제품번호·LOT·Heat No.(예: YD-016, FE015593-02)가 보이면 order_code 에 적는다.',
+    '- 한글 공사명이 보이면 project_hint 에 그대로 적는다. 자료의 공사명: ' + projs,
+    '- 읽을 수 없는 값은 0 이나 빈 문자열이 아니라 null 로 둔다. 규격을 하나도 못 읽으면 items 는 빈 배열이다.',
+    '- kind 는 철판 마킹이면 "plate_marking", 거래명세서·송장이면 "invoice", 판단이 안 되면 "unknown".',
+    '- note 에는 그 항목을 어디서 읽었는지 20자 이내로 적는다(예: "윗줄", "2번째 품목").'
+  ].join('\n');
+}
+function gemSchema(){
+  function S(t, extra){
+    var o = { type: t };
+    if (extra) for (var k in extra) if (extra.hasOwnProperty(k)) o[k] = extra[k];
+    return o;
+  }
+  return {
+    type: 'OBJECT',
+    properties: {
+      kind: S('STRING', { enum: ['plate_marking', 'invoice', 'unknown'] }),
+      items: {
+        type: 'ARRAY',
+        items: {
+          type: 'OBJECT',
+          properties: {
+            t: S('NUMBER', { description: '두께 mm' }),
+            w: S('NUMBER', { description: '폭 mm' }),
+            l: S('NUMBER', { description: '길이 mm' }),
+            qty: S('INTEGER', { nullable: true }),
+            order_code: S('STRING', { nullable: true }),
+            project_hint: S('STRING', { nullable: true }),
+            lot: S('STRING', { nullable: true }),
+            steel_grade: S('STRING', { nullable: true }),
+            note: S('STRING', { nullable: true })
+          },
+          required: ['t', 'w', 'l'],
+          propertyOrdering: ['t', 'w', 'l', 'qty', 'order_code', 'project_hint', 'lot', 'steel_grade', 'note']
+        }
+      }
+    },
+    required: ['kind', 'items'],
+    propertyOrdering: ['kind', 'items']
+  };
+}
+
+/* ---------- 통신 ---------- */
+function gemErrText(e){
+  var s = String((e && e.message) || e || '');
+  var low = s.toLowerCase();
+  if (e && e.name === 'AbortError') return '응답이 늦어 그만두었습니다(시간 초과)';
+  if (/api key not valid|api_key_invalid|invalid api key/.test(low)) return '키가 올바르지 않습니다';
+  if (/quota|resource_exhausted|rate limit|too many requests/.test(low)) return '무료 사용량(할당량)을 넘었습니다 — 잠시 뒤 다시';
+  if (/permission|denied|forbidden/.test(low)) return '이 키로는 쓸 수 없습니다';
+  if (/failed to fetch|networkerror|load failed/.test(low)) return '인터넷에 연결하지 못했습니다';
+  if (/not found|not_found|is not supported|does not support/.test(low)) return '이 모델을 쓸 수 없습니다';
+  return s ? s.slice(0, 120) : '알 수 없는 오류';
+}
+function gemFetchJson(url, opt){
+  var ctrl = (typeof AbortController === 'function') ? new AbortController() : null;
+  var timer = null;
+  if (ctrl){
+    opt.signal = ctrl.signal;
+    timer = setTimeout(function(){ try { ctrl.abort(); } catch(e){} }, GEM_TIMEOUT);
+  }
+  return fetch(url, opt).then(function(r){
+    return r.text().then(function(txt){
+      if (timer){ clearTimeout(timer); timer = null; }
+      var j = null;
+      try { j = txt ? JSON.parse(txt) : null; } catch(e){ j = null; }
+      if (!r.ok){
+        var msg = (j && j.error && j.error.message) ? String(j.error.message) : ('HTTP ' + r.status);
+        var err = new Error(msg);
+        err.status = r.status;
+        throw err;
+      }
+      return j;
+    });
+  }).catch(function(e){
+    if (timer){ clearTimeout(timer); timer = null; }
+    throw e;
+  });
+}
+function gemHeaders(key, json){
+  var h = { 'x-goog-api-key': key };
+  if (json) h['Content-Type'] = 'application/json';
+  return h;
+}
+
+/* 이 키로 쓸 수 있는 비전 모델 목록 (7일 기억) */
+function gemList(key, force){
+  if (!force && GEM_MODELS && GEM_MODELS.length) return Promise.resolve(GEM_MODELS);
+  if (!force){
+    try {
+      var raw = localStorage.getItem(GEM_MODEL_KEY), o = raw ? JSON.parse(raw) : null;
+      if (o && o.models && o.models.length && (Date.now() - (o.at || 0) < 7 * 864e5)){
+        GEM_MODELS = o.models;
+        return Promise.resolve(GEM_MODELS);
+      }
+    } catch(e){}
+  }
+  return gemFetchJson(GEM_API + '?pageSize=200', { method: 'GET', headers: gemHeaders(key, false) })
+    .then(function(j){
+      var ms = (j && j.models) || [], avail = {}, i, m, short, meth;
+      for (i = 0; i < ms.length; i++){
+        m = ms[i];
+        if (!m || !m.name) continue;
+        short = String(m.name).replace(/^models\//, '');
+        meth = m.supportedGenerationMethods || m.supportedActions || [];
+        if (meth.indexOf('generateContent') < 0) continue;
+        avail[short] = 1;
+      }
+      var out = [];
+      for (i = 0; i < GEM_PREF.length; i++){
+        if (avail[GEM_PREF[i]]){ out.push(GEM_PREF[i]); delete avail[GEM_PREF[i]]; }
+      }
+      for (var k in avail){
+        if (!avail.hasOwnProperty(k)) continue;
+        if (/flash/i.test(k) && out.indexOf(k) < 0) out.push(k);
+      }
+      if (!out.length) out = GEM_PREF.slice(0, 2);
+      GEM_MODELS = out;
+      try { localStorage.setItem(GEM_MODEL_KEY, JSON.stringify({ models: out, at: Date.now() })); } catch(e){}
+      return out;
+    })
+    .catch(function(){ GEM_MODELS = GEM_PREF.slice(0, 2); return GEM_MODELS; });
+}
+
+function gemPost(model, key, payload){
+  return gemFetchJson(GEM_API + encodeURIComponent(model) + ':generateContent', {
+    method: 'POST',
+    headers: gemHeaders(key, true),
+    body: JSON.stringify(payload)
+  });
+}
+function gemTextOf(j){
+  var c = j && j.candidates && j.candidates[0];
+  var ps = (c && c.content && c.content.parts) || [], out = '', i;
+  for (i = 0; i < ps.length; i++) if (ps[i] && typeof ps[i].text === 'string') out += ps[i].text;
+  if (!out && j && j.promptFeedback && j.promptFeedback.blockReason) out = '';
+  return out;
+}
+function gemJsonOf(txt){
+  var s = String(txt || '').trim();
+  if (!s) return null;
+  s = s.replace(/^```(?:json)?/i, '').replace(/```\s*$/, '').trim();
+  var a = s.indexOf('{'), b = s.lastIndexOf('}');
+  if (a >= 0 && b > a) s = s.slice(a, b + 1);
+  try { return JSON.parse(s); } catch(e){ return null; }
+}
+function gemNum(v){
+  if (typeof v === 'number') return isFinite(v) ? v : 0;
+  var s = String(v == null ? '' : v).replace(/[,\s]/g, '').replace(/[Oo]/g, '0');
+  var n = parseFloat(s);
+  return isFinite(n) ? n : 0;
+}
+function gemStr(v){
+  if (v === null || v === undefined) return null;
+  var s = String(v).trim();
+  return s ? s.slice(0, 40) : null;
+}
+function gemItems(arr){
+  var out = [], i, it, t, w, l, tmp;
+  if (!arr || !arr.length) return out;
+  for (i = 0; i < arr.length && i < 40; i++){
+    it = arr[i];
+    if (!it) continue;
+    t = gemNum(it.t); w = gemNum(it.w); l = gemNum(it.l);
+    if (w && l && w > l && w >= 300){ tmp = w; w = l; l = tmp; }   /* 폭·길이 순서가 바뀌어 오면 바로잡는다 */
+    if (!(t > 0 && w > 0 && l > 0)) continue;
+    if (!(t <= 200 && w >= 100 && w <= 5000 && l >= 300 && l <= 30000)) continue;
+    out.push({
+      t: t, w: w, l: l,
+      qty: (it.qty === 0 || it.qty) ? Math.max(1, Math.round(gemNum(it.qty))) : null,
+      order_code: gemStr(it.order_code !== undefined ? it.order_code : it.orderCode),
+      project_hint: gemStr(it.project_hint !== undefined ? it.project_hint : it.projectHint),
+      lot: gemStr(it.lot), steel_grade: gemStr(it.steel_grade !== undefined ? it.steel_grade : it.steelGrade),
+      note: gemStr(it.note)
+    });
+  }
+  return out;
+}
+
+/* 사진 한 장 → { ok, kind, items, model, ms } */
+function gemVision(prep, mode){
+  var key = gemKeyGet();
+  if (!key) return Promise.resolve({ ok: false, kind: '', items: [], err: 'nokey', ms: 0 });
+  var t0 = Date.now();
+  var payload = {
+    contents: [{ role: 'user', parts: [
+      { text: gemPrompt(mode) },
+      { inlineData: { mimeType: 'image/jpeg', data: prep.b64 } }
+    ]}],
+    generationConfig: {
+      responseMimeType: 'application/json',
+      responseSchema: gemSchema(),
+      temperature: 0,
+      maxOutputTokens: 1024
+    }
+  };
+  return gemList(key).then(function(models){
+    var list = (models || []).slice(0, GEM_MAXTRY), idx = 0, lastErr = '';
+    function step(){
+      if (idx >= list.length) return { ok: false, kind: '', items: [], err: lastErr || 'fail', ms: Date.now() - t0 };
+      var model = list[idx++];
+      return gemPost(model, key, payload).then(function(j){
+        var obj = gemJsonOf(gemTextOf(j));
+        if (!obj){ lastErr = '응답을 알아보지 못했습니다'; return step(); }
+        var items = gemItems(obj.items);
+        try {
+          var rest = (models || []).filter(function(m){ return m !== model; });
+          localStorage.setItem(GEM_MODEL_KEY, JSON.stringify({ models: [model].concat(rest), at: Date.now() }));
+        } catch(e){}
+        GEM_MODELS = [model].concat((models || []).filter(function(m){ return m !== model; }));
+        GEM_LAST = { model: model, ms: Date.now() - t0, n: items.length, kind: String(obj.kind || '') };
+        return { ok: true, kind: String(obj.kind || ''), items: items, model: model, ms: Date.now() - t0 };
+      }).catch(function(e){
+        lastErr = gemErrText(e);
+        if (Date.now() - t0 < GEM_TIMEOUT) return step();
+        return { ok: false, kind: '', items: [], err: lastErr, ms: Date.now() - t0 };
+      });
+    }
+    return step();
+  });
+}
+
+/* ---------- 📷 사진 모드 ---------- */
+function gemPhotoShow(res){
+  PHOTO_BUSY = false;
+  photoProgOn(false);
+  var dims = [], i, it;
+  for (i = 0; i < res.items.length; i++){
+    it = res.items[i];
+    dims.push({ t: +it.t, w: +it.w, l: +it.l, dist: 0 });
+  }
+  photoCollect(dims);
+  PHOTO_HITS = 1;
+  photoFail('');
+  photoRender();
+  var best = photoSorted()[0];
+  if (best && best.exact) photoApply(best.t, best.w, best.l);
+  var name = String(res.model || '').replace(/^gemini-/, '');
+  gemNote('photo', '🤖 <b>Gemini AI</b>(' + esc(name) + ')가 ' + res.items.length + '건을 읽었습니다'
+    + ' · ' + (res.ms / 1000).toFixed(1) + '초'
+    + (res.items.length > 1 ? ' · 첫 번째 규격으로 검색했습니다(다른 규격은 위 칩)' : ''));
+}
+function gemPhotoToInvoice(res){
+  try { photoClose(); } catch(e){}
+  try { invOpen(); } catch(e){ return false; }
+  invGemApply(res);
+  try { invToast('🤖 거래명세표로 보여 📥 송장 입고로 넘겼습니다 — 확인 후 [입고 확정]을 누르세요'); } catch(e){}
+  return true;
+}
+function gemPhotoRun(img){
+  PHOTO_BUSY = true;
+  photoProgOn(true);
+  photoProg('🤖 Gemini AI 준비 중…', 0.12);
+  var prep;
+  try { prep = gemPrep(img); }
+  catch(e){ return photoAnalyzeOcr(img); }
+  return gemVision(prep, 'photo').then(function(res){
+    if (res.ok && res.items.length){
+      if (res.kind === 'invoice' && typeof invOpen === 'function' && gemPhotoToInvoice(res)) return;
+      gemPhotoShow(res);
+      return;
+    }
+    gemNote('photo', 'warn: ⚠ AI가 읽지 못해(' + esc(res.err || '규격 없음') + ') 기기 인식으로 다시 읽습니다');
+    return photoAnalyzeOcr(img);
+  }).catch(function(){
+    return photoAnalyzeOcr(img);
+  });
+}
+
+/* ---------- 📥 송장 모드 ---------- */
+function gemProjOf(hint){
+  var h = String(hint || '').replace(/\s+/g, '').replace(/[()]/g, '').toUpperCase();
+  if (!h) return '';
+  var order = [];
+  try { order = (typeof projOrder === 'function') ? projOrder() : (typeof PROJ_ORDER !== 'undefined' ? PROJ_ORDER : []); } catch(e){ order = []; }
+  var i, n;
+  for (i = 0; i < order.length; i++){
+    n = String(order[i]).replace(/\s+/g, '').replace(/[()]/g, '').toUpperCase();
+    if (n && (h.indexOf(n) >= 0 || n.indexOf(h) >= 0)) return order[i];
+  }
+  var AL = [['수원이목', '수원이목2차'], ['평택', '평택P5'], ['모비스', '울산모비스'], ['함안', '함안복합화력발전소'],
+            ['현대부산', '더현대부산'], ['부산현대', '더현대부산'], ['광주현대', '더현대광주'], ['현대광주', '더현대광주'],
+            ['한화', '한화오션(해양)'], ['오션', '한화오션(해양)'], ['씨티오씨엘', '씨티오씨엘7단지'], ['씨티', '씨티오씨엘7단지'],
+            ['COC', '씨티오씨엘7단지'], ['대덕', '대덕전자'], ['양원', '서울양원지구(사급)'], ['파크사이드', '더파크사이드(사급)']];
+  for (i = 0; i < AL.length; i++) if (h.indexOf(AL[i][0]) >= 0) return AL[i][1];
+  return '';
+}
+/* AI 가 준 발주번호(문자열) → 자료의 실제 발주코드.
+   OCR 처럼 숫자 2~4자리만 집는 것이 아니라 'THB-104BX' 같은 전체 코드도 그대로 맞춰 본다.
+   여러 코드에 걸리는 어중간한 값은 붙이지 않는다(엉뚱한 자동 체크 방지). */
+function gemCodes(acc, raw){
+  var s = String(raw || '').toUpperCase().replace(/\s+/g, '');
+  var out = [], i, k, kn, hits;
+  if (!s) return out;
+  var idx = invCodeIndexBuild();
+  var n = s.replace(/[^A-Z0-9]/g, '');
+  if (idx[s]) out.push(idx[s].code);
+  if (!out.length && n.length >= 4){
+    hits = [];
+    for (k in idx){
+      if (!idx.hasOwnProperty(k)) continue;
+      kn = String(k).replace(/[^A-Z0-9]/g, '');
+      if (kn === n || kn.indexOf(n) === 0 || n.indexOf(kn) === 0) hits.push(idx[k].code);
+    }
+    if (hits.length === 1) out.push(hits[0]);
+  }
+  if (!out.length) out = invCodesInLine(s, acc);
+  for (i = 0; i < out.length; i++) if (acc && acc.codes.indexOf(out[i]) < 0) acc.codes.push(out[i]);
+  return out;
+}
+function invAccGem(items){
+  var acc = invNewAcc(), i, c, it, codes, key, spec, pk;
+  for (i = 0; i < items.length; i++){
+    it = items[i];
+    codes = [];
+    if (it.order_code) codes = gemCodes(acc, it.order_code);
+    key = (+it.t) + 'x' + (+it.w) + 'x' + (+it.l);
+    spec = { t: +it.t, w: +it.w, l: +it.l, qty: (it.qty ? +it.qty : null), key: key };
+    acc.lines.push({ codes: codes, specs: [spec] });
+    if (!acc.map[key]){
+      acc.map[key] = { t: spec.t, w: spec.w, l: spec.l, qty: (spec.qty || null), key: key, lines: 0 };
+      acc.specs.push(acc.map[key]);
+    } else if (acc.map[key].qty === null && spec.qty) acc.map[key].qty = spec.qty;
+    acc.map[key].lines = (acc.map[key].lines || 0) + 1;
+    for (c = 0; c < codes.length; c++){
+      pk = String(codes[c]).toUpperCase() + '|' + key;
+      acc.pairs[pk] = (acc.pairs[pk] || 0) + 1;
+    }
+    acc.pairs['|' + key] = (acc.pairs['|' + key] || 0);
+  }
+  acc.passes = 1;                       /* AI 판독은 한 번에 확정된 결과로 본다 */
+  for (i = 0; i < items.length && !acc.hint; i++) acc.hint = gemProjOf(items[i].project_hint);
+  if (!acc.hint) acc.hint = '';
+  return acc;
+}
+function invGemApply(res){
+  INV_BUSY = false;
+  invProgOn(false);
+  var acc = invAccGem(res.items);
+  invSetParsed(acc);                    /* 발주번호로 공사를 잡고 태그를 그린다 */
+  var fromCode = acc.proj || '';
+  if (!acc.proj && acc.hint) acc.proj = acc.hint;
+  $iv('invRes').classList.remove('hidden');
+  invFail('');
+  INV_CANDS = invMatchCandidates();
+  var auto = 0, i;
+  for (i = 0; i < INV_CANDS.length; i++) if (INV_CANDS[i].on) auto++;
+  invRenderList('AI 읽은 규격 ' + acc.specs.length + '건 · 미입고',
+    acc.specs.length ? null : '규격을 읽지 못해 미입고 자재를 먼저 보여 줍니다. 아래 직접 찾기로 채워 주세요.');
+  var rd = $iv('invRead');
+  if (rd) rd.innerHTML = invReadHTML() + ((acc.hint && acc.hint !== fromCode) ? '<span class="ivtag">🏗️ ' + esc(acc.hint) + '</span>' : '');
+  var name = String(res.model || '').replace(/^gemini-/, '');
+  gemNote('inv', '🤖 <b>Gemini AI</b>(' + esc(name) + ')가 ' + res.items.length + '건을 읽었습니다'
+    + ' · ' + (res.ms / 1000).toFixed(1) + '초'
+    + (auto ? ' · <b>' + auto + '건 자동 체크</b>' : ' · 체크할 자재를 확인해 주세요'));
+}
+function gemInvRun(img){
+  INV_BUSY = true;
+  invProgOn(true);
+  invProg('🤖 Gemini AI 준비 중…', 0.12);
+  var prep;
+  try { prep = gemPrep(img); }
+  catch(e){ return invAnalyzeOcr(img); }
+  return gemVision(prep, 'invoice').then(function(res){
+    if (res.ok && res.items.length){ invGemApply(res); return; }
+    gemNote('inv', 'warn: ⚠ AI가 읽지 못해(' + esc(res.err || '규격 없음') + ') 기기 인식으로 다시 읽습니다');
+    return invAnalyzeOcr(img);
+  }).catch(function(){
+    return invAnalyzeOcr(img);
+  });
+}
+
+/* ---------- 두 모드의 진입점 (기존 OCR 함수를 감싼다) ---------- */
+function photoAnalyze(img){
+  gemNote('photo', '');
+  if (!gemOn()) return photoAnalyzeOcr(img);
+  return gemPhotoRun(img);
+}
+function invAnalyze(img){
+  gemNote('inv', '');
+  if (!gemOn()) return invAnalyzeOcr(img);
+  return gemInvRun(img);
+}
+
+/* ---------- 설정 모달 ---------- */
+function gemStatus(txt, cls){
+  var e = document.getElementById('aiStat');
+  if (!e) return;
+  e.className = 'aistat' + (cls ? ' ' + cls : '');
+  e.innerHTML = txt || '';
+}
+function gemOpen(){
+  var w = document.getElementById('aiWrap');
+  if (!w) return;
+  w.classList.remove('hidden');
+  var el = document.getElementById('aiKey');
+  if (el) el.value = '';
+  gemKeyShow(false);
+  gemStatus(gemOn() ? '이 폰에 키가 저장되어 있습니다 · 🤖 AI ON' : '아직 키가 없습니다 · 🤖 AI OFF', gemOn() ? 'ok' : '');
+  try { document.body.style.overflow = 'hidden'; } catch(e){}
+}
+function gemClose(){
+  var w = document.getElementById('aiWrap');
+  if (!w) return;
+  w.classList.add('hidden');
+  var el = document.getElementById('aiKey');
+  if (el) el.value = '';
+  var sheetOpen = false;
+  try {
+    sheetOpen = !document.getElementById('photoWrap').classList.contains('hidden')
+             || !document.getElementById('invWrap').classList.contains('hidden')
+             || !document.getElementById('sheetWrap').classList.contains('hidden');
+  } catch(e){ sheetOpen = false; }
+  if (!sheetOpen) { try { document.body.style.overflow = ''; } catch(e){} }
+}
+function gemKeyShow(on){
+  var el = document.getElementById('aiKey'), b = document.getElementById('aiShow');
+  if (!el) return;
+  el.type = on ? 'text' : 'password';
+  if (b){ b.textContent = on ? '🙈' : '👁'; b.setAttribute('aria-pressed', on ? 'true' : 'false'); }
+}
+function gemTypedKey(){
+  var el = document.getElementById('aiKey');
+  return String((el && el.value) || '').trim();
+}
+function gemTest(){
+  var key = gemTypedKey() || gemKeyGet();
+  if (!key){ gemStatus('키를 먼저 붙여넣어 주세요', 'err'); return; }
+  gemStatus('<span class="spin2"></span>키를 확인하는 중…', 'wait');
+  gemList(key, true).then(function(models){
+    var model = (models && models[0]) || GEM_PREF[0];
+    return gemPost(model, key, {
+      contents: [{ role: 'user', parts: [{ text: '준비됐으면 OK 라고만 답해.' }] }],
+      generationConfig: { maxOutputTokens: 12, temperature: 0 }
+    }).then(function(j){ return { model: model, txt: gemTextOf(j) }; });
+  }).then(function(r){
+    gemStatus('✅ 사용할 수 있는 키입니다 · ' + r.model, 'ok');
+  }).catch(function(e){
+    gemStatus('❌ ' + gemErrText(e), 'err');
+  });
+}
+function gemSave(){
+  var key = gemTypedKey();
+  if (!key){ gemStatus('키를 붙여넣어 주세요', 'err'); return; }
+  if (/\s/.test(key)){ gemStatus('키에 공백이 있습니다. 다시 복사해 주세요', 'err'); return; }
+  if (key.length < 20){ gemStatus('키가 너무 짧습니다. 전체를 복사했는지 확인해 주세요', 'err'); return; }
+  gemKeySet(key);
+  var el = document.getElementById('aiKey');
+  if (el) el.value = '';
+  gemStatus('✅ 이 폰에 저장했습니다 · 🤖 AI ON', 'ok');
+}
+function gemDelete(){
+  gemKeySet('');
+  gemStatus('🗑 저장한 키를 지웠습니다 · 🤖 AI OFF', 'ok');
+}
+function gemWire(){
+  var b = document.getElementById('aiBtn');
+  if (b && !b.__wired){ b.__wired = 1; b.addEventListener('click', gemOpen); }
+  var ids = ['aiBtnPhoto', 'aiBtnInv'], i, e;
+  for (i = 0; i < ids.length; i++){
+    e = document.getElementById(ids[i]);
+    if (e && !e.__wired){ e.__wired = 1; e.addEventListener('click', gemOpen); }
+  }
+  var w = document.getElementById('aiWrap');
+  if (w && !w.__wired){
+    w.__wired = 1;
+    w.addEventListener('click', function(ev){ if (ev.target === this) gemClose(); });
+  }
+  var pairs = [['aiClose', gemClose], ['aiDone', gemClose], ['aiTest', gemTest],
+               ['aiSave', gemSave], ['aiDel', gemDelete], ['aiShow', function(){ gemKeyShow(document.getElementById('aiKey').type === 'password'); }]];
+  for (i = 0; i < pairs.length; i++){
+    e = document.getElementById(pairs[i][0]);
+    if (e && !e.__wired){ e.__wired = 1; e.addEventListener('click', pairs[i][1]); }
+  }
+  var inp = document.getElementById('aiKey');
+  if (inp && !inp.__wired){
+    inp.__wired = 1;
+    inp.addEventListener('keydown', function(ev){ if (ev.key === 'Enter'){ ev.preventDefault(); gemSave(); } });
+  }
+  gemBadge();
+}
+gemWire();
+
+try {
+  window.__GEM = {
+    key: gemKeyGet, on: gemOn, set: gemKeySet, prep: gemPrep, vision: gemVision,
+    schema: gemSchema, prompt: gemPrompt, items: gemItems, proj: gemProjOf,
+    models: function(){ return GEM_MODELS; }, last: function(){ return GEM_LAST; }
+  };
+} catch(e){}
 
 init();
 }
