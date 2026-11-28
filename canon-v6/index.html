@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>PROJECT CANON V8.0 — 상용 그래픽·타격감 · 음성 인식 안정화 · 연구 4호</title>
+<title>PROJECT CANON V8.1 — 상용 그래픽·타격감 · 음성 인식 안정화 · 연구 4호</title>
 <style>
   * { box-sizing: border-box; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
   html, body {
@@ -154,6 +154,33 @@
     .dmg-tag { font-size: 15px; } .dmg-tag.crit { font-size: 19px; } .dmg-tag.kill { font-size: 18px; }
   }
 
+  /* ---------- V8.1 터치 락온 표시 — 탭으로 잡은 적 위에 궤도 브래킷 + 이름/거리 ---------- */
+  #lock-hud {
+    position: fixed; left: 0; top: 0; width: 104px; height: 104px;
+    transform: translate(-50%,-50%); transform-origin: 50% 50%;
+    pointer-events: none; opacity: 0; z-index: 43; transition: opacity 0.12s linear;
+    will-change: left, top, transform;
+  }
+  #lock-hud.on { opacity: 1; }
+  #lock-hud .lk-frame { position: absolute; inset: 0; }
+  #lock-hud .lk-frame svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  #lock-hud .lk-frame path { fill: none; stroke: #fbbf24; stroke-width: 2.6; stroke-linecap: round;
+    filter: drop-shadow(0 0 5px rgba(251,191,36,0.85)) drop-shadow(0 1px 3px rgba(0,0,0,0.9)); }
+  #lock-hud .lk-frame circle { fill: #fbbf24; stroke: none; }
+  #lock-hud.pulse .lk-frame path { animation: lkPulse 0.46s ease-out both; }
+  @keyframes lkPulse { 0% { stroke: #fffbe8; stroke-width: 6; opacity: 0.35; } 60% { opacity: 1; } 100% { stroke: #fbbf24; stroke-width: 2.6; opacity: 1; } }
+  #lock-hud.hot .lk-frame path { stroke: #86efac; filter: drop-shadow(0 0 7px rgba(134,239,172,0.9)) drop-shadow(0 1px 3px rgba(0,0,0,0.9)); }
+  #lock-hud.hot .lk-frame circle { fill: #86efac; }
+  #lock-hud .lk-txt {
+    position: absolute; left: 50%; top: -15px; transform: translateX(-50%); white-space: nowrap;
+    font-family: Consolas, 'Malgun Gothic', monospace; font-size: 10px; font-weight: 900;
+    color: #ffeab6; letter-spacing: 0.4px; text-shadow: 0 1px 5px rgba(0,0,0,0.95), 0 0 9px rgba(251,191,36,0.5);
+  }
+  #lock-hud .lk-txt b { color: #fbbf24; font-weight: 900; }
+  #lock-hud .lk-txt i { font-style: normal; color: #9be7ff; }
+  #lock-hud.hot .lk-txt b, #lock-hud.hot .lk-txt span { color: #86efac; }
+  @media (max-width: 900px) { #lock-hud .lk-txt { font-size: 9.5px; top: -13px; } }
+
   /* ---------- 전자전 · APS / ECM 모니터 ---------- */
   #hud-ew { width: 315px; padding: 6px 9px; }
   .ew-row { display: flex; align-items: center; gap: 6px; font-size: 10.5px; line-height: 1.35; white-space: nowrap; }
@@ -240,7 +267,7 @@
 
   /* ---------- Virtual joystick ---------- */
   #touch-pad {
-    width: 126px; height: 126px; border-radius: 50%;
+    width: 130px; height: 130px; border-radius: 50%;
     align-items: center; justify-content: center;
     background: radial-gradient(circle at 50% 50%, rgba(20, 44, 70, 0.42), rgba(6, 14, 24, 0.32));
     border: 1.5px solid rgba(56, 189, 248, 0.5);
@@ -248,7 +275,7 @@
     pointer-events: auto; touch-action: none; z-index: 30;
   }
   #stick-knob {
-    width: 54px; height: 54px; border-radius: 50%;
+    width: 56px; height: 56px; border-radius: 50%;
     background: radial-gradient(circle at 36% 30%, #a5e4ff, #0369a1 72%);
     border: 1.5px solid rgba(224, 242, 254, 0.75);
     box-shadow: 0 0 18px rgba(56, 189, 248, 0.55);
@@ -256,7 +283,7 @@
   }
   #touch-fire {
     pointer-events: auto; touch-action: none;
-    width: 88px; height: 88px; border-radius: 50%;
+    width: 92px; height: 92px; border-radius: 50%;
     background: radial-gradient(circle at 40% 32%, #fca5a5, #dc2626 70%);
     border: 2.5px solid #fef08a; color: #fff;
     font-size: 14px; font-weight: 900; letter-spacing: 1px;
@@ -495,7 +522,7 @@
     }
     #touch-pad {
       left: 6px; bottom: calc(6px + env(safe-area-inset-bottom, 0px));
-      width: 118px; height: 118px; display: flex; z-index: 20;
+      width: 128px; height: 128px; display: flex; z-index: 20;
     }
     #mobile-right { right: 6px; bottom: calc(8px + env(safe-area-inset-bottom, 0px)); display: flex; z-index: 20; }
     #banner-msg {
@@ -568,7 +595,7 @@
     #cmd-bar .cmd-row { flex: 1 1 auto; min-width: 44%; gap: 2px; }
     #cmd-bar .cb { flex: 1 1 0; min-width: 0; padding: 3px 2px; font-size: 9px; }
     #cmd-bar .cmd-fold { padding: 1px 5px; font-size: 9px; }
-    #touch-pad { left: 6px; bottom: 4px; width: 96px; height: 96px; display: flex; z-index: 20; }
+    #touch-pad { left: 6px; bottom: 4px; width: 112px; height: 112px; display: flex; z-index: 20; }
     #mobile-right { right: 6px; bottom: 6px; display: flex; z-index: 20; }
     #banner-msg {
       position: fixed; left: 50%; top: 112px; bottom: auto; transform: translateX(-50%);
@@ -576,7 +603,8 @@
     }
     #reticle-wrap { width: 132px; height: 132px; }
     #reticle-wrap svg { width: 132px; height: 132px; }
-    #touch-fire { width: 74px; height: 74px; font-size: 12px; }
+    #touch-fire { width: 86px; height: 86px; font-size: 12px; }
+    #stick-knob { width: 48px; height: 48px; }
   }
 
   /* Wide touch screens (tablet landscape): virtual stick in its own slot above the radio log */
@@ -731,7 +759,8 @@
     #hud-actions .hud-btn .ic, #hud-weapons .hud-btn .ic { width: 14px; height: 14px; margin: 0; }
     #hud-actions { bottom: calc(144px + env(safe-area-inset-bottom, 0px)); }
     #hud-weapons { bottom: calc(190px + env(safe-area-inset-bottom, 0px)); }
-    #touch-pad { width: 122px; height: 122px; }
+    #touch-pad { width: 128px; height: 128px; }
+    #stick-knob { width: 56px; height: 56px; }
     #touch-fire { width: 92px; height: 92px; }
     #cmd-bar { border-radius: 5px; }
     .panel { border-radius: 5px; }
@@ -763,8 +792,8 @@
     #hud-actions .hud-btn, #hud-weapons .hud-btn { height: 32px; padding: 2px 0 1px; }
     #hud-actions .hud-btn .ic, #hud-weapons .hud-btn .ic { width: 12px; height: 12px; }
     .lbl2 { font-size: 7px; margin-top: 1px; }
-    #touch-pad { width: 100px; height: 100px; }
-    #touch-fire { width: 78px; height: 78px; }
+    #touch-pad { width: 112px; height: 112px; }
+    #touch-fire { width: 86px; height: 86px; }
     #touch-fire .fire-txt { font-size: 13px; }
     #touch-fire .fire-sub { font-size: 7px; }
     #hud-frame .c { width: 20px; height: 20px; }
@@ -896,6 +925,17 @@
     </g>
     <path d="M0 -104 l-9 15 h18 z" fill="#fb7185"/>
   </svg>
+</div>
+<!-- V8.1 터치 락온 표시 -->
+<div id="lock-hud" aria-hidden="true">
+  <div class="lk-frame">
+    <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+      <path d="M4 25 L4 4 L25 4"/><path d="M75 4 L96 4 L96 25"/>
+      <path d="M96 75 L96 96 L75 96"/><path d="M25 96 L4 96 L4 75"/>
+      <circle cx="50" cy="50" r="2.1"/>
+    </svg>
+  </div>
+  <div class="lk-txt"><span id="lock-tag">LOCK ON</span> <b id="lock-name">적 전차</b> <i id="lock-dist"></i></div>
 </div>
 
 <!-- Center Reticle -->
@@ -1029,7 +1069,7 @@
 <div id="hud">
   <!-- 1. Unit status -->
   <div id="hud-status" class="panel">
-    <div class="tag" id="hud-mode-tag">CANON V8.0 · 대대장 · 3개 중대</div>
+    <div class="tag" id="hud-mode-tag">CANON V8.1 · 대대장 · 3개 중대</div>
     <div class="row">
       <span>아군 <strong id="hud-allies" class="cyan">0</strong></span>
       <span>적전차 <strong id="hud-etanks" class="red">0</strong></span>
@@ -1169,7 +1209,7 @@
 
   <!-- 7. Keyboard hints -->
   <div id="hud-controls" class="panel controls">
-    <div class="tag" style="margin-bottom:3px;">V8.0 상용 그래픽·타격감 — PBR 금속 반사 · 궤도 자국 · 히트마커 · 유폭 연출 · APS/ECM</div>
+    <div class="tag" style="margin-bottom:3px;">V8.1 모바일 터치 조준·자동추적 — 탭 락온 · 엄지 조이스틱 · PBR 금속 반사 · 히트마커 · 유폭 연출</div>
     • <b>차체</b> <kbd>W/A/S/D</kbd>·<kbd>↑←↓→</kbd> 주행·선회 · <kbd>Y</kbd> 터보 · <kbd>P</kbd> 자율기동<br>
     • <b>포탑</b> 마우스 이동(락온 후) 또는 드래그 · <kbd>Q</kbd><kbd>E</kbd> 선회 · <kbd>R</kbd><kbd>F</kbd> 고저 · <kbd>U</kbd> 안정화 · <kbd>Tab</kbd> 락온<br>
     • <kbd>1</kbd>철갑 · <kbd>2</kbd>고폭 · <kbd>3</kbd>유도 · <kbd>4</kbd>기관 · <kbd>C</kbd> APS 요격 · <kbd>I</kbd> ECM 교란 · <kbd>L</kbd> 연막수리<br>
@@ -1220,15 +1260,18 @@
 <div id="overlay" class="modal-bg">
   <div class="modal">
     <div id="gift-banner" class="gift-ribbon"></div>
-    <div class="tag">대장님 연구 4호 · V8.0 상용 그래픽·타격감 에디션</div>
-    <h1 style="margin:6px 0 8px;">PROJECT CANON V8.0 : 상용 그래픽 기갑전 &amp; 실전 타격감</h1>
+    <div class="tag">대장님 연구 4호 · V8.1 모바일 터치 조준·자동추적 에디션</div>
+    <h1 style="margin:6px 0 8px;">PROJECT CANON V8.1 : 폰에서 톡 치면 잡히는 기갑전</h1>
     <p style="font-size:13px; color:#cbd5e1; line-height:1.55; margin:0 0 8px;">
-      이제 <strong>말로 지휘합니다</strong> — <strong>"발사"·"철갑"·"교란 전파"·"1중대 우측 우회"·"포격"·"3인칭"</strong>처럼 말하면 즉시 실행됩니다. V8.0 은 <strong>ACES 톤매핑 · 스카이+지형 환경맵(IBL) · PCF 소프트 그림자</strong>로 강철 장갑의 반사를 살리고, <strong>궤도 자국·흙먼지 웨이크·다층 포구 화염·충격파 링·히트마커·3D 데미지 태그·2차 유폭</strong>으로 실제 전차전의 손맛을 냅니다. 말로 지휘하는 음성 엔진(V7.4 안정화)은 그대로 살아 있습니다.
+      이제 <strong>말로 지휘합니다</strong> — <strong>"발사"·"철갑"·"교란 전파"·"1중대 우측 우회"·"포격"·"3인칭"</strong>처럼 말하면 즉시 실행됩니다. V8.1 은 <strong>폰에서 적 전차를 손가락으로 톡 치면 사통장치가 그 놈을 락온</strong>해 포탑이 알아서 따라가고(초록 브래킷 = 지금 쏘면 맞음), 조이스틱·발사 버튼도 엄지에 맞게 키웠습니다. V8.0 의 <strong>ACES 톤매핑 · 스카이+지형 환경맵(IBL) · PCF 소프트 그림자</strong>로 강철 장갑의 반사를 살리고, <strong>궤도 자국·흙먼지 웨이크·다층 포구 화염·충격파 링·히트마커·3D 데미지 태그·2차 유폭</strong>으로 실제 전차전의 손맛을 냅니다. 말로 지휘하는 음성 엔진(V7.4 안정화)은 그대로 살아 있습니다.
       음향포 대신 <strong>실전 기갑 무장(철갑·고폭·유도·기관)</strong>을 쓰고, 날아오는 적 대전차 탄두는 <strong>APS 요격탄</strong>이 공중에서 폭파하며
       <strong>ECM 교란전파</strong>는 적 사통과 유도탄 락온을 무력화합니다. 대장은 <strong>전체 · 1·2·3중대 · 자주포</strong>를 골라 전진 돌격·엄폐 사격·좌우 우회·화력 집중·연막 후퇴를 따로 명할 수 있고,
       지휘 부감·전술 지도에서 제대를 고른 뒤 지점을 탭하면 그 제대만 기동합니다. V7.0의 PBR 전장과 V7.1의 장갑·도탄·재장전·3단계 전선은 그대로입니다.
     </p>
     <div class="badge-strip">
+      <span class="v6-badge"><svg class="ic sm"><use href="#i-lock"/></svg> 터치 탭 락온</span>
+      <span class="v6-badge"><svg class="ic sm"><use href="#i-radar"/></svg> 자동추적 포탑</span>
+      <span class="v6-badge"><svg class="ic sm"><use href="#i-engine"/></svg> 커진 조이스틱</span>
       <span class="v6-badge"><svg class="ic sm"><use href="#i-mic"/></svg> 음성 지시(ko-KR)</span>
       <span class="v6-badge"><svg class="ic sm"><use href="#i-gun"/></svg> 120mm 철갑·고폭 실전 무장</span>
       <span class="v6-badge"><svg class="ic sm"><use href="#i-aps"/></svg> APS 능동방어 요격</span>
@@ -1254,7 +1297,7 @@
     <p style="font-size:12px; color:#fbbf24; margin:0 0 4px;">아군 편성은 지휘 계급이 결정합니다 — 전차장(1개 소대) · 대대장(3개 중대+포병) · 사단장(전차대대+기계화+포병대대+CAS). 출격 후 HUD 지휘소에서 전환하십시오.</p>
     <p id="modal-result" style="display:none; font-size:15px; font-weight:800;"></p>
     <button id="btn-start" class="btn-start"><svg class="ic lg"><use href="#i-engine"/></svg> 기동전투 엔진 가동 · 연구 4호 전면전 출격</button>
-    <button class="btn-gift-open" onclick="window._openGiftModal()"><svg class="ic"><use href="#i-gift"/></svg> V8.0 선물용 HTML 생성</button>
+    <button class="btn-gift-open" onclick="window._openGiftModal()"><svg class="ic"><use href="#i-gift"/></svg> V8.1 선물용 HTML 생성</button>
   </div>
 </div>
 
@@ -1276,7 +1319,7 @@
 <div id="gift-modal" class="modal-bg" style="display:none; z-index:75;">
   <div class="modal" style="max-width:520px;">
     <div class="tag">GIFT PACKAGING ENGINE · 1-FILE STANDALONE</div>
-    <h2 style="margin:6px 0 8px;"><svg class="ic lg"><use href="#i-gift"/></svg> V8.0 선물용 맞춤 게임 만들기</h2>
+    <h2 style="margin:6px 0 8px;"><svg class="ic lg"><use href="#i-gift"/></svg> V8.1 선물용 맞춤 게임 만들기</h2>
     <p style="font-size:12.5px; color:#cbd5e1;">받는 분 이름과 메시지를 입력하시면 외부 파일 없이 V7.0 전체가 담긴 단일 HTML 파일이 생성됩니다.</p>
     <label style="font-size:12px; color:#94a3b8;">보내는 사람</label>
     <input id="gift-from" class="inp" value="대장님">
@@ -1571,6 +1614,20 @@
       sub.type = 'sine'; sub.frequency.setValueAtTime(crit ? 122 : 152, t); sub.frequency.exponentialRampToValueAtTime(44, t + dur * 0.9);
       sg.gain.setValueAtTime(crit ? 0.40 : 0.20, t); sg.gain.exponentialRampToValueAtTime(0.001, t + dur);
       sub.connect(sg); sg.connect(this.sfxBus); sub.start(t); sub.stop(t + dur + 0.02);
+    }
+    // V8.1 락온 UI 음 — 사통장치가 표적을 물었을 때의 2단 상승 비프
+    playLock() {
+      if (!this.ctx) return;
+      const t = this.ctx.currentTime;
+      const tone = (f, gv, dur, delay) => {
+        const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+        o.type = 'triangle'; o.frequency.setValueAtTime(f, t + delay);
+        g.gain.setValueAtTime(0.0001, t + delay);
+        g.gain.exponentialRampToValueAtTime(gv, t + delay + 0.006);
+        g.gain.exponentialRampToValueAtTime(0.001, t + delay + dur);
+        o.connect(g); g.connect(this.sfxBus); o.start(t + delay); o.stop(t + delay + dur + 0.01);
+      };
+      tone(1040, 0.055, 0.055, 0); tone(1560, 0.050, 0.085, 0.055);
     }
     // 히트마커 UI 음 — 일반/치명타/격파를 음정으로 구분
     playHitmarker(kind = 'hit') {
@@ -4309,6 +4366,7 @@
     lastHit: null, lastTag: null, fps: 0, gunReady: true, blastT: 0,
     lockedObj: null, keys: {},
     moveX: 0, moveY: 0, terrPitch: 0, terrRoll: 0, lastAimInput: 0, autoAim: true,
+    lockedTarget: null, lockAcqT: 0,
   };
 
   window._selectScale = (k) => { state.scaleKey = k; ['platoon','company','division'].forEach(x => document.getElementById(`sc-${x}`).classList.toggle('selected', x===k)); };
@@ -4546,7 +4604,7 @@
       if (key === 'battalion') setTimeout(() => comms.say('대대 포병지원반', '대대장 지휘 계통 접속. 155mm 화력 지원 대기.', { prio: true }), 2200);
       if (key === 'division') setTimeout(() => comms.say('사단 포병대대', '사단장 지휘 계통 접속. 포병대대·기계화·CAS 전력 배속 완료.', { prio: true }), 2200);
     } else {
-      document.getElementById('hud-mode-tag').textContent = `CANON V8.0 · ${R.label} 지휘`;
+      document.getElementById('hud-mode-tag').textContent = `CANON V8.1 · ${R.label} 지휘`;
     }
   };
 
@@ -5040,7 +5098,7 @@
       ctx.fillStyle = 'rgba(6,14,24,0.94)'; ctx.fillRect(12, state.tacH - 32, tw, 24);
       ctx.strokeStyle = 'rgba(56,189,248,0.32)'; ctx.strokeRect(12, state.tacH - 32, tw, 24);
       ctx.fillStyle = '#7dd3fc'; ctx.font = '800 9.5px Consolas, monospace'; ctx.textAlign = 'left';
-      ctx.fillText('PROJECT CANON V8.0 · 작전구역 380×350m · GRID 50m · 등고 0.75m', 19, state.tacH - 16);
+      ctx.fillText('PROJECT CANON V8.1 · 작전구역 380×350m · GRID 50m · 등고 0.75m', 19, state.tacH - 16);
     }
     ctx.restore();
     // 아군 포병 사거리 / CAS 범위
@@ -5397,30 +5455,50 @@
   // ---------------------------------------------------------------------------
   const padEl = document.getElementById('touch-pad');
   const knobEl = document.getElementById('stick-knob');
-  const stick = { active: false, pointerId: null, maxR: 40 };
+  // ---- V8.1: 커진 패드에 맞춘 조이스틱 반경 · 중앙 데드존 · 살짝 벗어난 터치도 부드럽게 ----
+  const stick = { active: false, pointerId: null, maxR: 52, dead: 8, baseX: 0, baseY: 0 };
+  function stickMetrics() {
+    if (!padEl) return;
+    const r = padEl.getBoundingClientRect();
+    stick.maxR = Math.max(34, Math.min(64, r.width * 0.405));   // 128px 패드 → 51.8
+    stick.dead = Math.max(5, stick.maxR * 0.15);
+  }
+  stickMetrics();
   function stickMove(e) {
     const r = padEl.getBoundingClientRect();
-    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-    let dx = e.clientX - cx, dy = e.clientY - cy;
-    const len = Math.hypot(dx, dy) || 1;
+    const cx = r.left + r.width / 2 + stick.baseX, cy = r.top + r.height / 2 + stick.baseY;
+    const dx = e.clientX - cx, dy = e.clientY - cy;
+    const len = Math.hypot(dx, dy);
     const lim = stick.maxR;
-    if (len > lim) { dx = (dx / len) * lim; dy = (dy / len) * lim; }
-    knobEl.style.transform = `translate(${dx}px, ${dy}px)`;
-    state.moveX = Math.max(-1, Math.min(1, dx / lim));
-    state.moveY = Math.max(-1, Math.min(1, dy / lim));
-    if (Math.hypot(state.moveX, state.moveY) > 0.25 && state.autoDrive) {
+    let kx = dx, ky = dy;
+    if (len > lim) { kx = (dx / len) * lim; ky = (dy / len) * lim; }
+    knobEl.style.transform = `translate(${kx}px, ${ky}px)`;
+    // 중앙 데드존: 살짝 스친 터치는 제자리, 끝까지 밀면 최대 출력(부드러운 가속)
+    const mag = len <= stick.dead ? 0 : Math.min(1, (len - stick.dead) / Math.max(1, lim - stick.dead));
+    const ux = len > 0.001 ? dx / len : 0, uy = len > 0.001 ? dy / len : 0;
+    state.moveX = Math.max(-1, Math.min(1, ux * mag));
+    state.moveY = Math.max(-1, Math.min(1, uy * mag));
+    if (mag > 0.25 && state.autoDrive) {
       state.autoDrive = false; updateDriveUI();
       comms.say('본부', '지휘전차 수동 조종 전환. 조종수, 기동 개시.', { voice: false });
     }
   }
   function stickReset() {
-    stick.active = false; stick.pointerId = null;
+    stick.active = false; stick.pointerId = null; stick.baseX = 0; stick.baseY = 0;
     knobEl.style.transform = 'translate(0px, 0px)';
     state.moveX = 0; state.moveY = 0;
   }
   if (padEl) {
     padEl.addEventListener('pointerdown', (e) => {
       e.preventDefault();
+      stickMetrics();
+      const r = padEl.getBoundingClientRect();
+      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      const dx0 = e.clientX - cx, dy0 = e.clientY - cy, d0 = Math.hypot(dx0, dy0);
+      // 패드 가장자리를 눌러도 처음부터 전속력으로 튀지 않게 가상 중심을 살짝 당겨 온다
+      const soft = stick.maxR * 0.60;
+      if (d0 > soft && d0 > 0.001) { const k = soft / d0; stick.baseX = dx0 * (1 - k); stick.baseY = dy0 * (1 - k); }
+      else { stick.baseX = 0; stick.baseY = 0; }
       stick.active = true; stick.pointerId = e.pointerId;
       try { padEl.setPointerCapture(e.pointerId); } catch (_) {}
       stickMove(e);
@@ -5507,6 +5585,7 @@
     smokeFX.clear(); sparkFX.clear();
     clearObjective();
     state.attackOrder = false; state.attackTimer = 0; state.endQueued = false;
+    state.lockedTarget = null;
     state.artyCd = 0; state.casCd = 0;
   }
 
@@ -5522,7 +5601,7 @@
     const R = RANKS[state.rank];
     const echelon = R.companies === 1 ? '1개 소대' : `${R.companies}개 중대`;
     const tag = document.getElementById('hud-mode-tag');
-    if (tag) tag.textContent = `CANON V8.0 · ${R.label} · ${state.phase ? state.phase + '/3 ' + PHASE_NAMES[state.phase - 1] : echelon}`;
+    if (tag) tag.textContent = `CANON V8.1 · ${R.label} · ${state.phase ? state.phase + '/3 ' + PHASE_NAMES[state.phase - 1] : echelon}`;
   }
   function spawnPhase(idx) {
     const P = phaseCfg()[idx] || { n: 4 };
@@ -5639,7 +5718,7 @@
     state.ecmActive = 0; state.ecmCd = 0; state.ecmLocks = 0;
     state.jetSpawnTimer = 5.5; state.droneSpawnTimer = 3.5;
     const echelon = R.companies === 1 ? '1개 소대' : `${R.companies}개 중대`;
-    document.getElementById('hud-mode-tag').textContent = `CANON V8.0 · ${R.label} · ${echelon}`;
+    document.getElementById('hud-mode-tag').textContent = `CANON V8.1 · ${R.label} · ${echelon}`;
     document.getElementById('hud-echelon').textContent = echelon + (R.ifv ? ' + 기계화' : '');
     updateDriveUI();
     updateCmdUI();
@@ -6142,6 +6221,8 @@
     state.phase = 0; state.phaseGap = 0; state.battleT = 0; state.phaseLog = []; state.artyQueue = [];
     playerRoot.position.set(0, 0, 82); state.hullYaw = 0; state.hullSpeed = 0; state.turretYaw = 0; state.gunPitch = 0;
     state.hullPitch = 0; state.hullRoll = 0; state.lastHullYaw = 0; state.turretTraverse = 0;
+    state.lockedTarget = null; state.lockAcqT = 0;
+    if (typeof releaseLock === 'function') releaseLock();
     document.getElementById('aim-zone').classList.add('on');
     updateBearingHUD();
     state.apsAmmo = V72.aps.max; state.apsCd = 0; state.apsActive = 0; state.apsReload = 0; state.apsShots = 0;
@@ -6186,6 +6267,8 @@
   renderer.domElement.addEventListener('pointerdown', (e) => {
     if (!state.running || state.bigMapOpen) return;
     if (e.pointerType === 'mouse') return;   // 마우스는 mousedown/mousemove 조준 경로 사용
+    // V8.1: 터치 탭은 "조준"이다 — 브라우저가 뒤따라 보내는 마우스 호환 이벤트(발포·포인터락)를 막는다
+    if (e.cancelable) e.preventDefault();
     if (aimPtr.id !== null) return;
     aimPtr.id = e.pointerId; aimPtr.lastX = aimPtr.startX = e.clientX; aimPtr.lastY = aimPtr.startY = e.clientY; aimPtr.moved = 0;
     try { renderer.domElement.setPointerCapture(e.pointerId); } catch (_) {}
@@ -6206,16 +6289,150 @@
     aimPtr.moved += Math.abs(dx) + Math.abs(dy);
     aimPtr.lastX = e.clientX; aimPtr.lastY = e.clientY;
     state.lastAimInput = performance.now();
+    // V8.1: 손가락으로 직접 돌리면 수동 입력이 우선 — 락온·탭 조준 목표는 양보한다
+    if (aimPtr.moved > 8) {
+      if (state.lockedTarget) releaseLock();
+      V81.tapYaw = null; V81.tapPitch = null;
+    }
   });
   function aimPointerEnd(e) {
     if (e.pointerId !== aimPtr.id) return;
     const tap = Math.hypot(e.clientX - aimPtr.startX, e.clientY - aimPtr.startY) < 16 && aimPtr.moved < 18;
     aimPtr.id = null;
     if (!state.running || !tap) return;
-    if (state.camMode === 'cmd' || state.markMode) screenToObjective(e.clientX, e.clientY);
+    if (state.camMode === 'cmd' || state.markMode) { screenToObjective(e.clientX, e.clientY); return; }
+    tapAim(e.clientX, e.clientY);   // V8.1 화면 터치 조준 · 락온
   }
   renderer.domElement.addEventListener('pointerup', aimPointerEnd);
   renderer.domElement.addEventListener('pointercancel', (e) => { if (e.pointerId === aimPtr.id) aimPtr.id = null; });
+
+  // ============================================================================
+  // V8.1 모바일 조작 — 화면을 톡 치면 적 락온(자동 추적) / 빈 곳이면 지형 방향으로 선회
+  //   · 탭 반경 안에서 화면상 가장 잘 맞는 적 전차를 lockedTarget 으로 지정
+  //   · 락온 표시(궤도 브래킷 + 이름/거리)로 "이 놈을 잡았다"를 눈으로 확인
+  //   · 표적 이동을 예측(탄도 보정)해 포탑·포신이 부드럽고 빠르게 따라간다
+  // ============================================================================
+  const lockHudEl = document.getElementById('lock-hud');
+  const lockNameEl = document.getElementById('lock-name');
+  const lockDistEl = document.getElementById('lock-dist');
+  const lockTagEl = document.getElementById('lock-tag');
+  const lockRingEl = document.getElementById('lock-ring');
+  const V81 = { tapYaw: null, tapPitch: null, tapT: 0, pulseT: 0, aimHold: 0 };
+
+  function v81Project(world, out) {
+    const v = world.clone().applyMatrix4(camera.matrixWorldInverse);
+    out.front = v.z < -0.1;
+    const p = world.clone().project(camera);
+    out.x = (p.x * 0.5 + 0.5) * window.innerWidth;
+    out.y = (-p.y * 0.5 + 0.5) * window.innerHeight;
+    out.depth = p.z;
+    return out;
+  }
+  // 표적의 화면 좌표 + 터치 허용 반경(px) — 거리에 따라 커지고 최소 58px 는 넉넉히
+  function v81TargetScreen(e) {
+    const c = e.root.position.clone().add(new THREE.Vector3(0, 1.7, 0));
+    const p = v81Project(c, {});
+    const t = v81Project(e.root.position.clone().add(new THREE.Vector3(0, 4.0, 0)), {});
+    const px = Math.abs(p.y - t.y);
+    return { x: p.x, y: p.y, front: p.front, depth: p.depth,
+      rad: Math.max(58, Math.min(116, px * 1.3)),
+      dist: e.root.position.distanceTo(playerRoot.position) };
+  }
+  // 표적 속도 추정(이동 예측용) — 순간이동(검증 훅 등)은 무시
+  function v81TrackVel(e, dt) {
+    if (!e._v81p) { e._v81p = e.root.position.clone(); e._v81v = new THREE.Vector3(); return e._v81v; }
+    const inst = e.root.position.clone().sub(e._v81p).divideScalar(Math.max(0.008, dt));
+    if (inst.length() < 60) e._v81v.lerp(inst, 0.30);
+    e._v81p.copy(e.root.position);
+    return e._v81v;
+  }
+  // 사격 해법 — 표적 중심 + 탄착 시간만큼의 이동 예측(탄도 보정)
+  function v81AimSolution(e) {
+    const from = playerRoot.position.clone().add(new THREE.Vector3(0, 2.3, 0));
+    const mov = e.root.position.clone().add(new THREE.Vector3(0, 1.7, 0));
+    const spd = state.weapon === 'heat' ? 126 : (state.weapon === 'missile' ? 60 : (state.weapon === 'mg' ? 300 : 236));
+    const d0 = from.distanceTo(mov);
+    if (e._v81v) mov.addScaledVector(e._v81v, Math.min(1.4, d0 / spd));
+    const v = mov.sub(from);
+    return { yaw: Math.atan2(-v.x, -v.z),
+             pitch: Math.max(-0.18, Math.min(0.65, Math.atan2(v.y, Math.hypot(v.x, v.z)))) };
+  }
+  function releaseLock() {
+    state.lockedTarget = null;
+    if (lockRingEl) lockRingEl.setAttribute('stroke', '#22d3ee');
+    if (lockHudEl) lockHudEl.classList.remove('on', 'hot');
+  }
+  function lockTarget(e) {
+    state.lockedTarget = e;
+    state.lockAcqT = performance.now();
+    const sol = v81AimSolution(e);
+    V81.tapYaw = sol.yaw; V81.tapPitch = sol.pitch; V81.tapT = performance.now(); V81.aimHold = 0;
+    if (lockNameEl) lockNameEl.textContent = e.name || '적 전차';
+    if (lockTagEl) lockTagEl.textContent = 'LOCK ON';
+    if (lockHudEl) {
+      lockHudEl.classList.add('on');
+      lockHudEl.classList.remove('pulse'); void lockHudEl.offsetWidth; lockHudEl.classList.add('pulse');
+    }
+    if (lockRingEl) lockRingEl.setAttribute('stroke', '#fbbf24');
+    audio.init(); audio.playLock();
+    showBeat(`락온 — ${e.name}`, 'gold');
+  }
+  function tapAim(sx, sy) {
+    if (!state.running || state.camMode === 'cmd' || state.markMode) return false;
+    // 1) 탭 지점 반경 안의 살아있는 적 전차 — 화면상 가장 잘 맞는 놈을 고른다
+    let best = null, bestScore = Infinity;
+    for (const e of enemies) {
+      if (e.state !== 'active') continue;
+      const s = v81TargetScreen(e);
+      if (!s.front) continue;
+      const d = Math.hypot(s.x - sx, s.y - sy);
+      if (d > s.rad) continue;
+      const score = d / s.rad;
+      if (score < bestScore) { bestScore = score; best = e; }
+    }
+    if (best) { lockTarget(best); return true; }
+    // 2) 적이 없으면 탭한 방향의 지형·장애물 지점으로 포탑만 부드럽게 선회(이전 락온 해제)
+    releaseLock();
+    const ndc = new THREE.Vector2((sx / window.innerWidth) * 2 - 1, -(sy / window.innerHeight) * 2 + 1);
+    raycaster.setFromCamera(ndc, camera);
+    const obHit = raycaster.intersectObjects(obstacles, false);
+    let aimPt;
+    if (obHit.length) aimPt = obHit[0].point.clone();
+    else {
+      aimPt = raycaster.ray.at(140, new THREE.Vector3());
+      aimPt.y = terrainHeight(aimPt.x, aimPt.z);
+    }
+    const from = playerRoot.position.clone().add(new THREE.Vector3(0, 2.3, 0));
+    const v = aimPt.sub(from);
+    V81.tapYaw = Math.atan2(-v.x, -v.z);
+    V81.tapPitch = Math.max(-0.18, Math.min(0.65, Math.atan2(v.y, Math.hypot(v.x, v.z))));
+    V81.tapT = performance.now();
+    // 빈 곳을 짚었을 때는 그 방향을 잠시 존중한다 — 곧바로 자동추적이 되돌리지 않게(게임 시간 2.5초)
+    V81.aimHold = 2.5;
+    return false;
+  }
+  // 매 프레임 락온 표시 갱신 — 표적 위에 브래킷을 붙이고, 조준선이 물면 초록으로
+  function updateLockHUD() {
+    if (!lockHudEl) return;
+    const e = state.lockedTarget;
+    if (!e || e.state !== 'active' || !state.running || state.camMode === 'cmd' || state.bigMapOpen) {
+      lockHudEl.classList.remove('on', 'hot');
+      if (lockRingEl) lockRingEl.setAttribute('stroke', '#22d3ee');
+      return;
+    }
+    const s = v81TargetScreen(e);
+    if (!s.front) { lockHudEl.classList.remove('on', 'hot'); return; }
+    const scale = Math.max(0.62, Math.min(1.55, s.rad / 58));
+    lockHudEl.style.left = s.x.toFixed(1) + 'px';
+    lockHudEl.style.top = s.y.toFixed(1) + 'px';
+    lockHudEl.style.transform = `translate(-50%,-50%) scale(${scale.toFixed(3)})`;
+    lockHudEl.classList.add('on');
+    if (lockNameEl) lockNameEl.textContent = e.name || '적 전차';
+    if (lockDistEl) lockDistEl.textContent = Math.round(s.dist) + 'm';
+    const hot = Math.hypot(s.x - window.innerWidth / 2, s.y - window.innerHeight / 2) < s.rad * 0.95;
+    lockHudEl.classList.toggle('hot', hot);
+    if (lockRingEl) lockRingEl.setAttribute('stroke', hot ? '#86efac' : '#fbbf24');
+  }
 
   window.addEventListener('keydown', (e) => {
     state.keys[e.code] = true;
@@ -6664,21 +6881,48 @@
       if (state.keys['KeyF']) state.gunPitch = Math.max(-0.18, state.gunPitch - 0.85 * dt);
       if (state.keys['KeyQ'] || state.keys['KeyE'] || state.keys['KeyR'] || state.keys['KeyF']) state.lastAimInput = performance.now();
 
-      // Touch aim assist: gently track the nearest threat when the gunner is idle
-      if (state.autoAim && document.body.classList.contains('touch-ui') && aliveE.length) {
-        if (performance.now() - state.lastAimInput > 1700) {
-          let best = null, bestD = 240;
-          for (const e of aliveE) {
-            const d = e.root.position.distanceTo(playerRoot.position);
-            if (d < bestD) { bestD = d; best = e; }
-          }
-          if (best) {
-            const v = new THREE.Vector3().subVectors(best.root.position.clone().add(new THREE.Vector3(0, 1.6, 0)), playerRoot.position.clone().add(new THREE.Vector3(0, 2.3, 0)));
-            const wantYaw = Math.atan2(-v.x, -v.z);
-            const diff = wrapAngle(wantYaw - state.turretYaw);
-            if (Math.abs(diff) < 0.7) state.turretYaw += diff * Math.min(1, dt * 1.1);
-            const wantPitch = Math.max(-0.15, Math.min(0.5, Math.atan2(v.y, Math.hypot(v.x, v.z))));
-            state.gunPitch += (wantPitch - state.gunPitch) * Math.min(1, dt * 0.8);
+      // ---- V8.1 포탑 자동 추적: 락온 표적 우선 · 손가락 드래그 중에는 수동이 우선 ----
+      {
+        const nowMs = performance.now();
+        const draggingAim = aimPtr.id !== null || state.dragging;
+        V81.aimHold = Math.max(0, V81.aimHold - dt);
+        if (state.lockedTarget && state.lockedTarget.state !== 'active') releaseLock();
+        // (1) 탭으로 잡은 조준 목표 — 부드럽고 빠르게 선회해 맞춘다
+        if (!draggingAim && V81.tapYaw !== null) {
+          const dy = wrapAngle(V81.tapYaw - state.turretYaw);
+          const dp = V81.tapPitch - state.gunPitch;
+          const k = Math.min(1, dt * 7.5);
+          state.turretYaw = wrapAngle(state.turretYaw + dy * k);
+          state.gunPitch = Math.max(-0.18, Math.min(0.65, state.gunPitch + dp * k));
+          if (Math.abs(dy) < 0.008 && Math.abs(dp) < 0.008) { V81.tapYaw = null; V81.tapPitch = null; }
+        }
+        // (2) 자동추적 — 락온된 적은 계속, 없으면 0.5초 뒤 가장 가까운 위협(전방 1.6rad·260m)
+        const trackOn = state.autoAim && document.body.classList.contains('touch-ui') && !state.markMode;
+        if (trackOn && !draggingAim && state.camMode !== 'cmd') {
+          const lt = state.lockedTarget;
+          if (lt) {
+            v81TrackVel(lt, dt);
+            const sol = v81AimSolution(lt);
+            const k = Math.min(1, dt * 4.2);
+            state.turretYaw = wrapAngle(state.turretYaw + wrapAngle(sol.yaw - state.turretYaw) * k);
+            state.gunPitch += (sol.pitch - state.gunPitch) * Math.min(1, dt * 3.6);
+            V81.tapYaw = null; V81.tapPitch = null;
+          } else if (V81.aimHold <= 0 && V81.tapYaw === null && nowMs - state.lastAimInput > 500 && aliveE.length) {
+            let best = null, bestD = 260;
+            const sp = playerRoot.position.clone().add(new THREE.Vector3(0, 2.3, 0));
+            for (const e of aliveE) {
+              const d = e.root.position.distanceTo(playerRoot.position);
+              if (d > bestD) continue;
+              const v = e.root.position.clone().add(new THREE.Vector3(0, 1.7, 0)).sub(sp);
+              if (Math.abs(wrapAngle(Math.atan2(-v.x, -v.z) - state.turretYaw)) > 1.6) continue;
+              bestD = d; best = e;
+            }
+            if (best) {
+              v81TrackVel(best, dt);
+              const sol = v81AimSolution(best);
+              state.turretYaw = wrapAngle(state.turretYaw + wrapAngle(sol.yaw - state.turretYaw) * Math.min(1, dt * 2.6));
+              state.gunPitch += (sol.pitch - state.gunPitch) * Math.min(1, dt * 2.0);
+            }
           }
         }
       }
@@ -7384,6 +7628,7 @@
     tickEW();
     renderMap(miniCtx, 210, 290);
     if (state.bigMapOpen) renderTacMap();
+    updateLockHUD();
     renderer.render(scene, camera);
   }
   // 읽기 전용 검증 훅 (테스트/디버깅용 — 게임 상태를 바꾸지 않음)
@@ -7537,7 +7782,7 @@
   window.__v80 = () => {
     const gl = renderer.getContext();
     return {
-      version: 'V8.0',
+      version: 'V8.1',
       toneMapping: renderer.toneMapping === THREE.ACESFilmicToneMapping,
       toneMappingExposure: +renderer.toneMappingExposure.toFixed(3),
       shadowMapOn: renderer.shadowMap.enabled,
@@ -7640,6 +7885,49 @@
     return muzzleFlashes.length;
   };
   window.__v80Render = () => { renderer.render(scene, camera); return true; };
+
+  // ---- V8.1 읽기 전용 검증 훅 — 모바일 터치 조준·락온·자동추적·조이스틱 상태 ----
+  window.__v81 = () => {
+    const pad = document.getElementById('touch-pad');
+    const fire = document.getElementById('touch-fire');
+    const pr = pad ? pad.getBoundingClientRect() : { width: 0, height: 0 };
+    const fr = fire ? fire.getBoundingClientRect() : { width: 0, height: 0 };
+    const lt = state.lockedTarget;
+    const sol = (lt && lt.state === 'active') ? v81AimSolution(lt) : null;
+    return {
+      version: 'V8.1',
+      running: state.running, camMode: state.camMode, touchUI: document.body.classList.contains('touch-ui'),
+      locked: lt ? lt.name : null,
+      lockedHp: lt ? Math.round(lt.hp) : null,
+      lockErr: sol ? { yaw: +wrapAngle(sol.yaw - state.turretYaw).toFixed(4), pitch: +(sol.pitch - state.gunPitch).toFixed(4) } : null,
+      lockDist: lt ? Math.round(lt.root.position.distanceTo(playerRoot.position)) : null,
+      hud: lockHudEl ? { on: lockHudEl.classList.contains('on'), hot: lockHudEl.classList.contains('hot'),
+                         left: lockHudEl.style.left, top: lockHudEl.style.top, transform: lockHudEl.style.transform,
+                         name: lockNameEl ? lockNameEl.textContent : null, dist: lockDistEl ? lockDistEl.textContent : null,
+                         ring: lockRingEl ? lockRingEl.getAttribute('stroke') : null } : null,
+      turretYaw: +state.turretYaw.toFixed(4), gunPitch: +state.gunPitch.toFixed(4),
+      hullYaw: +state.hullYaw.toFixed(4),
+      tapYaw: V81.tapYaw === null ? null : +V81.tapYaw.toFixed(4), aimHold: +V81.aimHold.toFixed(2),
+      autoDrive: state.autoDrive,
+      lastAimInputAge: Math.round(performance.now() - state.lastAimInput),
+      pad: { w: Math.round(pr.width), h: Math.round(pr.height), maxR: +stick.maxR.toFixed(1), dead: +stick.dead.toFixed(1),
+             x: Math.round(pr.x), y: Math.round(pr.y), shown: pad ? getComputedStyle(pad).display !== 'none' : false },
+      fire: { w: Math.round(fr.width), h: Math.round(fr.height), x: Math.round(fr.x), y: Math.round(fr.y),
+              shown: fire ? getComputedStyle(fire).display !== 'none' : false },
+      knob: knobEl ? knobEl.style.transform : null,
+      move: { x: +state.moveX.toFixed(3), y: +state.moveY.toFixed(3) },
+      hullSpeed: +state.hullSpeed.toFixed(2), hp: +state.hp.toFixed(1), kills: state.kills,
+      apCd: +state.apCd.toFixed(2), heatCd: +state.heatCd.toFixed(2), mgCd: +state.mgCd.toFixed(2),
+      screen: { w: window.innerWidth, h: window.innerHeight },
+      enemyScreens: enemies.filter(e => e.state === 'active').map(e => {
+        const s = v81TargetScreen(e);
+        return { name: e.name, x: Math.round(s.x), y: Math.round(s.y), rad: Math.round(s.rad), front: !!s.front, dist: Math.round(s.dist) };
+      }),
+    };
+  };
+  window.__v81ClearLock = () => { releaseLock(); return true; };
+  window.__v81TapAim = (x, y) => tapAim(x, y);
+  window.__v81Yaw = (y) => { V81.tapYaw = null; V81.tapPitch = null; state.turretYaw = wrapAngle(y); return state.turretYaw; };
   window.__tm = () => TrackMarks.debug();
   window.__v80LookBack = () => { state.turretYaw = wrapAngle(state.turretYaw + Math.PI); return state.turretYaw; };
   window.__v80Clear = () => { clearDamageTags(); return dmgTags.length; };
